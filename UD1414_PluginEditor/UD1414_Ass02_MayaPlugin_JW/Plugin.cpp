@@ -72,22 +72,33 @@ MeshData outMeshData(std::string name)
 		{
 			outMesh.triIndices[i] = triVerts[i];
 		}
-		outMesh.norIndices = new int(outMesh.normalCount);
+		outMesh.norIndices = new int[outMesh.normalCount];
 		for (int i = 0; i < outMesh.normalCount; i++)
 		{
 			outMesh.norIndices[i] = normalPerPoly[i];
 		}
-		outMesh.UVIndices = new int(outMesh.UVCount);
+		outMesh.UVIndices = new int[outMesh.UVCount];
 		for (int i = 0; i < outMesh.UVCount; i++)
 		{
 			outMesh.UVIndices[i] = i;
 		}
-		outMesh.vertices = new float3[outMesh.vertCount];
-		for (int i = 0; i < vertices.length(); i++)
+		MStatus st;
+		outMesh.vertices = mNode.getRawPoints(&st);
+		if (st)
 		{
-			outMesh.vertices[i].x = vertices[i].x;
+			int rawsize = outMesh.vertCount *3;
+			MGlobal::displayInfo("RAW SIZE "+MString() + rawsize);
+			for (int i = 0; i < rawsize; i++)
+			{
+				MGlobal::displayInfo(MString() + outMesh.vertices[i]);
+			}
 		}
+		
 
+		delete[] outMesh.indices;
+		delete[] outMesh.triIndices;
+		delete[] outMesh.norIndices;
+		delete[] outMesh.UVIndices;
 
 		//for()
 
@@ -124,6 +135,60 @@ MeshData outMeshData(std::string name)
 	}
 	return outMesh;
 }
+
+TransData outTransformData(std::string name)
+{
+	MStatus result;
+	MString _name(name.c_str());
+	MSelectionList sList;
+	MDagPath dagPath;
+	if (MGlobal::getSelectionListByName(_name, sList))
+	{
+		sList.getDagPath(0, dagPath);
+		if (dagPath.hasFn(MFn::kTransform))
+		{
+			MGlobal::displayInfo("Transform found: " + dagPath.fullPathName());
+		}
+
+	}
+
+	MFnTransform mNode(dagPath.node());
+	TransData outTrans;
+	outTrans.parentName = nullptr;
+	
+	//MString att(plug_1.node());
+	MGlobal::displayInfo(MString(mNode.fullPathName()) + MString() +mNode.childCount());
+	std::string attName(mNode.fullPathName().asChar());
+	if (attName.find("translate") != std::string::npos)
+	{
+
+		MVector trans = mNode.getTranslation(MSpace::kPostTransform, &result);
+		MGlobal::displayInfo("NODE: " + mNode.fullPathName() + " Translation changed: (" + MString() + trans.x + " , " + MString() + trans.y + " , " + MString() + trans.z + ")");
+		outTrans.translation[0] = trans.x;
+		outTrans.translation[1] = trans.y;
+		outTrans.translation[2] = trans.z;
+	}
+	else if (attName.find("rotate") != std::string::npos)
+	{
+		MEulerRotation rotation;
+		mNode.getRotation(rotation);
+		MGlobal::displayInfo("NODE: " + mNode.fullPathName() + " Scaling changed: (" + MString() + rotation.x + " , " + MString() + rotation.y + " , " + MString() + rotation.z + ")");
+		outTrans.rotation[0] = rotation.x;
+		outTrans.rotation[1] = rotation.y;
+		outTrans.rotation[2] = rotation.z;
+	}
+	else if (attName.find("scale") != std::string::npos)
+	{
+		double scale[3];
+		mNode.getScale(scale);
+		MGlobal::displayInfo("NODE: " + mNode.fullPathName() + "Scale changed: (" + MString() + scale[0] + " , " + MString() + scale[1] + " , " + MString() + scale[2] + ")");
+		outTrans.scale[0] = scale[0];
+		outTrans.scale[1] = scale[1];
+		outTrans.scale[2] = scale[2];
+	}
+	return outTrans;
+}
+
 
 void oldMeshData(std::string name)
 {
@@ -569,6 +634,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			else if(_msgQueue.front().nodeType == nTransform)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Transform)");
+				TransData trans = outTransformData(_msgQueue.front().nodeName);
 			}
 			else if (_msgQueue.front().nodeType == nCamera)
 			{

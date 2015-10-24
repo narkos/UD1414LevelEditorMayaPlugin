@@ -102,8 +102,8 @@
 		int* triIndices;
 		int* norIndices;
 		int* UVIndices;
-		float3* vertices;
-		float3* normals;
+		const float* vertices;
+		const float* normals;
 		float2* uv;
 	};
 	struct TransInfo
@@ -112,6 +112,15 @@
 		//std::string parentName;
 		int childCount;
 	};
+	struct TransData
+	{
+		std::string parentName;
+		float translation[3];
+		float rotation[3];
+		float scale[3];
+		//kanske number of children?
+	};
+
 
 	bool debug;
 	MCallbackId _CBid;
