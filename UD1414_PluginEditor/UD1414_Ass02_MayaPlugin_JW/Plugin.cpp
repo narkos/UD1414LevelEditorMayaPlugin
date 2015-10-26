@@ -152,39 +152,31 @@ TransData outTransformData(std::string name)
 
 	}
 
-	MFnTransform mNode(dagPath.node());
+	MFnTransform mNode(dagPath.node(), &result);
 	TransData outTrans;
-	outTrans.parentName = nullptr;
-	
-	//MString att(plug_1.node());
-	MGlobal::displayInfo(MString(mNode.fullPathName()) + MString() +mNode.childCount());
-	std::string attName(mNode.fullPathName().asChar());
-	if (attName.find("translate") != std::string::npos)
+	if (result)
 	{
+		
+		outTrans.parentName = "";
 
+		std::string attName(mNode.fullPathName().asChar());
 		MVector trans = mNode.getTranslation(MSpace::kPostTransform, &result);
-		MGlobal::displayInfo("NODE: " + mNode.fullPathName() + " Translation changed: (" + MString() + trans.x + " , " + MString() + trans.y + " , " + MString() + trans.z + ")");
 		outTrans.translation[0] = trans.x;
 		outTrans.translation[1] = trans.y;
 		outTrans.translation[2] = trans.z;
-	}
-	else if (attName.find("rotate") != std::string::npos)
-	{
+
 		MEulerRotation rotation;
 		mNode.getRotation(rotation);
-		MGlobal::displayInfo("NODE: " + mNode.fullPathName() + " Scaling changed: (" + MString() + rotation.x + " , " + MString() + rotation.y + " , " + MString() + rotation.z + ")");
 		outTrans.rotation[0] = rotation.x;
 		outTrans.rotation[1] = rotation.y;
 		outTrans.rotation[2] = rotation.z;
-	}
-	else if (attName.find("scale") != std::string::npos)
-	{
+
 		double scale[3];
 		mNode.getScale(scale);
-		MGlobal::displayInfo("NODE: " + mNode.fullPathName() + "Scale changed: (" + MString() + scale[0] + " , " + MString() + scale[1] + " , " + MString() + scale[2] + ")");
 		outTrans.scale[0] = scale[0];
 		outTrans.scale[1] = scale[1];
 		outTrans.scale[2] = scale[2];
+		return outTrans;
 	}
 	return outTrans;
 }
@@ -634,7 +626,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			else if(_msgQueue.front().nodeType == nTransform)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Transform)");
-				TransData trans = outTransformData(_msgQueue.front().nodeName);
+				outTransformData(_msgQueue.front().nodeName);
 			}
 			else if (_msgQueue.front().nodeType == nCamera)
 			{
@@ -652,6 +644,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			else if (_msgQueue.front().nodeType == nTransform)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Edited)");
+				outTransformData(_msgQueue.front().nodeName);
 			}
 			break;
 		case (MessageType::msgDeleted) :
@@ -698,6 +691,7 @@ void loadScene()
 		
 		if (dagPath.hasFn(MFn::kCamera))
 		{
+			_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
 			MObject parent = dagNode.parent(0);
 			if (parent.hasFn(MFn::kTransform))
 			{
