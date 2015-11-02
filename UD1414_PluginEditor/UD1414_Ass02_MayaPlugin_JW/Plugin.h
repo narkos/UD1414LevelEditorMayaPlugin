@@ -53,6 +53,8 @@
 #include <maya/MModelMessage.h>
 #include <maya/MCameraSetMessage.h>
 
+#include "FileMap.h"
+
 // Commands
 #include <maya/MPxCommand.h>
 
@@ -63,70 +65,18 @@
 #pragma comment(lib,"OpenMayaUI.lib")
 
 
-	enum MessageType { msgAdded = 1, msgEdited = 2, msgDeleted = 3, msgRenamed = 4};
-	enum NodeType { nDefaultNode = 0, nMesh = 1, nTransform = 2, nCamera = 3, nLight = 4 , nMaterial = 5};
 
 
 
+	
 
-	struct MessageInfo
-	{
-		std::string nodeName;
-		int msgType;
-		int nodeType;
-	};
-
-
-	struct CameraInfo
-	{
-		std::string nodeName;
-		std::string transformName;
-	};
-
-	struct MeshInfo
-	{
-		std::string nodeName;
-		//std::string transformName;
-		int vertCount;
-	};
-
-	struct MeshData
-	{
-		std::string transformName;
-		int vertCount;
-		int normalCount;
-		int UVCount;
-		int indCount;
-		int triCount;
-		int* indices;
-		int* triIndices;
-		int* norIndices;
-		int* UVIndices;
-		const float* vertices;
-		const float* normals;
-		float2* uv;
-	};
-	struct TransInfo
-	{
-		std::string nodeName;
-		//std::string parentName;
-		int childCount;
-	};
-	struct TransData
-	{
-		std::string parentName;
-		float translation[3];
-		float rotation[3];
-		float scale[3];
-		//kanske number of children?
-	};
-
+	FileMapping fileMap;
 
 	bool debug;
 	MCallbackId _CBid;
 	MCallbackIdArray _CBidArray;
 	std::vector<MeshInfo> _meshVector;
-	std::vector<TransInfo> _transVector;
+	std::vector<TransformInfo> _transVector;
 	std::vector<CameraInfo> _camVector;	
 	std::vector<MessageInfo> _msgVector;
 	std::queue<MessageInfo> _msgQueue;

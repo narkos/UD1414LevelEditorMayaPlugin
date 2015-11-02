@@ -1,10 +1,13 @@
 #include "Plugin.h"
 
-MeshData outMeshData(std::string name)
+MeshInfo outMeshData(std::string name)
 {
-	MString _name(name.c_str());
-	MSelectionList sList;
-	MDagPath dagPath;
+	// Find mesh node in Dag
+	MStatus			status;
+	MString			_name(name.c_str());
+	MSelectionList	sList;
+	MDagPath		dagPath;
+
 	if (MGlobal::getSelectionListByName(_name, sList))
 	{
 		sList.getDagPath(0, dagPath);
@@ -12,131 +15,158 @@ MeshData outMeshData(std::string name)
 		{
 			MGlobal::displayInfo("Mesh found: " + dagPath.fullPathName());
 		}
-		
 	}
 
-	MFnMesh mNode(dagPath.node());
-	MeshData outMesh;
+	MFnMesh			mNode(dagPath.node(), &status);
+	MItMeshPolygon	polyIterator(dagPath.node(), &status);
+	MeshInfo		outMesh;
+	//MeshData		outMesh;
 	
+	// Variable declaration for mesh analysis
+	const float*	vertices = mNode.getRawPoints(&status);
+	const float*	normals = mNode.getRawNormals(&status);
+	MFloatArray		uArray;
+	MFloatArray		vArray;
+	mNode.getUVs(uArray, vArray);
+
+	MIntArray		triCount;
+	MIntArray		triVerts;
+	mNode.getTriangles(triCount, triVerts);
+
+	MIntArray		triNorIndices;
+	MIntArray		triUVIndices;
+	
+	int				totTris = 0;
+	int				trisPerFace = 0;
+	if (polyIterator.hasValidTriangulation())
+	{
+		//DO STUFF
+		for (polyIterator.reset(); !polyIterator.isDone(); polyIterator.next())
+		{
+
+			polyIterator.numTriangles(trisPerFace);
+			//totTris += trisPerFace;
+			int uId0, uId1, uId2;
+			cout << trisPerFace;
+			if (trisPerFace == 1)
+			{	
+				triNorIndices.append(polyIterator.normalIndex(0, &status));
+				triNorIndices.append(polyIterator.normalIndex(1, &status));
+				triNorIndices.append(polyIterator.normalIndex(2, &status));
+
+				polyIterator.getUVIndex(0, uId0);
+				polyIterator.getUVIndex(1, uId1);
+				polyIterator.getUVIndex(2, uId2);
+				triUVIndices.append(uId0);
+				triUVIndices.append(uId1);
+				triUVIndices.append(uId2);
+			}
+			else
+			{
+				triNorIndices.append(polyIterator.normalIndex(0, &status));
+				triNorIndices.append(polyIterator.normalIndex(1, &status));
+				triNorIndices.append(polyIterator.normalIndex(3, &status));
+				triNorIndices.append(polyIterator.normalIndex(3, &status));
+				triNorIndices.append(polyIterator.normalIndex(1, &status));
+				triNorIndices.append(polyIterator.normalIndex(2, &status));
+
+				
+				polyIterator.getUVIndex(0, uId0);
+				polyIterator.getUVIndex(1, uId1);
+				polyIterator.getUVIndex(3, uId2);
+				triUVIndices.append(uId0);
+				triUVIndices.append(uId1);
+				triUVIndices.append(uId2);
+
+				polyIterator.getUVIndex(3, uId0);
+				polyIterator.getUVIndex(1, uId1);
+				polyIterator.getUVIndex(2, uId2);
+				triUVIndices.append(uId0);
+				triUVIndices.append(uId1);
+				triUVIndices.append(uId2);
+
+			}
+
+		}
+	}
+
 	if (mNode.parent(0).hasFn(MFn::kTransform))
 	{
 		MFnTransform mTrans(mNode.parent(0));
 		outMesh.transformName = mTrans.fullPathName().asChar();
 		MGlobal::displayInfo(outMesh.transformName.c_str());
 	}
-	
 
-	MStatus result;
-	////MFnMesh mNode((obj), &result);
-	if (result)
+	outMesh.meshData.vertCount = mNode.numVertices();
+	outMesh.meshData.normalCount = mNode.numNormals();
+	outMesh.meshData.UVCount = mNode.numUVs();
+
+	outMesh.meshData.vertices = vertices;
+	outMesh.meshData.normals = normals;
+
+	outMesh.meshData.triPerFace = new int[triCount.length()];
+	triCount.get(outMesh.meshData.triPerFace);
+
+	outMesh.meshData.uv = new float2[mNode.numUVs()];
+	for (int i = 0; i < outMesh.meshData.UVCount; i++)
 	{
-		//DO STUFF
-		//MPointArray vertices;
-		MFloatPointArray vertices;
-		MFloatVectorArray normals;
-		MFloatArray uArray;
-		MFloatArray vArray;
-
-		MIntArray vertexCountPerPoly;
-		MIntArray vertList;
-		mNode.getVertices(vertexCountPerPoly, vertList);
-
-		MIntArray normalIndices;
-		MIntArray normalPerPoly;
-		mNode.getNormalIds(normalIndices, normalPerPoly);
-
-		MIntArray triCount;
-		MIntArray triVerts;
-		mNode.getTriangleOffsets(triCount, triVerts);
-
-		mNode.getPoints(vertices, MSpace::kPreTransform);
-		mNode.getNormals(normals, MSpace::kPreTransform);
-		mNode.getUVs(uArray, vArray);
-		
-		int numUVs = mNode.numUVs();
-		
-
-		outMesh.vertCount = vertices.length();
-		outMesh.normalCount = normals.length();
-		outMesh.UVCount = numUVs;
-		outMesh.triCount = triVerts.length();
-		outMesh.indCount = vertList.length();
-
-		outMesh.indices = new int[outMesh.indCount];
-		for (int i = 0; i < outMesh.indCount; i++)
-		{
-			outMesh.indices[i] = vertList[i];
-		}
-		outMesh.triIndices = new int[outMesh.triCount];
-		for (int i = 0; i < outMesh.triCount; i++)
-		{
-			outMesh.triIndices[i] = triVerts[i];
-		}
-		outMesh.norIndices = new int[outMesh.normalCount];
-		for (int i = 0; i < outMesh.normalCount; i++)
-		{
-			outMesh.norIndices[i] = normalPerPoly[i];
-		}
-		outMesh.UVIndices = new int[outMesh.UVCount];
-		for (int i = 0; i < outMesh.UVCount; i++)
-		{
-			outMesh.UVIndices[i] = i;
-		}
-		MStatus st;
-		outMesh.vertices = mNode.getRawPoints(&st);
-		if (st)
-		{
-			int rawsize = outMesh.vertCount *3;
-			MGlobal::displayInfo("RAW SIZE "+MString() + rawsize);
-			for (int i = 0; i < rawsize; i++)
-			{
-				MGlobal::displayInfo(MString() + outMesh.vertices[i]);
-			}
-		}
-		
-
-		delete[] outMesh.indices;
-		delete[] outMesh.triIndices;
-		delete[] outMesh.norIndices;
-		delete[] outMesh.UVIndices;
-
-		//for()
-
-		if (debug)
-		{
-
-			MGlobal::displayInfo("\nNew Mesh node path: " + mNode.fullPathName() + "\n");
-			MGlobal::displayInfo("Normal Indicies: " + MString() + normalPerPoly.length());
-			MGlobal::displayInfo("Triangle Count: " + MString() + triVerts.length());
-			MGlobal::displayInfo("UV count:" + MString() + numUVs);
-			MGlobal::displayInfo("Number of vertices: " + MString() + vertices.length());
-			MGlobal::displayInfo("Number of vertIndicies: " + MString() + vertList.length());
-			for (int i = 0; i < vertices.length(); i++)
-			{
-				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-				MGlobal::displayInfo("v: " + MString() + vertices[i].x + ", " + MString() + vertices[i].y + ", " + MString() + vertices[i].z);
-
-			}
-			for (int i = 0; i < normals.length(); i++)
-			{
-				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-				MGlobal::displayInfo("n: " + MString() + normals[i].x + ", " + MString() + normals[i].y + ", " + MString() + normals[i].z);
-			}
-			for (int i = 0; i < uArray.length(); i++)
-			{
-				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-				MGlobal::displayInfo("uv: " + MString() + uArray[i] + ", " + MString() + vArray[i]);
-			}
-			for (int i = 0; i < triCount.length(); i++)
-			{
-				MGlobal::displayInfo("Tri ID:" + MString() + triCount[i] + " ( " + MString() + triVerts[i]);
-			}
-		}
+		outMesh.meshData.uv[i][0] = uArray[i];
+		outMesh.meshData.uv[i][1] = vArray[i];
 	}
+
+	outMesh.meshData.indCount = triVerts.length();
+	outMesh.meshData.triCount = triCount.length();
+
+	outMesh.meshData.triIndices = new int[outMesh.meshData.indCount];
+	 triVerts.get(outMesh.meshData.triIndices);
+
+	outMesh.meshData.norIndices = new int[triNorIndices.length()];
+	triNorIndices.get(outMesh.meshData.norIndices);
+
+	outMesh.meshData.UVIndices = new int[triUVIndices.length()];
+	triUVIndices.get(outMesh.meshData.UVIndices);
+
+	if (debug)
+	{
+		MGlobal::displayInfo("outMesh Name: " + MString(name.c_str()));
+		MGlobal::displayInfo("outMesh Transform Name: " + MString(outMesh.transformName.c_str()));
+		MGlobal::displayInfo("outMesh Vert/Nor/UV Count: " + MString() + outMesh.meshData.vertCount + " / " + MString() + outMesh.meshData.normalCount + " / " + MString() + outMesh.meshData.UVCount);
+		MGlobal::displayInfo("outMesh Indices / Triangle Count: " + MString() + outMesh.meshData.indCount + " / " + MString() + outMesh.meshData.triCount);
+		MString triFaceStr = " ( ";
+		MString triIndStr = "";
+		for (int i = 0; i < triCount.length(); i++)
+		{
+
+			if (i != triCount.length() - 1)
+			{
+				triFaceStr += MString() + outMesh.meshData.triPerFace[i] + " , ";
+				//triIndStr += MString() + outMesh.triIndices[i] + "," + MString() + outMesh.norIndices[i] + "," + MString() + outMesh.UVIndices[i] + ")";
+			}
+
+			else
+			{
+				triFaceStr += MString() + outMesh.meshData.triPerFace[i];
+				//triIndStr += MString() + outMesh.triIndices[i] + "," + MString() + outMesh.norIndices[i] + "," + MString() + outMesh.UVIndices[i] + ")";
+			}
+
+		}
+		MGlobal::displayInfo("outMesh Tris per Polygon: " + triFaceStr + " )");
+		for (int i = 0; i + 3 < outMesh.meshData.indCount; i += 3)
+		{
+			triIndStr += "(";
+			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
+			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 1] + "," + MString() + outMesh.meshData.norIndices[i + 1] + "," + MString() + outMesh.meshData.UVIndices[i + 1] + ")");
+			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 2] + "," + MString() + outMesh.meshData.norIndices[i + 2] + "," + MString() + outMesh.meshData.UVIndices[i + 2] + ")");
+			triIndStr += ")\n";
+		}
+
+		MGlobal::displayInfo("outMesh Indices per triangle: " + triIndStr);
+	}
+	
 	return outMesh;
 }
 
-TransData outTransformData(std::string name)
+TransformInfo outTransformData(std::string name)
 {
 	MStatus result;
 	MString _name(name.c_str());
@@ -153,7 +183,7 @@ TransData outTransformData(std::string name)
 	}
 
 	MFnTransform mNode(dagPath.node(), &result);
-	TransData outTrans;
+	TransformInfo outTrans;
 	if (result)
 	{
 		
@@ -161,112 +191,173 @@ TransData outTransformData(std::string name)
 
 		std::string attName(mNode.fullPathName().asChar());
 		MVector trans = mNode.getTranslation(MSpace::kPostTransform, &result);
-		outTrans.translation[0] = trans.x;
-		outTrans.translation[1] = trans.y;
-		outTrans.translation[2] = trans.z;
+		outTrans.transformData.translation[0] = trans.x;
+		outTrans.transformData.translation[1] = trans.y;
+		outTrans.transformData.translation[2] = trans.z;
 
 		MEulerRotation rotation;
 		mNode.getRotation(rotation);
-		outTrans.rotation[0] = rotation.x;
-		outTrans.rotation[1] = rotation.y;
-		outTrans.rotation[2] = rotation.z;
+		outTrans.transformData.rotation[0] = rotation.x;
+		outTrans.transformData.rotation[1] = rotation.y;
+		outTrans.transformData.rotation[2] = rotation.z;
 
 		double scale[3];
 		mNode.getScale(scale);
-		outTrans.scale[0] = scale[0];
-		outTrans.scale[1] = scale[1];
-		outTrans.scale[2] = scale[2];
+		outTrans.transformData.scale[0] = scale[0];
+		outTrans.transformData.scale[1] = scale[1];
+		outTrans.transformData.scale[2] = scale[2];
 		return outTrans;
 	}
 	return outTrans;
 }
 
-
-void oldMeshData(std::string name)
+std::string getParentName(MPlug& plug)
 {
-	MString _name(name.c_str());
-	MSelectionList sList;
-	MDagPath dagPath;
-	if (MGlobal::getSelectionListByName(_name, sList))
+	MPlug p = plug;
+	if (p.parent().asMObject().hasFn(MFn::kTransform))
 	{
-		sList.getDagPath(0, dagPath);
-		if (dagPath.hasFn(MFn::kMesh))
-		{
-			MGlobal::displayInfo("Mesh found: " + dagPath.fullPathName());
-		}
-		else return;
+		MFnTransform tr(plug.parent());
+		return tr.fullPathName().asChar();
 	}
-
-	MFnMesh mNode(dagPath.node());
-
-
-
-	MStatus result;
-	////MFnMesh mNode((obj), &result);
-	if (result)
-	{
-		//DO STUFF
-		MPointArray vertices;
-		MFloatVectorArray normals;
-		MFloatArray uArray;
-		MFloatArray vArray;
-
-		MIntArray vertexCountPerPoly;
-		MIntArray vertList;
-		mNode.getVertices(vertexCountPerPoly, vertList);
-
-		MIntArray normalIndices;
-		MIntArray normalPerPoly;
-		mNode.getNormalIds(normalIndices, normalPerPoly);
-
-		MIntArray triCount;
-		MIntArray triVerts;
-		mNode.getTriangleOffsets(triCount, triVerts);
-
-		mNode.getPoints(vertices, MSpace::kPreTransform);
-		mNode.getNormals(normals, MSpace::kPreTransform);
-		mNode.getUVs(uArray, vArray);
-
-		//int numUVs = mNode.numUVs;
-
-		MIntArray indices;
-		//for()
-
-
-
-
-		if (debug)
-		{
-
-			MGlobal::displayInfo("\nNew Mesh node path: " + mNode.fullPathName() + "\n");
-			MGlobal::displayInfo("Normal Indicies: " + MString() + normalPerPoly.length());
-			MGlobal::displayInfo("Triangle Count: " + MString() + triVerts.length());
-//			MGlobal::displayInfo("UV count:" + MString() + numUVs);
-			MGlobal::displayInfo("Number of vertices: " + MString() + vertices.length());
-			MGlobal::displayInfo("Number of vertIndicies: " + MString() + vertList.length());
-			for (int i = 0; i < vertices.length(); i++)
-			{
-				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-				MGlobal::displayInfo("v: " + MString() + vertices[i].x + ", " + MString() + vertices[i].y + ", " + MString() + vertices[i].z);
-
-			}
-			for (int i = 0; i < normals.length(); i++)
-			{
-				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-				MGlobal::displayInfo("n: " + MString() + normals[i].x + ", " + MString() + normals[i].y + ", " + MString() + normals[i].z);
-			}
-			for (int i = 0; i < uArray.length(); i++)
-			{
-				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-				MGlobal::displayInfo("uv: " + MString() + uArray[i] + ", " + MString() + vArray[i]);
-			}
-			for (int i = 0; i < triCount.length(); i++)
-			{
-				MGlobal::displayInfo("Tri ID:" + MString() + triCount[i] + " ( " + MString() + triVerts[i]);
-			}
-		}
-	}
+	else
+		return "";
 }
+//
+//void oldMeshData(std::string name)
+//{
+//	MString _name(name.c_str());
+//	MSelectionList sList;
+//	MDagPath dagPath;
+//	if (MGlobal::getSelectionListByName(_name, sList))
+//	{
+//		sList.getDagPath(0, dagPath);
+//		if (dagPath.hasFn(MFn::kMesh))
+//		{
+//			MGlobal::displayInfo("Mesh found: " + dagPath.fullPathName());
+//		}
+//
+//	}
+//
+//	MFnMesh mNode(dagPath.node());
+//	MeshData outMesh;
+//
+//	if (mNode.parent(0).hasFn(MFn::kTransform))
+//	{
+//		MFnTransform mTrans(mNode.parent(0));
+//		outMesh.transformName = mTrans.fullPathName().asChar();
+//		MGlobal::displayInfo(outMesh.transformName.c_str());
+//	}
+//
+//
+//	MStatus result;
+//	////MFnMesh mNode((obj), &result);
+//	if (result)
+//	{
+//		//DO STUFF
+//		//MPointArray vertices;
+//		MFloatPointArray vertices;
+//		MFloatVectorArray normals;
+//		MFloatArray uArray;
+//		MFloatArray vArray;
+//
+//		MIntArray vertexCountPerPoly;
+//		MIntArray vertList;
+//		mNode.getVertices(vertexCountPerPoly, vertList);
+//
+//		MIntArray normalIndices;
+//		MIntArray normalPerPoly;
+//		mNode.getNormalIds(normalIndices, normalPerPoly);
+//
+//		MIntArray triCount;
+//		MIntArray triVerts;
+//		mNode.getTriangleOffsets(triCount, triVerts);
+//
+//		mNode.getPoints(vertices, MSpace::kPreTransform);
+//		mNode.getNormals(normals, MSpace::kPreTransform);
+//		mNode.getUVs(uArray, vArray);
+//
+//		int numUVs = mNode.numUVs();
+//
+//
+//		outMesh.vertCount = vertices.length();
+//		outMesh.normalCount = normals.length();
+//		outMesh.UVCount = numUVs;
+//		outMesh.triCount = triVerts.length();
+//		outMesh.indCount = vertList.length();
+//
+//		////outMesh.indices = new int[outMesh.indCount];
+//		//for (int i = 0; i < outMesh.indCount; i++)
+//		//{
+//		//	outMesh.indices[i] = vertList[i];
+//		//}
+//		outMesh.triIndices = new int[outMesh.triCount];
+//		for (int i = 0; i < outMesh.triCount; i++)
+//		{
+//			outMesh.triIndices[i] = triVerts[i];
+//		}
+//		outMesh.norIndices = new int[outMesh.normalCount];
+//		for (int i = 0; i < outMesh.normalCount; i++)
+//		{
+//			outMesh.norIndices[i] = normalPerPoly[i];
+//		}
+//		outMesh.UVIndices = new int[outMesh.UVCount];
+//		for (int i = 0; i < outMesh.UVCount; i++)
+//		{
+//			outMesh.UVIndices[i] = i;
+//		}
+//		MStatus st;
+//		outMesh.vertices = mNode.getRawPoints(&st);
+//		if (st)
+//		{
+//			int rawsize = outMesh.vertCount * 3;
+//			MGlobal::displayInfo("RAW SIZE " + MString() + rawsize);
+//			for (int i = 0; i < rawsize; i++)
+//			{
+//				MGlobal::displayInfo(MString() + outMesh.vertices[i]);
+//			}
+//		}
+//
+//
+//		//delete[] outMesh.indices;
+//		//delete[] outMesh.triIndices;
+//		//delete[] outMesh.norIndices;
+//		//delete[] outMesh.UVIndices;
+//
+//		//for()
+//
+//		if (debug)
+//		{
+//
+//			MGlobal::displayInfo("\nNew Mesh node path: " + mNode.fullPathName() + "\n");
+//			MGlobal::displayInfo("Normal Indicies: " + MString() + normalPerPoly.length());
+//			MGlobal::displayInfo("Triangle Count: " + MString() + triVerts.length());
+//			MGlobal::displayInfo("UV count:" + MString() + numUVs);
+//			MGlobal::displayInfo("Number of vertices: " + MString() + vertices.length());
+//			MGlobal::displayInfo("Number of vertIndicies: " + MString() + vertList.length());
+//			for (int i = 0; i < vertices.length(); i++)
+//			{
+//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
+//				MGlobal::displayInfo("v: " + MString() + vertices[i].x + ", " + MString() + vertices[i].y + ", " + MString() + vertices[i].z);
+//
+//			}
+//			for (int i = 0; i < normals.length(); i++)
+//			{
+//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
+//				MGlobal::displayInfo("n: " + MString() + normals[i].x + ", " + MString() + normals[i].y + ", " + MString() + normals[i].z);
+//			}
+//			for (int i = 0; i < uArray.length(); i++)
+//			{
+//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
+//				MGlobal::displayInfo("uv: " + MString() + uArray[i] + ", " + MString() + vArray[i]);
+//			}
+//			for (int i = 0; i < triCount.length(); i++)
+//			{
+//				MGlobal::displayInfo("Tri ID:" + MString() + triCount[i] + " ( " + MString() + triVerts[i]);
+//			}
+//		}
+//	}
+//	//return outMesh;
+//}
 
 void mAddMessage(std::string name, int msgType, int nodeType)
 {
@@ -289,13 +380,13 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 	}
 	if (!exists)
 	{
-		MessageInfo tMsg{ name, msgType, nodeType };
+		MessageInfo tMsg{ name, nodeType,msgType };
 		_msgVector.push_back(tMsg);
 		_msgQueue.push(tMsg);
 	}
 }
 
-void mAddNode(std::string name, int type, int vertCount = 0, char* childname=nullptr)
+void mAddNode(std::string name, std::string parentName, int type, int vertCount = 0, char* childname=nullptr)
 {
 	if (!name.empty())
 	{
@@ -317,7 +408,7 @@ void mAddNode(std::string name, int type, int vertCount = 0, char* childname=nul
 			}
 			if (!exists)
 			{
-				MeshInfo mesh{ name, vertCount };
+				MeshInfo mesh{ name, parentName };
 				_meshVector.push_back(mesh);
 				mAddMessage(name, msgAdded, nMesh);
 				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()) + "with " + MString() + vertCount + " vertices.");
@@ -327,7 +418,7 @@ void mAddNode(std::string name, int type, int vertCount = 0, char* childname=nul
 		{
 			if (_transVector.size() > 0)
 			{
-				for (std::vector<TransInfo>::size_type i = 0; i != _transVector.size(); i++)
+				for (std::vector<TransformInfo>::size_type i = 0; i != _transVector.size(); i++)
 				{
 					std::string tmp = _transVector.at(i).nodeName;
 					if (strcmp(name.c_str(), tmp.c_str()) == 0)
@@ -340,7 +431,7 @@ void mAddNode(std::string name, int type, int vertCount = 0, char* childname=nul
 			if (!exists)
 			{
 				mAddMessage(name, msgAdded, nTransform);
-				TransInfo trans{ name, vertCount };
+				TransformInfo trans{ name};
 				_transVector.push_back(trans);
 				MGlobal::displayInfo("Added transform: " + MString(name.c_str()));
 			}
@@ -407,8 +498,9 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 
 			MPointArray vertices;
 			mNode.getPoints(vertices, MSpace::kPreTransform);
+			std::string parentname = getParentName(plug_1);
 			std::string tmpName = mNode.fullPathName().asChar();
-			mAddNode(tmpName.c_str(), nMesh, vertices.length());
+			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh, vertices.length());
 		}
 	}
 	//Finds changes to vertex positions
@@ -595,7 +687,8 @@ void cbNewNode(MObject& node, void* clientData)
 			MFnTransform trans(node);
 			if (trans.childCount() > 0)
 			{
-				mAddNode(trans.fullPathName().asChar(), nTransform);
+
+				mAddNode(trans.fullPathName().asChar(), "", nTransform);
 				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbTransformModified));
 				_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
 
@@ -621,7 +714,15 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			if (_msgQueue.front().nodeType == nMesh)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Mesh)");
-				outMeshData(_msgQueue.front().nodeName);
+				MeshInfo  outMesh = outMeshData(_msgQueue.front().nodeName);
+				fileMap.tryWrite(_msgQueue.front(), outMesh);
+				//fileMap.createHeaderMesh(_msgQueue.front(),outMesh);
+				delete[] outMesh.meshData.uv;
+				delete[] outMesh.meshData.triIndices;
+				delete[] outMesh.meshData.norIndices;
+				delete[] outMesh.meshData.UVIndices;
+				delete[] outMesh.meshData.triPerFace;
+				//delete[] outMesh.vertices;
 			}
 			else if(_msgQueue.front().nodeType == nTransform)
 			{
@@ -688,7 +789,7 @@ void loadScene()
 		MDagPath dagPath;
 		stat = dagIt.getPath(dagPath);
 		MFnDagNode dagNode(dagPath, &stat);
-		
+		std::string transname;
 		if (dagPath.hasFn(MFn::kCamera))
 		{
 			_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
@@ -697,12 +798,13 @@ void loadScene()
 			{
 				//MGlobal::displayInfo("FOUND CAMERA LOL " + dagPath.fullPathName());
 				MFnTransform trans(parent);
-				mAddNode(trans.fullPathName().asChar(), nTransform);
+				transname = trans.fullPathName().asChar();
+				mAddNode(trans.fullPathName().asChar(),"", nTransform);
 				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(parent, cbTransformModified));
 				MString panel;
 				_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
 			}
-			mAddNode(dagPath.fullPathName().asChar(), nCamera);
+			mAddNode(dagPath.fullPathName().asChar(), transname.c_str(), nCamera);
 		}
 
 	}
@@ -720,6 +822,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 	{
 		CHECK_MSTATUS(result);
 	}
+
+
+	fileMap.CreateFileMaps();
 
 	MGlobal::displayInfo("Level Editor plugin loaded.");
 	loadScene();
