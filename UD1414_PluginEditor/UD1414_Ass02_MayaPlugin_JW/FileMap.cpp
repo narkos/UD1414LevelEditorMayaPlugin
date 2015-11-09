@@ -9,11 +9,22 @@ FileMapping::FileMapping()
 
 FileMapping::~FileMapping()
 {
-	UnmapViewOfFile((LPCVOID)mMessageData);
-	CloseHandle(hMessageFileMap);
+	bool m = UnmapViewOfFile((LPCVOID)mMessageData);
+	if (m!=0) 
+		MGlobal::displayInfo("Filemap closed");
+	m = CloseHandle(hMessageFileMap);
+	if (m != 0)
+		MGlobal::displayInfo("Filemap closed");
+	
 
-	UnmapViewOfFile((LPCVOID)mInfoData);
-	CloseHandle(hInfoFileMap);
+	bool n = UnmapViewOfFile((LPCVOID)mInfoData);
+	if (n != 0)
+		MGlobal::displayInfo("InfoFilemap closed");
+	n = CloseHandle(hInfoFileMap);
+	if (n != 0)
+		MGlobal::displayInfo("InfoFilemap closed");
+
+	
 }
 
 void FileMapping::CreateFileMaps()
@@ -27,6 +38,7 @@ void FileMapping::CreateFileMaps()
 		mInfoSize,
 		(LPCWSTR) "infoFileMap");
 
+	//MGlobal::displayInfo("mInfoSize: " + MString() + mInfoSize);
 	mutexInfo.Create("__info_Mutex__");
 
 	mInfoData = MapViewOfFile(hInfoFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
@@ -36,16 +48,17 @@ void FileMapping::CreateFileMaps()
 		MGlobal::displayInfo("Couldn't create infofilemap");
 	}
 	//FilemapInfo fmInfo;
-	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		MGlobal::displayInfo("Infofilemap exists, you get an handle to it!");
+	else if (GetLastError() == ERROR_ALREADY_EXISTS) {
+		MGlobal::displayInfo("Infofilemap exists, you get a handle to it!");
 		GetFilemapInfoValues();
 	}
 	else { //first, sätter de första värdena på filemapinfon
 		MGlobal::displayInfo("Creating new infofilemap");
+		SetFilemapInfoValues(0, 0, 256, 2048);
 	}
 	memoryPadding = _fileMapInfo.non_accessmemoryOffset;
 	
-	mSize = _fileMapInfo.messageFilemap_Size;
+	mSize = 256;
 	hMessageFileMap = CreateFileMapping(INVALID_HANDLE_VALUE,
 		NULL,
 		PAGE_READWRITE,
@@ -58,9 +71,8 @@ void FileMapping::CreateFileMaps()
 	if (hMessageFileMap == NULL) {
 		MGlobal::displayInfo("Couldn't create filemap");
 	}
-
-	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		MGlobal::displayInfo("Filemap exists, you get an handle to it!");
+	else if (GetLastError() == ERROR_ALREADY_EXISTS) {
+		MGlobal::displayInfo("Filemap exists, you get a handle to it!");
 
 	}
 	else {
@@ -69,7 +81,7 @@ void FileMapping::CreateFileMaps()
 	}
 
 
-	MGlobal::displayInfo("FileMapSize: " + MString() + mSize + MString()+_fileMapInfo.non_accessmemoryOffset);
+	MGlobal::displayInfo("FileMapSize: " + MString() + mSize +" "+ MString()+_fileMapInfo.non_accessmemoryOffset);
 }
 
 void FileMapping::GetFilemapInfoValues()
@@ -91,7 +103,7 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 	if (messageFileMapTotalSize > 0)
 		_fileMapInfo.messageFilemap_Size = messageFileMapTotalSize;
 
-	memcpy(mInfoData, &_fileMapInfo, sizeof(FilemapInfo));
+	memcpy(mInfoData, &_fileMapInfo, sizeof(FilemapInfo));	
 	mutexInfo.Unlock();
 }
 
@@ -103,18 +115,56 @@ bool FileMapping::tryWrite(MessageInfo& msg, MeshInfo& minfo)
 	case NodeType::nMesh:
 		MGlobal::displayInfo("WOOOOOOOOOOOH");
 		MessageHeader mHeader = createHeaderMesh(msg, minfo);
+		int cfg = findWriteConfig(mHeader);
+		createMessageMesh(msg, minfo);
+		
 		break;
 
-	default:
-		break;
+	//default:
+	//	break;
 
 	}
 	return false;
 }
 
-void FileMapping::findWriteConfig(bool& canWrite, bool& )
+//void FileMapping::findWriteConfig(bool& canWrite, bool& )
+int FileMapping::findWriteConfig(MessageHeader& hdr)
+{
+	// Write config return values
+	// 0: Can't write
+	// 1: Can write normally
+	// 2: Header fits before buffer end, but message will have to be moved to the beginning of the buffer
+	memcpy(&_fileMapInfo, mInfoData, sizeof(FilemapInfo));
 
-bool FileMapping::writeMesh(MessageInfo& msg, MeshInfo& mdata)
+	localHead = _fileMapInfo.head_ByteOffset;
+	localTail = _fileMapInfo.tail_ByteOffset;
+
+	if (localHead >= localTail)
+	{
+		if (hdr.byteSize + hdr.bytePadding + localHead + memoryPadding <= mSize)
+		{
+			MGlobal::displayInfo("MSG Config (CAN WRITE NORMALLY)");
+			return 1;
+		}
+		else if (localHead + sizeof(MessageHeader) <= mSize && hdr.byteSize + hdr.bytePadding + memoryPadding <=localTail)
+		{
+			MGlobal::displayInfo("MSG Config (CAN WRITE WITH SPLIT)");
+			return 2;
+		}
+	}
+	else
+	{
+		if (hdr.byteSize + hdr.bytePadding + localHead + memoryPadding <= localTail)
+		{
+			MGlobal::displayInfo("MSG Config (CAN WRITE NORMALLY)");
+			return 1;
+		}
+	}
+	MGlobal::displayInfo("MSG Config (CANNOT WRITE)");
+	return 0;
+
+}
+bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 {
 
 	return false;
@@ -123,7 +173,7 @@ bool FileMapping::writeMesh(MessageInfo& msg, MeshInfo& mdata)
 MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo)
 {
 	size_t totalSize;
-	size_t msgSize;
+	size_t msgSize; 
 	size_t padding;
 	size_t infoSize;
 	infoSize = 200 * sizeof(char);
@@ -141,11 +191,12 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	MGlobal::displayInfo(":: Header byte size: " + MString() + _headerSize);
 	msgSize += infoSize;
 	msgSize += _headerSize;
-	MGlobal::displayInfo("::MESSAGE BYTE SIZE: " + MString() + msgSize);
+	MGlobal::displayInfo(":: MESSAGE BYTE SIZE: " + MString() + msgSize);
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
 	MGlobal::displayInfo(":: Padding byte size: " + MString() + padding);
 	MGlobal::displayInfo(":: TOTAL BYTE SIZE: " + MString() + totalSize);
+	MGlobal::displayInfo(":: Node Name Length: " + MString(msginfo.nodeName.c_str()) + MString() + mInfo.nodeName.length());
 
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
@@ -154,9 +205,46 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	hdr.bytePadding = padding;
 
 	return hdr;
-
 	//return 0;
 }
+
+MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo)
+{
+	MeshMessage msg;
+
+	int nodeNameLength = msginfo.nodeName.length();
+	int transformNameLength = mInfo.transformName.length();
+	if (nodeNameLength <= 100)
+	{
+		for (int i = 0; i < nodeNameLength; i++)
+		{
+			msg.nodeName[i] = msginfo.nodeName[i];
+		}
+		//msg.nodeName[nodeNameLength] = (char)"\0";
+		msg.nodeName[nodeNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("Node name too long!");
+	}
+	if (transformNameLength <= 100)
+	{
+		for (int i = 0; i < transformNameLength; i++)
+		{
+			msg.transformName[i] = mInfo.transformName[i];
+		}
+		//msg.nodeName[nodeNameLength] = (char)"\0";
+		msg.transformName[transformNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("Transform name too long!");
+	}
+	msg.meshData = &mInfo.meshData;
+	MGlobal::displayInfo(MString() + msg.meshData->indCount);
+	return msg;
+}
+
 
 
 size_t FileMapping::makeMultiple(size_t size, size_t multiple)

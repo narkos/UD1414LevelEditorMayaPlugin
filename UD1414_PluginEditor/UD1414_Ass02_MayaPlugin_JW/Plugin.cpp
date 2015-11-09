@@ -517,6 +517,7 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 			
 			if (debug)
 			{
+				MGlobal::displayInfo("VERTS VERTS VERTS");
 				MPointArray verts;
 				mesh.getPoints(verts, MSpace::kPostTransform);
 			}

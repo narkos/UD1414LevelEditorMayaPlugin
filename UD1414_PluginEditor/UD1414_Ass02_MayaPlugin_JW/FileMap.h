@@ -23,7 +23,6 @@ struct MessageHeader
 }
 int nodeType;
 int messageType;
-
 size_t byteSize;
 size_t bytePadding;
 };
@@ -75,6 +74,13 @@ struct MeshInfo
 	std::string nodeName;
 	std::string transformName;
 	MeshData meshData;
+};
+
+struct MeshMessage
+{
+	char nodeName[100];
+	char transformName[100];
+	MeshData *meshData;
 };
 
 struct CameraData
@@ -140,9 +146,12 @@ public:
 	void GetFilemapInfoValues();
 
 	MessageHeader createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo);
+	MeshMessage createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo);
 	size_t makeMultiple(size_t size, size_t multiple);
 	bool tryWrite(MessageInfo& msg, MeshInfo& minfo);
-	bool writeMesh(MessageInfo& msg, MeshInfo& mdata);
+	bool writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config);
+	int findWriteConfig(MessageHeader& hdr);
+
 
 private:
 
@@ -169,7 +178,8 @@ private:
 	HANDLE hInfoFileMap;
 	LPVOID mInfoData;
 	unsigned int mInfoSize = 256;
-	size_t thisApplication_filemap_MemoryOffset = 0;
+	size_t localHead = 0;
+	size_t localTail = 0;
 	Mutex mutexInfo;
 
 	size_t memoryPadding;
@@ -188,10 +198,7 @@ private:
 		char transformName[100];
 		CameraData cameraData;
 	};
-	struct MeshMessage {
-		char transformName[100];
-		MeshData *meshData;
-	};
+	
 	struct MaterialMessage { //namnet på den ligger i headern sen
 		MaterialData materialData;
 	};
