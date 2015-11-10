@@ -48,7 +48,10 @@ struct TransformInfo
 	//std::string parentName;
 	//int childCount;
 };
+struct TransformMessage
+{
 
+};
 struct MeshData
 {
 	int vertCount;
@@ -75,14 +78,12 @@ struct MeshInfo
 	std::string transformName;
 	MeshData meshData;
 };
-
 struct MeshMessage
 {
 	char nodeName[100];
 	char transformName[100];
 	MeshData *meshData;
 };
-
 struct CameraData
 {
 
@@ -92,6 +93,10 @@ struct CameraInfo
 	std::string nodeName;
 	std::string transformName;
 };
+struct CameraMessage
+{
+
+};
 struct MaterialData
 {
 
@@ -99,6 +104,10 @@ struct MaterialData
 struct MaterialInfo
 {
 	
+};
+struct MaterialMessage
+{
+
 };
 struct LightData
 {
@@ -108,6 +117,10 @@ struct LightInfo
 {
 	std::string transformName;
 	LightData lightData;
+};
+struct LightMessage
+{
+
 };
 
 class Mutex {
@@ -149,8 +162,17 @@ public:
 	MeshMessage createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo);
 	size_t makeMultiple(size_t size, size_t multiple);
 	bool tryWrite(MessageInfo& msg, MeshInfo& minfo);
-	bool writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config);
 	int findWriteConfig(MessageHeader& hdr);
+	
+	bool writeTransform(MessageHeader& hdr, TransformMessage& tdata, int config);
+	bool writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config);
+	bool writeCamera(MessageHeader& hdr, CameraMessage& cdata, int config);
+	bool writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int config);
+	bool writeLight(MessageHeader& hdr, LightMessage& ldata, int config);
+
+	std::string GetLastErrorAsString();
+
+
 
 
 private:
@@ -171,7 +193,7 @@ private:
 		}
 	};
 
-	FilemapInfo _fileMapInfo;
+	FilemapInfo fileMapInfo;
 	HANDLE hMessageFileMap;
 	LPVOID mMessageData;
 	unsigned int mSize;
@@ -188,31 +210,11 @@ private:
 
 	MessageHeader messageHeader;
 	
-
-					   //har kvar vissa av dessa structsen även om de är lite onödiga då alla värden i vissa redan ligger i en full struct, men vill hålla det cleant med namngivning :-)
-	struct TransformMessage {
-		char parentName[100];
-		TransformData transformData;
-	};
-	struct CameraMessage {
-		char transformName[100];
-		CameraData cameraData;
-	};
-	
-	struct MaterialMessage { //namnet på den ligger i headern sen
-		MaterialData materialData;
-	};
-	struct LightMessage {
-		//ljusvärden
-		char transformName[100];
-		LightData lightdata;
-	};
-
-	TransformMessage *transformMessage;
-	CameraMessage *cameraMessage;
-	MeshMessage *meshMessage;
-	MaterialMessage *materialMessage;
-	LightMessage *lightMessage;
+	//TransformMessage *transformMessage;
+	//CameraMessage *cameraMessage;
+	//MeshMessage *meshMessage;
+	//MaterialMessage *materialMessage;
+	//LightMessage *lightMessage;
 
 };
 

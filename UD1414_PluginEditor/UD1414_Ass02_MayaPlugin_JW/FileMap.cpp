@@ -9,18 +9,43 @@ FileMapping::FileMapping()
 
 FileMapping::~FileMapping()
 {
+	std::string str;
 	bool m = UnmapViewOfFile((LPCVOID)mMessageData);
+	/*str = GetLastErrorAsString();
+	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	if (GetLastError() != 0)
+	{
+		MGlobal::displayInfo("Error");
+	}
 	if (m!=0) 
 		MGlobal::displayInfo("Filemap closed");
 	m = CloseHandle(hMessageFileMap);
+	/*str = GetLastErrorAsString();
+	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	if (GetLastError() != 0)
+	{
+		MGlobal::displayInfo("Error");
+	}
 	if (m != 0)
 		MGlobal::displayInfo("Filemap closed");
 	
 
 	bool n = UnmapViewOfFile((LPCVOID)mInfoData);
+	/*str = GetLastErrorAsString();
+	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	if (GetLastError() != 0)
+	{
+		MGlobal::displayInfo("Error");
+	}
 	if (n != 0)
 		MGlobal::displayInfo("InfoFilemap closed");
 	n = CloseHandle(hInfoFileMap);
+	/*str = GetLastErrorAsString();
+	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	if (GetLastError() != 0)
+	{
+		MGlobal::displayInfo("Error");
+	}
 	if (n != 0)
 		MGlobal::displayInfo("InfoFilemap closed");
 
@@ -56,9 +81,9 @@ void FileMapping::CreateFileMaps()
 		MGlobal::displayInfo("Creating new infofilemap");
 		SetFilemapInfoValues(0, 0, 256, 2048);
 	}
-	memoryPadding = _fileMapInfo.non_accessmemoryOffset;
+	memoryPadding = fileMapInfo.non_accessmemoryOffset;
 	
-	mSize = 256;
+	mSize = 2048;
 	hMessageFileMap = CreateFileMapping(INVALID_HANDLE_VALUE,
 		NULL,
 		PAGE_READWRITE,
@@ -81,29 +106,29 @@ void FileMapping::CreateFileMaps()
 	}
 
 
-	MGlobal::displayInfo("FileMapSize: " + MString() + mSize +" "+ MString()+_fileMapInfo.non_accessmemoryOffset);
+	MGlobal::displayInfo("FileMapSize: " + MString() + mSize +" "+ MString()+fileMapInfo.non_accessmemoryOffset);
 }
 
 void FileMapping::GetFilemapInfoValues()
 {
 	mutexInfo.Lock();
-	memcpy(&_fileMapInfo, mInfoData, sizeof(FilemapInfo));
+	memcpy(&fileMapInfo, mInfoData, sizeof(FilemapInfo));
 	mutexInfo.Unlock();
 }
 
 void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacement, size_t nonAccessMemoryPlacement, size_t messageFileMapTotalSize) {
 	mutexInfo.Lock();
-	memcpy(&_fileMapInfo, mInfoData, sizeof(FilemapInfo));
+	memcpy(&fileMapInfo, mInfoData, sizeof(FilemapInfo));
 	if (headPlacement >= 0)
-		_fileMapInfo.head_ByteOffset = headPlacement;
+		fileMapInfo.head_ByteOffset = headPlacement;
 	if (tailPlacement >= 0)
-		_fileMapInfo.tail_ByteOffset = tailPlacement;
+		fileMapInfo.tail_ByteOffset = tailPlacement;
 	if (nonAccessMemoryPlacement >= 0)
-		_fileMapInfo.non_accessmemoryOffset = nonAccessMemoryPlacement;
+		fileMapInfo.non_accessmemoryOffset = nonAccessMemoryPlacement;
 	if (messageFileMapTotalSize > 0)
-		_fileMapInfo.messageFilemap_Size = messageFileMapTotalSize;
+		fileMapInfo.messageFilemap_Size = messageFileMapTotalSize;
 
-	memcpy(mInfoData, &_fileMapInfo, sizeof(FilemapInfo));	
+	memcpy(mInfoData, &fileMapInfo, sizeof(FilemapInfo));	
 	mutexInfo.Unlock();
 }
 
@@ -127,17 +152,17 @@ bool FileMapping::tryWrite(MessageInfo& msg, MeshInfo& minfo)
 	return false;
 }
 
-//void FileMapping::findWriteConfig(bool& canWrite, bool& )
+// Write config return values
+// 0: Can't write
+// 1: Can write normally
+// 2: Header fits before buffer end, but message will have to be moved to the beginning of the buffer
 int FileMapping::findWriteConfig(MessageHeader& hdr)
 {
-	// Write config return values
-	// 0: Can't write
-	// 1: Can write normally
-	// 2: Header fits before buffer end, but message will have to be moved to the beginning of the buffer
-	memcpy(&_fileMapInfo, mInfoData, sizeof(FilemapInfo));
+	
+	memcpy(&fileMapInfo, mInfoData, sizeof(FilemapInfo));
 
-	localHead = _fileMapInfo.head_ByteOffset;
-	localTail = _fileMapInfo.tail_ByteOffset;
+	localHead = fileMapInfo.head_ByteOffset;
+	localTail = fileMapInfo.tail_ByteOffset;
 
 	if (localHead >= localTail)
 	{
@@ -164,11 +189,121 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 	return 0;
 
 }
-bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
+
+bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, int config)
 {
+	int cfg = config;
+	switch (cfg)
+	{
+	case 1:
+
+		break;
+
+	case 2:
+
+		break;
+
+	case 3:
+
+		break;
+	}
+
+
 
 	return false;
 }
+bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
+{
+	int cfg = config;
+	switch (cfg)
+	{
+		case 1:
+			memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+			localHead += sizeof(MessageHeader);
+
+
+			break;
+
+		case 2:
+
+			break;
+
+		case 3:
+
+			break;
+	}
+
+
+
+	return false;
+}
+bool FileMapping::writeCamera(MessageHeader& hdr, CameraMessage& cdata, int config)
+{
+	int cfg = config;
+	switch (cfg)
+	{
+	case 1:
+
+		break;
+
+	case 2:
+
+		break;
+
+	case 3:
+
+		break;
+	}
+
+
+
+	return false;
+}
+bool FileMapping::writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int config)
+{
+	int cfg = config;
+	switch (cfg)
+	{
+	case 1:
+
+		break;
+
+	case 2:
+
+		break;
+
+	case 3:
+
+		break;
+	}
+
+
+
+	return false;
+}
+bool FileMapping::writeLight(MessageHeader& hdr, LightMessage& ldata, int config)
+{
+	int cfg = config;
+	switch (cfg)
+	{
+	case 1:
+
+		break;
+
+	case 2:
+
+		break;
+
+	case 3:
+
+		break;
+	}
+
+
+
+	return false;
+}
+
 
 MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo)
 {
@@ -258,4 +393,23 @@ size_t FileMapping::makeMultiple(size_t size, size_t multiple)
 	}
 
 	return size + multiple - modValue;
+}
+
+std::string FileMapping::GetLastErrorAsString()
+{
+	//Get the error message, if any.
+	DWORD errorMessageID = ::GetLastError();
+	if (errorMessageID == 0)
+		return std::string(); //No error message has been recorded
+
+	LPSTR messageBuffer = nullptr;
+	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+	std::string message(messageBuffer, size);
+
+	//Free the buffer.
+	LocalFree(messageBuffer);
+
+	return message;
 }
