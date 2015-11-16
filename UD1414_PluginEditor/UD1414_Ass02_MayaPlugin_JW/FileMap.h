@@ -158,10 +158,24 @@ public:
 	void SetFilemapInfoValues(size_t headPlacement, size_t tailPlacement, size_t nonAccessMemoryPlacement, size_t messageFileMapTotalSize);
 	void GetFilemapInfoValues();
 
+	MessageHeader createHeaderTransform(MessageInfo& msginfo, TransformInfo &tInfo);
 	MessageHeader createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo);
+	MessageHeader createHeaderCamera(MessageInfo& msginfo, CameraInfo& cInfo);
+	MessageHeader createHeaderMaterial(MessageInfo& msginfo, MaterialInfo& mInfo);
+	MessageHeader createHeaderLight(MessageInfo& msginfo, LightInfo& lInfo);
+	
 	MeshMessage createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo);
+	TransformMessage createMessageTransform(MessageInfo& msginfo, TransformInfo &tInfo);
+	CameraMessage createMessageCamera(MessageInfo& msginfo, CameraInfo& cInfo);
+	MaterialMessage createMessageMaterial(MessageInfo& msginfo, MaterialInfo& mInfo);
+	LightMessage createMessageLight(MessageInfo& msgInfo, LightInfo& lInfo);
 	size_t makeMultiple(size_t size, size_t multiple);
-	bool tryWrite(MessageInfo& msg, MeshInfo& minfo);
+	bool tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo);
+	bool tryWriteMesh(MessageInfo& msg, MeshInfo& minfo);
+	bool tryWriteCamera(MessageInfo& msg, CameraInfo& cinfo);
+	bool tryWriteMaterial(MessageInfo& msg, MaterialInfo& minfo);
+	bool tryWriteLight(MessageInfo& msg, LightInfo& linfo);
+
 	int findWriteConfig(MessageHeader& hdr);
 	
 	bool writeTransform(MessageHeader& hdr, TransformMessage& tdata, int config);

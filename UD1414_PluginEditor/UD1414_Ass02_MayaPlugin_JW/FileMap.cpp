@@ -133,25 +133,76 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 }
 
 
-bool FileMapping::tryWrite(MessageInfo& msg, MeshInfo& minfo)
+bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 {
-	switch (msg.nodeType)
-	{
-	case NodeType::nMesh:
-		MGlobal::displayInfo("WOOOOOOOOOOOH");
+	MGlobal::displayInfo("FileMap Msg: Mesh Message found");
+			MessageHeader mHeader = createHeaderTransform(msg, tinfo);
+			int cfg = findWriteConfig(mHeader);
+			createMessageTransform(msg, tinfo);
+	
+	return false;
+}
+bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
+{
+		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
 		MessageHeader mHeader = createHeaderMesh(msg, minfo);
 		int cfg = findWriteConfig(mHeader);
 		createMessageMesh(msg, minfo);
-		
-		break;
 
-	//default:
-	//	break;
+	return false;
+}
+bool FileMapping::tryWriteCamera(MessageInfo& msg, CameraInfo& cinfo)
+{
+	
+		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
+		MessageHeader mHeader = createHeaderCamera(msg, cinfo);
+		int cfg = findWriteConfig(mHeader);
+		createMessageCamera(msg, cinfo);
 
-	}
+	return false;
+}
+bool FileMapping::tryWriteMaterial(MessageInfo& msg, MaterialInfo& minfo)
+{
+
+		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
+		MessageHeader mHeader = createHeaderMaterial(msg, minfo);
+		int cfg = findWriteConfig(mHeader);
+		createMessageMaterial(msg, minfo);
+
+	
+	return false;
+}
+bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
+{
+
+		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
+		MessageHeader mHeader = createHeaderLight(msg, linfo);
+		int cfg = findWriteConfig(mHeader);
+		createMessageLight(msg, linfo);
+
 	return false;
 }
 
+//bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
+//{
+//	switch (msg.nodeType)
+//	{
+//
+//
+//	case NodeType::nMesh:
+//		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
+//		MessageHeader mHeader = createHeaderMesh(msg, minfo);
+//		int cfg = findWriteConfig(mHeader);
+//		createMessageMesh(msg, minfo);
+//
+//		break;
+//
+//		//default:
+//		//	break;
+//
+//	}
+//	return false;
+//}
 // Write config return values
 // 0: Can't write
 // 1: Can write normally
@@ -189,6 +240,7 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 	return 0;
 
 }
+
 
 bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, int config)
 {
@@ -342,6 +394,76 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	return hdr;
 	//return 0;
 }
+MessageHeader FileMapping::createHeaderTransform(MessageInfo& msginfo, TransformInfo &tInfo)
+{
+	size_t totalSize;
+	size_t msgSize;
+	size_t padding;
+	size_t infoSize;
+	infoSize = 200 * sizeof(char);
+
+
+	MessageHeader hdr;
+	hdr.nodeType = msginfo.nodeType;
+	hdr.messageType = msginfo.msgType;
+	hdr.byteSize = msgSize;
+	hdr.bytePadding = padding;
+
+	return hdr;
+	//return 0;
+}
+MessageHeader FileMapping::createHeaderCamera(MessageInfo& msginfo, CameraInfo& cInfo)
+{
+	size_t totalSize;
+	size_t msgSize;
+	size_t padding;
+	size_t infoSize;
+	infoSize = 200 * sizeof(char);
+
+	MessageHeader hdr;
+	hdr.nodeType = msginfo.nodeType;
+	hdr.messageType = msginfo.msgType;
+	hdr.byteSize = msgSize;
+	hdr.bytePadding = padding;
+
+	return hdr;
+	//return 0;
+}
+MessageHeader FileMapping::createHeaderMaterial(MessageInfo& msginfo, MaterialInfo& mInfo)
+{
+	size_t totalSize;
+	size_t msgSize;
+	size_t padding;
+	size_t infoSize;
+	infoSize = 200 * sizeof(char);
+
+	MessageHeader hdr;
+	hdr.nodeType = msginfo.nodeType;
+	hdr.messageType = msginfo.msgType;
+	hdr.byteSize = msgSize;
+	hdr.bytePadding = padding;
+
+	return hdr;
+	//return 0;
+}
+MessageHeader FileMapping::createHeaderLight(MessageInfo& msginfo, LightInfo& lInfo)
+{
+	size_t totalSize;
+	size_t msgSize;
+	size_t padding;
+	size_t infoSize;
+	infoSize = 200 * sizeof(char);
+
+	MessageHeader hdr;
+	hdr.nodeType = msginfo.nodeType;
+	hdr.messageType = msginfo.msgType;
+	hdr.byteSize = msgSize;
+	hdr.bytePadding = padding;
+
+	return hdr;
+	//return 0;
+}
+
 
 MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo)
 {
@@ -379,7 +501,26 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 	MGlobal::displayInfo(MString() + msg.meshData->indCount);
 	return msg;
 }
-
+TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, TransformInfo &tInfo)
+{
+	TransformMessage outMsg;
+	return outMsg;
+}
+CameraMessage FileMapping::createMessageCamera(MessageInfo& msginfo, CameraInfo& cInfo)
+{
+	CameraMessage outMsg;
+	return outMsg;
+}
+MaterialMessage FileMapping::createMessageMaterial(MessageInfo& msginfo, MaterialInfo& mInfo)
+{
+	MaterialMessage outMsg;
+	return outMsg;
+}
+LightMessage FileMapping::createMessageLight(MessageInfo& msgInfo, LightInfo& lInfo)
+{
+	LightMessage outMsg;
+	return outMsg;
+}
 
 
 size_t FileMapping::makeMultiple(size_t size, size_t multiple)

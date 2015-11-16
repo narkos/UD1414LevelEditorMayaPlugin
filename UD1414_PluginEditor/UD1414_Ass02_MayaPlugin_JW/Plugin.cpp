@@ -716,7 +716,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Mesh)");
 				MeshInfo  outMesh = outMeshData(_msgQueue.front().nodeName);
-				fileMap.tryWrite(_msgQueue.front(), outMesh);
+				fileMap.tryWriteMesh(_msgQueue.front(), outMesh);
 				//fileMap.createHeaderMesh(_msgQueue.front(),outMesh);
 				delete[] outMesh.meshData.uv;
 				delete[] outMesh.meshData.triIndices;
@@ -728,7 +728,9 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			else if(_msgQueue.front().nodeType == nTransform)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Transform)");
-				outTransformData(_msgQueue.front().nodeName);
+				TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
+				fileMap.tryWriteTransform(_msgQueue.front(), outTrans);
+				
 			}
 			else if (_msgQueue.front().nodeType == nCamera)
 			{
