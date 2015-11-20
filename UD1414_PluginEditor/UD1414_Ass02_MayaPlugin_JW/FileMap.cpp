@@ -135,10 +135,17 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 
 bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 {
-	MGlobal::displayInfo("FileMap Msg: Mesh Message found");
+	MGlobal::displayInfo("FileMap Msg: Transform Message found");
 			MessageHeader mHeader = createHeaderTransform(msg, tinfo);
 			int cfg = findWriteConfig(mHeader);
-			createMessageTransform(msg, tinfo);
+			
+			if (writeTransform(mHeader, createMessageTransform(msg, tinfo), cfg) == true)
+			{
+				MGlobal::displayInfo("MORE SUCCEZ");
+				return true;
+			}
+				
+			
 	
 	return false;
 }
@@ -240,16 +247,23 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 	return 0;
 
 }
-
-
 bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, int config)
 {
 	int cfg = config;
+	MGlobal::displayInfo("TRANSFORM OUTER DATA: " + MString(tdata.nodeName));
+	MGlobal::displayInfo("Pos: " + MString() + tdata.trData->translation[0] + " " + MString() + tdata.trData->translation[1] + " " + MString() + tdata.trData->translation[2]);
+	MGlobal::displayInfo("Rot: " + MString() + tdata.trData->rotation[0] + " " + MString() + tdata.trData->rotation[1] + " " + MString() + tdata.trData->rotation[2]);
+	MGlobal::displayInfo("Sca: " + MString() + tdata.trData->scale[0] + " " + MString() + tdata.trData->scale[1] + " " + MString() + tdata.trData->scale[2]);
 	switch (cfg)
 	{
 	case 1:
-
-		break;
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		localHead +=sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + localHead, &tdata, hdr.byteSize - sizeof(MessageHeader));
+		localHead += hdr.byteSize - sizeof(MessageHeader);
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy(mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		return true;
 
 	case 2:
 
@@ -400,8 +414,13 @@ MessageHeader FileMapping::createHeaderTransform(MessageInfo& msginfo, Transform
 	size_t msgSize;
 	size_t padding;
 	size_t infoSize;
-	infoSize = 200 * sizeof(char);
-
+	//infoSize = 200 * sizeof(char);
+	msgSize = sizeof(tInfo) + sizeof(MessageInfo) + sizeof(MessageHeader);
+	
+	totalSize = makeMultiple(msgSize, 256);
+	padding = totalSize - msgSize;
+	 MGlobal::displayInfo("::Transform Message Sizes: " + MString() + sizeof(tInfo) + " " + MString() + sizeof(MessageInfo) + " " + sizeof(MessageHeader)
+		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
@@ -504,6 +523,39 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, TransformInfo &tInfo)
 {
 	TransformMessage outMsg;
+
+	int nodeNameLength = msginfo.nodeName.length();
+	int parentNameLength = tInfo.parentName.length();
+	if (nodeNameLength <= 100)
+	{
+		for (int i = 0; i < nodeNameLength; i++)
+		{
+			outMsg.nodeName[i] = msginfo.nodeName[i];
+		}
+		MGlobal::displayInfo("Node name added!");
+		//msg.nodeName[nodeNameLength] = (char)"\0";
+		outMsg.nodeName[nodeNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("Node name too long!");
+	}
+	if (parentNameLength <= 100)
+	{
+		for (int i = 0; i < parentNameLength; i++)
+		{
+			outMsg.parentName[i] = tInfo.parentName[i];
+		}
+		//msg.nodeName[nodeNameLength] = (char)"\0";
+		outMsg.parentName[parentNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("Transform name too long!");
+	}
+	outMsg.trData = &tInfo.transformData;
+	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
+
 	return outMsg;
 }
 CameraMessage FileMapping::createMessageCamera(MessageInfo& msginfo, CameraInfo& cInfo)

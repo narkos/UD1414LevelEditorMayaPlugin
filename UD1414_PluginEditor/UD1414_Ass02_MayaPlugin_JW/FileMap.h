@@ -50,7 +50,9 @@ struct TransformInfo
 };
 struct TransformMessage
 {
-
+	char nodeName[100];
+	char parentName[100];
+	TransformData *trData;
 };
 struct MeshData
 {

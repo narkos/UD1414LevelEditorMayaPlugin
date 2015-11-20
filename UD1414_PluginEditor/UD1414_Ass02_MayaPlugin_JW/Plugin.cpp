@@ -206,6 +206,14 @@ TransformInfo outTransformData(std::string name)
 		outTrans.transformData.scale[0] = scale[0];
 		outTrans.transformData.scale[1] = scale[1];
 		outTrans.transformData.scale[2] = scale[2];
+
+		outTrans.nodeName = attName;
+		//outTrans.parentName = getParentName()
+
+		MGlobal::displayInfo("TRANSFORM INNER DATA: " + MString(outTrans.nodeName.c_str()));
+		MGlobal::displayInfo("Pos: " + MString() + trans.x + " " + MString() + trans.y + " " + MString() + trans.z);
+		MGlobal::displayInfo("Rot: " + MString() + rotation.x + " " + MString() + rotation.y + " " + MString() + rotation.z);
+		MGlobal::displayInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);
 		return outTrans;
 	}
 	return outTrans;
@@ -724,17 +732,25 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 				delete[] outMesh.meshData.UVIndices;
 				delete[] outMesh.meshData.triPerFace;
 				//delete[] outMesh.vertices;
+				_msgQueue.pop();
+				break;
 			}
 			else if(_msgQueue.front().nodeType == nTransform)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Transform)");
 				TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
-				fileMap.tryWriteTransform(_msgQueue.front(), outTrans);
-				
+				if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
+				{
+					_msgQueue.pop();
+					MGlobal::displayInfo("SUCCEX!!!!!!!!!!!!!!!!!!!");
+				}
+					
+				break;
 			}
 			else if (_msgQueue.front().nodeType == nCamera)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Camera)");
+				_msgQueue.pop();
 			}
 			
 			
@@ -744,27 +760,32 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			if (_msgQueue.front().nodeType == nMesh)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Edited)");
+				_msgQueue.pop();
 			}
 			else if (_msgQueue.front().nodeType == nTransform)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Edited)");
 				outTransformData(_msgQueue.front().nodeName);
+				_msgQueue.pop();
 			}
 			break;
 		case (MessageType::msgDeleted) :
 			if (_msgQueue.front().nodeType == nMesh)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Deleted)");
+				_msgQueue.pop();
 			}
 			else if (_msgQueue.front().nodeType == nTransform)
 			{
 				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Deleted)");
+				_msgQueue.pop();
 			}
 			break;
 		case (MessageType::msgRenamed) :
+			_msgQueue.pop();
 			break;
 		}
-		_msgQueue.pop();
+		//_msgQueue.pop();
 	}
 	MGlobal::displayInfo("-------------------------------------------------");
 
