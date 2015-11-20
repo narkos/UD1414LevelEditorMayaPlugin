@@ -601,7 +601,6 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 
 
 }
-
 void cbRemovedNode(MObject& node, void* clientData)
 {
 	/*MFnDependencyNode n(node);
@@ -861,8 +860,6 @@ EXPORT MStatus initializePlugin(MObject obj)
 	return result;
 	
 }
-
-
 
 EXPORT MStatus uninitializePlugin(MObject obj)
 {

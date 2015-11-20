@@ -287,7 +287,10 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		case 1:
 			memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 			localHead += sizeof(MessageHeader);
-
+			memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize - sizeof(MessageHeader));
+			localHead += hdr.byteSize + hdr.bytePadding - sizeof(MessageHeader);
+			fileMapInfo.head_ByteOffset = localHead;
+			memcpy(mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 
 			break;
 
