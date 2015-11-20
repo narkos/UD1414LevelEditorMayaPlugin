@@ -216,7 +216,7 @@ bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 // 2: Header fits before buffer end, but message will have to be moved to the beginning of the buffer
 int FileMapping::findWriteConfig(MessageHeader& hdr)
 {
-	
+	mutexInfo.Lock();
 	memcpy(&fileMapInfo, mInfoData, sizeof(FilemapInfo));
 
 	localHead = fileMapInfo.head_ByteOffset;
@@ -244,6 +244,7 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 		}
 	}
 	MGlobal::displayInfo("MSG Config (CANNOT WRITE)");
+	mutexInfo.Unlock();
 	return 0;
 
 }
