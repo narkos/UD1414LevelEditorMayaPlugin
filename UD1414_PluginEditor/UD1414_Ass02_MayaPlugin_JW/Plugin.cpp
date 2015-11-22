@@ -230,142 +230,6 @@ std::string getParentName(MPlug& plug)
 	else
 		return "";
 }
-//
-//void oldMeshData(std::string name)
-//{
-//	MString _name(name.c_str());
-//	MSelectionList sList;
-//	MDagPath dagPath;
-//	if (MGlobal::getSelectionListByName(_name, sList))
-//	{
-//		sList.getDagPath(0, dagPath);
-//		if (dagPath.hasFn(MFn::kMesh))
-//		{
-//			MGlobal::displayInfo("Mesh found: " + dagPath.fullPathName());
-//		}
-//
-//	}
-//
-//	MFnMesh mNode(dagPath.node());
-//	MeshData outMesh;
-//
-//	if (mNode.parent(0).hasFn(MFn::kTransform))
-//	{
-//		MFnTransform mTrans(mNode.parent(0));
-//		outMesh.transformName = mTrans.fullPathName().asChar();
-//		MGlobal::displayInfo(outMesh.transformName.c_str());
-//	}
-//
-//
-//	MStatus result;
-//	////MFnMesh mNode((obj), &result);
-//	if (result)
-//	{
-//		//DO STUFF
-//		//MPointArray vertices;
-//		MFloatPointArray vertices;
-//		MFloatVectorArray normals;
-//		MFloatArray uArray;
-//		MFloatArray vArray;
-//
-//		MIntArray vertexCountPerPoly;
-//		MIntArray vertList;
-//		mNode.getVertices(vertexCountPerPoly, vertList);
-//
-//		MIntArray normalIndices;
-//		MIntArray normalPerPoly;
-//		mNode.getNormalIds(normalIndices, normalPerPoly);
-//
-//		MIntArray triCount;
-//		MIntArray triVerts;
-//		mNode.getTriangleOffsets(triCount, triVerts);
-//
-//		mNode.getPoints(vertices, MSpace::kPreTransform);
-//		mNode.getNormals(normals, MSpace::kPreTransform);
-//		mNode.getUVs(uArray, vArray);
-//
-//		int numUVs = mNode.numUVs();
-//
-//
-//		outMesh.vertCount = vertices.length();
-//		outMesh.normalCount = normals.length();
-//		outMesh.UVCount = numUVs;
-//		outMesh.triCount = triVerts.length();
-//		outMesh.indCount = vertList.length();
-//
-//		////outMesh.indices = new int[outMesh.indCount];
-//		//for (int i = 0; i < outMesh.indCount; i++)
-//		//{
-//		//	outMesh.indices[i] = vertList[i];
-//		//}
-//		outMesh.triIndices = new int[outMesh.triCount];
-//		for (int i = 0; i < outMesh.triCount; i++)
-//		{
-//			outMesh.triIndices[i] = triVerts[i];
-//		}
-//		outMesh.norIndices = new int[outMesh.normalCount];
-//		for (int i = 0; i < outMesh.normalCount; i++)
-//		{
-//			outMesh.norIndices[i] = normalPerPoly[i];
-//		}
-//		outMesh.UVIndices = new int[outMesh.UVCount];
-//		for (int i = 0; i < outMesh.UVCount; i++)
-//		{
-//			outMesh.UVIndices[i] = i;
-//		}
-//		MStatus st;
-//		outMesh.vertices = mNode.getRawPoints(&st);
-//		if (st)
-//		{
-//			int rawsize = outMesh.vertCount * 3;
-//			MGlobal::displayInfo("RAW SIZE " + MString() + rawsize);
-//			for (int i = 0; i < rawsize; i++)
-//			{
-//				MGlobal::displayInfo(MString() + outMesh.vertices[i]);
-//			}
-//		}
-//
-//
-//		//delete[] outMesh.indices;
-//		//delete[] outMesh.triIndices;
-//		//delete[] outMesh.norIndices;
-//		//delete[] outMesh.UVIndices;
-//
-//		//for()
-//
-//		if (debug)
-//		{
-//
-//			MGlobal::displayInfo("\nNew Mesh node path: " + mNode.fullPathName() + "\n");
-//			MGlobal::displayInfo("Normal Indicies: " + MString() + normalPerPoly.length());
-//			MGlobal::displayInfo("Triangle Count: " + MString() + triVerts.length());
-//			MGlobal::displayInfo("UV count:" + MString() + numUVs);
-//			MGlobal::displayInfo("Number of vertices: " + MString() + vertices.length());
-//			MGlobal::displayInfo("Number of vertIndicies: " + MString() + vertList.length());
-//			for (int i = 0; i < vertices.length(); i++)
-//			{
-//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-//				MGlobal::displayInfo("v: " + MString() + vertices[i].x + ", " + MString() + vertices[i].y + ", " + MString() + vertices[i].z);
-//
-//			}
-//			for (int i = 0; i < normals.length(); i++)
-//			{
-//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-//				MGlobal::displayInfo("n: " + MString() + normals[i].x + ", " + MString() + normals[i].y + ", " + MString() + normals[i].z);
-//			}
-//			for (int i = 0; i < uArray.length(); i++)
-//			{
-//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-//				MGlobal::displayInfo("uv: " + MString() + uArray[i] + ", " + MString() + vArray[i]);
-//			}
-//			for (int i = 0; i < triCount.length(); i++)
-//			{
-//				MGlobal::displayInfo("Tri ID:" + MString() + triCount[i] + " ( " + MString() + triVerts[i]);
-//			}
-//		}
-//	}
-//	//return outMesh;
-//}
 
 void mAddMessage(std::string name, int msgType, int nodeType)
 {
@@ -556,6 +420,10 @@ void cbPolyChanged(MObject& node, void* clientData)
 	}
 }
 
+void cbCamAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+{
+	MGlobal::displayInfo("--------------- cam attribute");
+}
 
 void cbNameChange(MObject& node, const MString& str, void* clientData)
 {
@@ -795,10 +663,7 @@ void cbCameraChange(MObject &cameraSetNode, unsigned int multiIndex, MObject &ol
 	MGlobal::displayInfo("CAMERAAAAAAAAAAAAAAA");
 }
 
-//void cbCameraChange(const MString &str, MObject &node, void *clientData)
-//{
-//	MGlobal::displayInfo("CAMERAAAAAAAAAAAAAAA");
-//}
+
 
 void loadScene()
 {
@@ -815,7 +680,8 @@ void loadScene()
 		std::string transname;
 		if (dagPath.hasFn(MFn::kCamera))
 		{
-			_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
+			
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(dagPath.node(), cbCamAttribute));
 			MObject parent = dagNode.parent(0);
 			if (parent.hasFn(MFn::kTransform))
 			{
@@ -824,6 +690,7 @@ void loadScene()
 				transname = trans.fullPathName().asChar();
 				mAddNode(trans.fullPathName().asChar(),"", nTransform);
 				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(parent, cbTransformModified));
+
 				MString panel;
 				_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
 			}
@@ -834,7 +701,16 @@ void loadScene()
 
 
 }
+void cbCameraPanel(const MString &str, MObject &node, void *clientData)
+{
+	if (node.hasFn(MFn::kCamera))
+	{
+		MFnCamera currCam(node);
+		MGlobal::displayInfo("Current Camera: " + currCam.fullPathName() );
+	}
+	
 
+}
 EXPORT MStatus initializePlugin(MObject obj)
 {
 	//Error Checking Variable
@@ -856,7 +732,12 @@ EXPORT MStatus initializePlugin(MObject obj)
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
 	_CBidArray.append(MTimerMessage::addTimerCallback(5, &cbMessageTimer));	
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));	
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel3", cbCameraPanel));
 	
+
 	return result;
 	
 }
