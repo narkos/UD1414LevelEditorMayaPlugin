@@ -88,12 +88,17 @@ struct MeshMessage
 };
 struct CameraData
 {
-
+	int			isOrtho;
+	float		target[3];
+	float		upVector[3];
+	float		rightVector[3];
+	float		hAngle;
 };
 struct CameraInfo
 {
 	std::string nodeName;
 	std::string transformName;
+	CameraData camData;
 };
 struct CameraMessage
 {

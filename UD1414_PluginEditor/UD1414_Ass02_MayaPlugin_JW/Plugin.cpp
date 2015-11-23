@@ -219,6 +219,49 @@ TransformInfo outTransformData(std::string name)
 	return outTrans;
 }
 
+CameraInfo outCameraData(std::string name)
+{
+	MStatus result;
+	MString cname(name.c_str());
+	MSelectionList sList;
+	MDagPath dagPath;
+	if (MGlobal::getSelectionListByName(cname, sList))
+	{
+		sList.getDagPath(0, dagPath);
+		if (dagPath.hasFn(MFn::kCamera))
+		{
+			MGlobal::displayInfo("Camera found: " + dagPath.fullPathName());
+			
+		}
+
+	}
+
+	MFnCamera mNode(dagPath.node(), &result);
+	MFloatMatrix projMtx(mNode.projectionMatrix());
+	//MGlobal::displayInfo(MString() + projMtx);
+	MPoint pos = mNode.eyePoint(MSpace::Space::kWorld);
+	MFloatVector dir = mNode.viewDirection(MSpace::Space::kWorld);
+	MFloatVector up = mNode.upDirection(MSpace::Space::kWorld);
+	MFloatVector right = mNode.rightDirection(MSpace::Space::kWorld);
+	MGlobal::displayInfo("Pos(" + MString() + pos.x + " , " + MString() + pos.y + " , "+ MString() + pos.z + ")");
+	MGlobal::displayInfo("Dir(" + MString() + dir.x + " , " + MString() + dir.y + " , " + MString() + dir.z + ")");
+	MGlobal::displayInfo("Up(" + MString() + up.x + " , " + MString() + up.y + " , " + MString() + up.z + ")");
+	bool isOrtho = mNode.isOrtho();
+	double fov = mNode.horizontalFieldOfView();
+	MGlobal::displayInfo("Fov: " + MString() + fov);
+	MGlobal::displayInfo("Orthographic: " +MString() + isOrtho);
+	CameraInfo outCam;
+	outCam.camData.isOrtho = isOrtho;
+	outCam.camData.hAngle = fov;
+	for (int i = 0; i < 3; i++)
+	{
+		outCam.camData.rightVector[i] = right[i];
+		outCam.camData.target[i] = dir[i];
+		outCam.camData.upVector[i] = up[i];
+	}
+	return outCam;
+}
+
 std::string getParentName(MPlug& plug)
 {
 	MPlug p = plug;
@@ -682,6 +725,7 @@ void loadScene()
 		{
 			
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(dagPath.node(), cbCamAttribute));
+			outCameraData(dagPath.fullPathName().asChar());
 			MObject parent = dagNode.parent(0);
 			if (parent.hasFn(MFn::kTransform))
 			{

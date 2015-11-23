@@ -20,6 +20,7 @@
 #include <maya/MIntArray.h>
 #include <maya/MPoint.h>
 #include <maya/MMatrix.h>
+#include <maya/MFloatMatrix.h>
 #include <maya/MEulerRotation.h>
 #include <maya/MVector.h>
 #include <maya/MItDag.h>

@@ -190,26 +190,6 @@ bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 	return false;
 }
 
-//bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
-//{
-//	switch (msg.nodeType)
-//	{
-//
-//
-//	case NodeType::nMesh:
-//		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
-//		MessageHeader mHeader = createHeaderMesh(msg, minfo);
-//		int cfg = findWriteConfig(mHeader);
-//		createMessageMesh(msg, minfo);
-//
-//		break;
-//
-//		//default:
-//		//	break;
-//
-//	}
-//	return false;
-//}
 // Write config return values
 // 0: Can't write
 // 1: Can write normally
@@ -259,10 +239,14 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 	{
 	case 1:
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		
 		localHead +=sizeof(MessageHeader);
 		memcpy((unsigned char*)mMessageData + localHead, &tdata, hdr.byteSize - sizeof(MessageHeader));
-		localHead += hdr.byteSize - sizeof(MessageHeader);
+		localHead += (hdr.byteSize +hdr.bytePadding - sizeof(MessageHeader));
 		fileMapInfo.head_ByteOffset = localHead;
+		MGlobal::displayInfo("FILEMAP_ HEAD POSITION: " + MString() + fileMapInfo.head_ByteOffset);
+		MGlobal::displayInfo("FILEMAP_ SIZE " + MString() + fileMapInfo.messageFilemap_Size);
+		MGlobal::displayInfo("FILEMAP_ MESSAGE INFO: "+MString()+hdr.nodeType+" " +MString()+hdr.messageType+" "+hdr.byteSize+" " + MString() + hdr.bytePadding +" "+MString()+sizeof(size_t));
 		memcpy(mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		return true;
 
