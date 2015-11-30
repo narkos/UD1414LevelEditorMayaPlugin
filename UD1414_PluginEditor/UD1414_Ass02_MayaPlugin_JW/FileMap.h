@@ -118,16 +118,26 @@ struct MaterialMessage
 };
 struct LightData
 {
-
+	int type;
+	float intensity;
+	float colorDiffuse[3];
+	float colorSpecular[3];
+	float direction[3];
+	float attenuation[3];
+	float coneAngle;
+	float penumAgle;
 };
 struct LightInfo
 {
+	std::string nodeName;
 	std::string transformName;
 	LightData lightData;
 };
 struct LightMessage
 {
-
+	char nodeName[100];
+	char transformName[100];
+	LightData lightData;
 };
 
 class Mutex {

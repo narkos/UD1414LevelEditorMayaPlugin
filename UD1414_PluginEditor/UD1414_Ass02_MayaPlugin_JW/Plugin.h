@@ -36,6 +36,9 @@
 #include <maya/MFnPointLight.h>
 #include <maya/MSelectionList.h>
 #include <maya/MItDependencyNodes.h>
+#include <maya/MFnDirectionalLight.h>
+#include <maya/MFnSpotLight.h>
+#include <maya/MFnPointLight.h>
 
 // Wrappers
 #include <maya/MGlobal.h>
