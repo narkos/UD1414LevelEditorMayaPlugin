@@ -125,7 +125,7 @@ struct LightData
 		intensity = 0;
 		colorDiffuse[0] = colorDiffuse[1] = colorDiffuse[2] = 0.5f;
 		direction[0] = direction[1] = direction[2] = 0.0f;
-		dropOff[0] = dropOff[1] = dropOff[2] = 1.0f;
+		dropOff = 1.0f;
 		coneAngle = 0.0f;
 		penumAgle = 0.0f;
 	}
@@ -134,7 +134,7 @@ struct LightData
 	float intensity;
 	float colorDiffuse[3];
 	float direction[3];
-	float dropOff[3];
+	float dropOff;
 	float coneAngle;
 	float penumAgle;
 };

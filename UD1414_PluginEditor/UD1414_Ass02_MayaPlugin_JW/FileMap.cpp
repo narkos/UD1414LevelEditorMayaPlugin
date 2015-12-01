@@ -417,7 +417,7 @@ MessageHeader FileMapping::createHeaderTransform(MessageInfo& msginfo, Transform
 	size_t padding;
 	size_t infoSize;
 	//infoSize = 200 * sizeof(char);
-	msgSize = sizeof(tInfo) + sizeof(MessageInfo) + sizeof(MessageHeader);
+	msgSize = sizeof(TransformMessage) + sizeof(MessageHeader);
 	
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
@@ -535,7 +535,6 @@ TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, Trans
 			outMsg.nodeName[i] = msginfo.nodeName[i];
 		}
 		MGlobal::displayInfo("Node name added!");
-		//msg.nodeName[nodeNameLength] = (char)"\0";
 		outMsg.nodeName[nodeNameLength] = '\0';
 	}
 	else
@@ -548,7 +547,6 @@ TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, Trans
 		{
 			outMsg.parentName[i] = tInfo.parentName[i];
 		}
-		//msg.nodeName[nodeNameLength] = (char)"\0";
 		outMsg.parentName[parentNameLength] = '\0';
 	}
 	else

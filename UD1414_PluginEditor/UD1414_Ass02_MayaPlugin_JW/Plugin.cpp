@@ -187,7 +187,7 @@ TransformInfo outTransformData(std::string name)
 	if (result)
 	{
 		
-		outTrans.parentName = "";
+		outTrans.parentName[0] = 0;
 
 		std::string attName(mNode.fullPathName().asChar());
 		MVector trans = mNode.getTranslation(MSpace::kPostTransform, &result);
@@ -294,6 +294,9 @@ LightInfo outLightData(std::string name)
 				outLight.lightData.type = 1;
 				MFnDirectionalLight dLight(dagPath); // Don't think this is necessary dude to probably all relevant data exist within MFnLight
 				MFloatVector dir(baseLight.lightDirection(0, MSpace::kWorld, &result));
+				outLight.lightData.direction[0] = dir.x;
+				outLight.lightData.direction[1] = dir.y;
+				outLight.lightData.direction[2] = dir.z;
 				if(result)
 					MGlobal::displayInfo("Light direction: " + MString() + dir.x + " " + MString() + dir.y + " " + MString() + dir.z);
 			}
@@ -301,12 +304,21 @@ LightInfo outLightData(std::string name)
 			{
 				outLight.lightData.type = 2;
 				MFnSpotLight sLight(dagPath);
-				outLight.lightData.decayType = sLight.decayRate();
+				outLight.lightData.decayType =	sLight.decayRate();
+				outLight.lightData.coneAngle =	sLight.coneAngle();
+				outLight.lightData.penumAgle =	sLight.penumbraAngle();
+				outLight.lightData.dropOff =	sLight.dropOff();
+
+				MFloatVector dir(baseLight.lightDirection(0, MSpace::kWorld, &result));
+				outLight.lightData.direction[0] = dir.x;
+				outLight.lightData.direction[1] = dir.y;
+				outLight.lightData.direction[2] = dir.z;
 			}
 			else if (dagPath.hasFn(MFn::kPointLight))
 			{
 				outLight.lightData.type = 3;
-				MFnPointLight(dagPath);
+				MFnPointLight pLight(dagPath);
+				outLight.lightData.decayType = pLight.decayRate();
 			}
 		}
 	}
@@ -681,20 +693,23 @@ void cbNewNode(MObject& node, void* clientData)
 	if (node.hasFn(MFn::kLight))
 	{
 		MGlobal::displayInfo("Light created");
-		_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
+		
 		MFnLight light(node);
-		outLightData(light.fullPathName().asChar());
+		//outLightData(light.fullPathName().asChar());
 		if (node.hasFn(MFn::kDirectionalLight))
 		{
 			MGlobal::displayInfo("Directional");
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 		else if (node.hasFn(MFn::kSpotLight))
 		{
 			MGlobal::displayInfo("Spot");
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 		else if (node.hasFn(MFn::kPointLight))
 		{
 			MGlobal::displayInfo("Point");
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 	}
 }
