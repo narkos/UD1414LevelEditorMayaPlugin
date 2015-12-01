@@ -125,15 +125,16 @@ struct LightData
 		intensity = 0;
 		colorDiffuse[0] = colorDiffuse[1] = colorDiffuse[2] = 0.5f;
 		direction[0] = direction[1] = direction[2] = 0.0f;
+		dropOff[0] = dropOff[1] = dropOff[2] = 1.0f;
 		coneAngle = 0.0f;
 		penumAgle = 0.0f;
-		
 	}
 	int type; //0 = def, 1 = dir, 2 = spot, 3 = point
 	int decayType; //0 = none, 1 = linear, 2 = quadratic (l/d**v)
 	float intensity;
 	float colorDiffuse[3];
 	float direction[3];
+	float dropOff[3];
 	float coneAngle;
 	float penumAgle;
 };
