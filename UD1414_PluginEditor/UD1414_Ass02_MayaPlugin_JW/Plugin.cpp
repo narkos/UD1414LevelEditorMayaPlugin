@@ -219,6 +219,100 @@ TransformInfo outTransformData(std::string name)
 	return outTrans;
 }
 
+CameraInfo outCameraData(std::string name)
+{
+	MStatus result;
+	MString cname(name.c_str());
+	MSelectionList sList;
+	MDagPath dagPath;
+	CameraInfo outCam;
+	if (MGlobal::getSelectionListByName(cname, sList))
+	{
+		sList.getDagPath(0, dagPath);
+		if (dagPath.hasFn(MFn::kCamera))
+		{
+			MGlobal::displayInfo("Camera found: " + dagPath.fullPathName());
+			MFnCamera mNode(dagPath.node(), &result);
+			MFloatMatrix projMtx(mNode.projectionMatrix());
+			//MGlobal::displayInfo(MString() + projMtx);
+			MPoint pos = mNode.eyePoint(MSpace::Space::kWorld);
+			MFloatVector dir = mNode.viewDirection(MSpace::Space::kWorld);
+			MFloatVector up = mNode.upDirection(MSpace::Space::kWorld);
+			MFloatVector right = mNode.rightDirection(MSpace::Space::kWorld);
+			MGlobal::displayInfo("Pos(" + MString() + pos.x + " , " + MString() + pos.y + " , " + MString() + pos.z + ")");
+			MGlobal::displayInfo("Dir(" + MString() + dir.x + " , " + MString() + dir.y + " , " + MString() + dir.z + ")");
+			MGlobal::displayInfo("Up(" + MString() + up.x + " , " + MString() + up.y + " , " + MString() + up.z + ")");
+			bool isOrtho = mNode.isOrtho();
+			double fov = mNode.horizontalFieldOfView();
+			MGlobal::displayInfo("Fov: " + MString() + fov);
+			MGlobal::displayInfo("Orthographic: " + MString() + isOrtho);
+			
+			outCam.camData.isOrtho = isOrtho;
+			outCam.camData.hAngle = fov;
+			for (int i = 0; i < 3; i++)
+			{
+				outCam.camData.rightVector[i] = right[i];
+				outCam.camData.target[i] = dir[i];
+				outCam.camData.upVector[i] = up[i];
+			}
+		}
+
+	}
+
+
+	return outCam;
+}
+
+LightInfo outLightData(std::string name)
+{
+	MStatus result;
+	MString lName(name.c_str());
+	MSelectionList sList;
+	MDagPath dagPath;
+	LightInfo outLight;
+	MGlobal::displayInfo(MString() + outLight.lightData.colorDiffuse[1]);
+	if (MGlobal::getSelectionListByName(lName, sList))
+	{
+		sList.getDagPath(0, dagPath);
+		if (dagPath.hasFn(MFn::kLight))
+		{
+			MFnLight baseLight(dagPath);
+			
+			// Get diffuse color data
+			MColor diffColor = baseLight.color();
+			float RGBColor[3];
+			diffColor.get(MColor::MColorType::kRGB, RGBColor[0], RGBColor[1], RGBColor[2]);
+			std::copy(RGBColor, RGBColor+3, outLight.lightData.colorDiffuse);
+			MGlobal::displayInfo("Light Color Diffuse: " + MString() + outLight.lightData.colorDiffuse[0] + " " + MString() + outLight.lightData.colorDiffuse[1] + " " + MString() + outLight.lightData.colorDiffuse[2]);
+			//Get light intensity
+			outLight.lightData.intensity = baseLight.intensity();
+			MGlobal::displayInfo("Light intensity: " + MString() + outLight.lightData.intensity);
+
+
+			if (dagPath.hasFn(MFn::kDirectionalLight))
+			{
+				outLight.lightData.type = 1;
+				MFnDirectionalLight dLight(dagPath); // Don't think this is necessary dude to probably all relevant data exist within MFnLight
+				MFloatVector dir(baseLight.lightDirection(0, MSpace::kWorld, &result));
+				if(result)
+					MGlobal::displayInfo("Light direction: " + MString() + dir.x + " " + MString() + dir.y + " " + MString() + dir.z);
+			}
+			else if (dagPath.hasFn(MFn::kSpotLight))
+			{
+				outLight.lightData.type = 2;
+				MFnSpotLight sLight(dagPath);
+				outLight.lightData.decayType = sLight.decayRate();
+			}
+			else if (dagPath.hasFn(MFn::kPointLight))
+			{
+				outLight.lightData.type = 3;
+				MFnPointLight(dagPath);
+			}
+		}
+	}
+	return outLight;
+}
+
 std::string getParentName(MPlug& plug)
 {
 	MPlug p = plug;
@@ -230,142 +324,6 @@ std::string getParentName(MPlug& plug)
 	else
 		return "";
 }
-//
-//void oldMeshData(std::string name)
-//{
-//	MString _name(name.c_str());
-//	MSelectionList sList;
-//	MDagPath dagPath;
-//	if (MGlobal::getSelectionListByName(_name, sList))
-//	{
-//		sList.getDagPath(0, dagPath);
-//		if (dagPath.hasFn(MFn::kMesh))
-//		{
-//			MGlobal::displayInfo("Mesh found: " + dagPath.fullPathName());
-//		}
-//
-//	}
-//
-//	MFnMesh mNode(dagPath.node());
-//	MeshData outMesh;
-//
-//	if (mNode.parent(0).hasFn(MFn::kTransform))
-//	{
-//		MFnTransform mTrans(mNode.parent(0));
-//		outMesh.transformName = mTrans.fullPathName().asChar();
-//		MGlobal::displayInfo(outMesh.transformName.c_str());
-//	}
-//
-//
-//	MStatus result;
-//	////MFnMesh mNode((obj), &result);
-//	if (result)
-//	{
-//		//DO STUFF
-//		//MPointArray vertices;
-//		MFloatPointArray vertices;
-//		MFloatVectorArray normals;
-//		MFloatArray uArray;
-//		MFloatArray vArray;
-//
-//		MIntArray vertexCountPerPoly;
-//		MIntArray vertList;
-//		mNode.getVertices(vertexCountPerPoly, vertList);
-//
-//		MIntArray normalIndices;
-//		MIntArray normalPerPoly;
-//		mNode.getNormalIds(normalIndices, normalPerPoly);
-//
-//		MIntArray triCount;
-//		MIntArray triVerts;
-//		mNode.getTriangleOffsets(triCount, triVerts);
-//
-//		mNode.getPoints(vertices, MSpace::kPreTransform);
-//		mNode.getNormals(normals, MSpace::kPreTransform);
-//		mNode.getUVs(uArray, vArray);
-//
-//		int numUVs = mNode.numUVs();
-//
-//
-//		outMesh.vertCount = vertices.length();
-//		outMesh.normalCount = normals.length();
-//		outMesh.UVCount = numUVs;
-//		outMesh.triCount = triVerts.length();
-//		outMesh.indCount = vertList.length();
-//
-//		////outMesh.indices = new int[outMesh.indCount];
-//		//for (int i = 0; i < outMesh.indCount; i++)
-//		//{
-//		//	outMesh.indices[i] = vertList[i];
-//		//}
-//		outMesh.triIndices = new int[outMesh.triCount];
-//		for (int i = 0; i < outMesh.triCount; i++)
-//		{
-//			outMesh.triIndices[i] = triVerts[i];
-//		}
-//		outMesh.norIndices = new int[outMesh.normalCount];
-//		for (int i = 0; i < outMesh.normalCount; i++)
-//		{
-//			outMesh.norIndices[i] = normalPerPoly[i];
-//		}
-//		outMesh.UVIndices = new int[outMesh.UVCount];
-//		for (int i = 0; i < outMesh.UVCount; i++)
-//		{
-//			outMesh.UVIndices[i] = i;
-//		}
-//		MStatus st;
-//		outMesh.vertices = mNode.getRawPoints(&st);
-//		if (st)
-//		{
-//			int rawsize = outMesh.vertCount * 3;
-//			MGlobal::displayInfo("RAW SIZE " + MString() + rawsize);
-//			for (int i = 0; i < rawsize; i++)
-//			{
-//				MGlobal::displayInfo(MString() + outMesh.vertices[i]);
-//			}
-//		}
-//
-//
-//		//delete[] outMesh.indices;
-//		//delete[] outMesh.triIndices;
-//		//delete[] outMesh.norIndices;
-//		//delete[] outMesh.UVIndices;
-//
-//		//for()
-//
-//		if (debug)
-//		{
-//
-//			MGlobal::displayInfo("\nNew Mesh node path: " + mNode.fullPathName() + "\n");
-//			MGlobal::displayInfo("Normal Indicies: " + MString() + normalPerPoly.length());
-//			MGlobal::displayInfo("Triangle Count: " + MString() + triVerts.length());
-//			MGlobal::displayInfo("UV count:" + MString() + numUVs);
-//			MGlobal::displayInfo("Number of vertices: " + MString() + vertices.length());
-//			MGlobal::displayInfo("Number of vertIndicies: " + MString() + vertList.length());
-//			for (int i = 0; i < vertices.length(); i++)
-//			{
-//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-//				MGlobal::displayInfo("v: " + MString() + vertices[i].x + ", " + MString() + vertices[i].y + ", " + MString() + vertices[i].z);
-//
-//			}
-//			for (int i = 0; i < normals.length(); i++)
-//			{
-//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-//				MGlobal::displayInfo("n: " + MString() + normals[i].x + ", " + MString() + normals[i].y + ", " + MString() + normals[i].z);
-//			}
-//			for (int i = 0; i < uArray.length(); i++)
-//			{
-//				MGlobal::displayInfo(MString() + (int)(i + 1) + ".");
-//				MGlobal::displayInfo("uv: " + MString() + uArray[i] + ", " + MString() + vArray[i]);
-//			}
-//			for (int i = 0; i < triCount.length(); i++)
-//			{
-//				MGlobal::displayInfo("Tri ID:" + MString() + triCount[i] + " ( " + MString() + triVerts[i]);
-//			}
-//		}
-//	}
-//	//return outMesh;
-//}
 
 void mAddMessage(std::string name, int msgType, int nodeType)
 {
@@ -534,6 +492,16 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 	}
 }
 
+void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+{
+	MFnLight light(plug_1.node());
+
+	MString lightName(light.fullPathName());
+	outLightData(lightName.asChar());
+	/*else
+	{ }*/
+}
+
 void cbEvalAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	if (msg & MNodeMessage::AttributeMessage::kAttributeEval)
@@ -556,6 +524,10 @@ void cbPolyChanged(MObject& node, void* clientData)
 	}
 }
 
+void cbCamAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+{
+	MGlobal::displayInfo("--------------- cam attribute");
+}
 
 void cbNameChange(MObject& node, const MString& str, void* clientData)
 {
@@ -601,7 +573,6 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 
 
 }
-
 void cbRemovedNode(MObject& node, void* clientData)
 {
 	/*MFnDependencyNode n(node);
@@ -691,23 +662,41 @@ void cbNewNode(MObject& node, void* clientData)
 				_CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
 				_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
 			}
-		if (node.hasFn(MFn::kTransform))
+	if (node.hasFn(MFn::kTransform))
+	{
+		MFnTransform trans(node);
+		if (trans.childCount() > 0)
 		{
+
+			mAddNode(trans.fullPathName().asChar(), "", nTransform);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbTransformModified));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+
 			MFnTransform trans(node);
-			if (trans.childCount() > 0)
-			{
-
-				mAddNode(trans.fullPathName().asChar(), "", nTransform);
-				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbTransformModified));
-				_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
-
-				MFnTransform trans(node);
-				int pcount = trans.parentCount();
-				MFnTransform parent(trans.parent(0));
-				MGlobal::displayInfo("Transform parent: " + parent.fullPathName() + MString()+ pcount);
-			}
-			
+			int pcount = trans.parentCount();
+			MFnTransform parent(trans.parent(0));
+			MGlobal::displayInfo("Transform parent: " + parent.fullPathName() + MString()+ pcount);
 		}
+	}
+	if (node.hasFn(MFn::kLight))
+	{
+		MGlobal::displayInfo("Light created");
+		_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
+		MFnLight light(node);
+		outLightData(light.fullPathName().asChar());
+		if (node.hasFn(MFn::kDirectionalLight))
+		{
+			MGlobal::displayInfo("Directional");
+		}
+		else if (node.hasFn(MFn::kSpotLight))
+		{
+			MGlobal::displayInfo("Spot");
+		}
+		else if (node.hasFn(MFn::kPointLight))
+		{
+			MGlobal::displayInfo("Point");
+		}
+	}
 }
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 {
@@ -796,10 +785,7 @@ void cbCameraChange(MObject &cameraSetNode, unsigned int multiIndex, MObject &ol
 	MGlobal::displayInfo("CAMERAAAAAAAAAAAAAAA");
 }
 
-//void cbCameraChange(const MString &str, MObject &node, void *clientData)
-//{
-//	MGlobal::displayInfo("CAMERAAAAAAAAAAAAAAA");
-//}
+
 
 void loadScene()
 {
@@ -816,7 +802,9 @@ void loadScene()
 		std::string transname;
 		if (dagPath.hasFn(MFn::kCamera))
 		{
-			_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
+			
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(dagPath.node(), cbCamAttribute));
+			outCameraData(dagPath.fullPathName().asChar());
 			MObject parent = dagNode.parent(0);
 			if (parent.hasFn(MFn::kTransform))
 			{
@@ -825,6 +813,7 @@ void loadScene()
 				transname = trans.fullPathName().asChar();
 				mAddNode(trans.fullPathName().asChar(),"", nTransform);
 				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(parent, cbTransformModified));
+
 				MString panel;
 				_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
 			}
@@ -835,7 +824,16 @@ void loadScene()
 
 
 }
+void cbCameraPanel(const MString &str, MObject &node, void *clientData)
+{
+	if (node.hasFn(MFn::kCamera))
+	{
+		MFnCamera currCam(node);
+		MGlobal::displayInfo("Current Camera: " + currCam.fullPathName() );
+	}
+	
 
+}
 EXPORT MStatus initializePlugin(MObject obj)
 {
 	//Error Checking Variable
@@ -857,12 +855,15 @@ EXPORT MStatus initializePlugin(MObject obj)
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
 	_CBidArray.append(MTimerMessage::addTimerCallback(5, &cbMessageTimer));	
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));	
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel3", cbCameraPanel));
 	
+
 	return result;
 	
 }
-
-
 
 EXPORT MStatus uninitializePlugin(MObject obj)
 {

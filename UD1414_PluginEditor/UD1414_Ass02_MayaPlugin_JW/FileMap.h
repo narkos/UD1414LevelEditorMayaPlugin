@@ -88,12 +88,17 @@ struct MeshMessage
 };
 struct CameraData
 {
-
+	int			isOrtho;
+	float		target[3];
+	float		upVector[3];
+	float		rightVector[3];
+	float		hAngle;
 };
 struct CameraInfo
 {
 	std::string nodeName;
 	std::string transformName;
+	CameraData camData;
 };
 struct CameraMessage
 {
@@ -113,16 +118,36 @@ struct MaterialMessage
 };
 struct LightData
 {
-
+	LightData() 
+	{
+		type = 0;
+		decayType = 0;
+		intensity = 0;
+		colorDiffuse[0] = colorDiffuse[1] = colorDiffuse[2] = 0.5f;
+		direction[0] = direction[1] = direction[2] = 0.0f;
+		coneAngle = 0.0f;
+		penumAgle = 0.0f;
+		
+	}
+	int type; //0 = def, 1 = dir, 2 = spot, 3 = point
+	int decayType; //0 = none, 1 = linear, 2 = quadratic (l/d**v)
+	float intensity;
+	float colorDiffuse[3];
+	float direction[3];
+	float coneAngle;
+	float penumAgle;
 };
 struct LightInfo
 {
+	std::string nodeName;
 	std::string transformName;
 	LightData lightData;
 };
 struct LightMessage
 {
-
+	char nodeName[100];
+	char transformName[100];
+	LightData lightData;
 };
 
 class Mutex {

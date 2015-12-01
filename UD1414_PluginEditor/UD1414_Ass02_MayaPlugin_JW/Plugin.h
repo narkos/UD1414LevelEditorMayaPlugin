@@ -20,6 +20,7 @@
 #include <maya/MIntArray.h>
 #include <maya/MPoint.h>
 #include <maya/MMatrix.h>
+#include <maya/MFloatMatrix.h>
 #include <maya/MEulerRotation.h>
 #include <maya/MVector.h>
 #include <maya/MItDag.h>
@@ -35,6 +36,9 @@
 #include <maya/MFnPointLight.h>
 #include <maya/MSelectionList.h>
 #include <maya/MItDependencyNodes.h>
+#include <maya/MFnDirectionalLight.h>
+#include <maya/MFnSpotLight.h>
+#include <maya/MFnPointLight.h>
 
 // Wrappers
 #include <maya/MGlobal.h>
