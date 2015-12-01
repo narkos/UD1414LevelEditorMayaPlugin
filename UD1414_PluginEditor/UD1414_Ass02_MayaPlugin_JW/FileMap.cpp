@@ -3,12 +3,15 @@
 
 FileMapping::FileMapping()
 {
+	//mutexInfo.Unlock();
 	_headerSize = sizeof(MessageHeader);
 	headerFit;
 }
 
 FileMapping::~FileMapping()
 {
+	//mutexInfo.Unlock();
+
 	std::string str;
 	bool m = UnmapViewOfFile((LPCVOID)mMessageData);
 	/*str = GetLastErrorAsString();
@@ -54,36 +57,37 @@ FileMapping::~FileMapping()
 
 void FileMapping::CreateFileMaps()
 {
-
+	mInfoSize = 1 << 6;
 	//info filemapen
 	hInfoFileMap = CreateFileMapping(INVALID_HANDLE_VALUE,
 		NULL,
 		PAGE_READWRITE,
 		(DWORD)0,
 		mInfoSize,
-		(LPCWSTR) "infoFileMap");
-
-	//MGlobal::displayInfo("mInfoSize: " + MString() + mInfoSize);
-	mutexInfo.Create("__info_Mutex__");
+		(LPCWSTR) "infoFileMap"); 
 
 	mInfoData = MapViewOfFile(hInfoFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	//MGlobal::displayInfo("mInfoSize: " + MString() + mInfoSize);
+	mutexInfo.Create("__info_Mutex__");
+	
 	//SetFilemapInfoValues(0, 0, 0, mSize); //storar de i filemapen oxå! sätt negativa värden om man inte vill nått värde ska ändras :)
 
 	if (hInfoFileMap == NULL) {
 		MGlobal::displayInfo("Couldn't create infofilemap");
 	}
 	//FilemapInfo fmInfo;
-	else if (GetLastError() == ERROR_ALREADY_EXISTS) {
+	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		MGlobal::displayInfo("Infofilemap exists, you get a handle to it!");
 		GetFilemapInfoValues();
 	}
 	else { //first, sätter de första värdena på filemapinfon
-		MGlobal::displayInfo("Creating new infofilemap");
-		SetFilemapInfoValues(0, 0, 256, 2048);
+		MGlobal::displayInfo("Creating new infofilemap, JAG SKA INTE VARA FÖRST :'(");
+		GetFilemapInfoValues();
+		//SetFilemapInfoValues(0, 0, 256, 2048);
 	}
 	memoryPadding = fileMapInfo.non_accessmemoryOffset;
 	
-	mSize = 2048;
+	mSize = 2048; //denna ska hämtas
 	hMessageFileMap = CreateFileMapping(INVALID_HANDLE_VALUE,
 		NULL,
 		PAGE_READWRITE,
@@ -111,14 +115,17 @@ void FileMapping::CreateFileMaps()
 
 void FileMapping::GetFilemapInfoValues()
 {
-	mutexInfo.Lock();
-	memcpy(&fileMapInfo, mInfoData, sizeof(FilemapInfo));
+	while (mutexInfo.Lock(1000) == false) Sleep(10);
+	memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo)); //får inget värde!!!!!!! default värdet är fortfarande kvar
+	//mSize = fileMapInfo.messageFilemap_Size;
+	MGlobal::displayInfo("MessageFMMemorySize: " + MString() + fileMapInfo.messageFilemap_Size);
+	MGlobal::displayInfo("Nonaccess: " + MString()+fileMapInfo.non_accessmemoryOffset);
 	mutexInfo.Unlock();
 }
 
 void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacement, size_t nonAccessMemoryPlacement, size_t messageFileMapTotalSize) {
-	mutexInfo.Lock();
-	memcpy(&fileMapInfo, mInfoData, sizeof(FilemapInfo));
+	while (mutexInfo.Lock(1000) == false) Sleep(10);
+	memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
 	if (headPlacement >= 0)
 		fileMapInfo.head_ByteOffset = headPlacement;
 	if (tailPlacement >= 0)
@@ -128,7 +135,7 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 	if (messageFileMapTotalSize > 0)
 		fileMapInfo.messageFilemap_Size = messageFileMapTotalSize;
 
-	memcpy(mInfoData, &fileMapInfo, sizeof(FilemapInfo));	
+	memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));	
 	mutexInfo.Unlock();
 }
 
@@ -216,8 +223,8 @@ bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 // 2: Header fits before buffer end, but message will have to be moved to the beginning of the buffer
 int FileMapping::findWriteConfig(MessageHeader& hdr)
 {
-	mutexInfo.Lock();
-	memcpy(&fileMapInfo, mInfoData, sizeof(FilemapInfo));
+	while (mutexInfo.Lock(1000) == false) Sleep(10);
+	memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
 
 	localHead = fileMapInfo.head_ByteOffset;
 	localTail = fileMapInfo.tail_ByteOffset;
@@ -261,9 +268,14 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 		localHead +=sizeof(MessageHeader);
 		memcpy((unsigned char*)mMessageData + localHead, &tdata, hdr.byteSize - sizeof(MessageHeader));
-		localHead += hdr.byteSize - sizeof(MessageHeader);
+		localHead += hdr.byteSize+hdr.bytePadding - sizeof(MessageHeader);
+
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
 		fileMapInfo.head_ByteOffset = localHead;
-		memcpy(mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+
 		return true;
 
 	case 2:

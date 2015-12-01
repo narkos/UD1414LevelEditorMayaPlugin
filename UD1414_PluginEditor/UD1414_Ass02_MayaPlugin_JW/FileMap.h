@@ -131,7 +131,7 @@ private:
 public:
 	Mutex(const char* name = "__my_mutex__")
 	{
-		handle_ = CreateMutex(nullptr, false, (LPWSTR)(name));
+		//handle_ = CreateMutex(nullptr, false, (LPWSTR)(name));
 	}
 	~Mutex()
 	{
@@ -139,11 +139,20 @@ public:
 	}
 	void Create(const char* name = "__my_mutex__")
 	{
-		handle_ = CreateMutex(nullptr, false, (LPWSTR)(name));
+		//handle_ = CreateMutex(nullptr, false, (LPWSTR)(name));
+
+		handle_ = OpenMutex(MUTEX_ALL_ACCESS, FALSE, (LPWSTR)(name)); //(LPWSTR)(name) TEXT("__info_Mutex__")
 	}
-	void Lock(DWORD milliseconds = INFINITE)
+	bool Lock(DWORD milliseconds = 10000000000000)
 	{
-		WaitForSingleObject(handle_, milliseconds);
+		DWORD check;
+		check = WaitForSingleObject(handle_, milliseconds);
+		//Sleep(milliseconds); //check returneras direkt så vänta ut skiten oxå??
+		if (check == WAIT_ABANDONED) {
+			return false; //didnt get mutex
+		}
+
+		return true; //got mutex
 	}
 	void Unlock()
 	{
@@ -203,18 +212,18 @@ private:
 		FilemapInfo() {
 			head_ByteOffset = 0;
 			tail_ByteOffset = 0;
-			non_accessmemoryOffset = 10;
+			non_accessmemoryOffset = 0;
 			//totalConsumers = 0;
 			messageFilemap_Size = 0; //storleken på filemapen med meddelanden
 		}
 	};
 
 	FilemapInfo fileMapInfo;
-	HANDLE hMessageFileMap;
-	LPVOID mMessageData;
+	HANDLE hMessageFileMap = nullptr;;
+	LPVOID mMessageData = nullptr;;
 	unsigned int mSize;
-	HANDLE hInfoFileMap;
-	LPVOID mInfoData;
+	HANDLE hInfoFileMap = nullptr;;
+	LPVOID mInfoData = nullptr;
 	unsigned int mInfoSize = 256;
 	size_t localHead = 0;
 	size_t localTail = 0;
