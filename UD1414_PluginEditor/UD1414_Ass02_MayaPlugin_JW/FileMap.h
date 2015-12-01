@@ -42,7 +42,7 @@ struct TransformData
 struct TransformInfo
 {
 	std::string nodeName;
-	std::string parentName;
+	std::string parentName; //om ingen parent sätt till 0 första bokstav fuck off.
 	TransformData transformData;
 	//
 	//std::string parentName;
@@ -52,7 +52,7 @@ struct TransformMessage
 {
 	char nodeName[100];
 	char parentName[100];
-	TransformData *trData;
+	TransformData trData;
 };
 struct MeshData
 {

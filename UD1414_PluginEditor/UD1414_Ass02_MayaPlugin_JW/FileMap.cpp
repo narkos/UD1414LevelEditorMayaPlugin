@@ -239,9 +239,9 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 {
 	int cfg = config;
 	MGlobal::displayInfo("TRANSFORM OUTER DATA: " + MString(tdata.nodeName));
-	MGlobal::displayInfo("Pos: " + MString() + tdata.trData->translation[0] + " " + MString() + tdata.trData->translation[1] + " " + MString() + tdata.trData->translation[2]);
-	MGlobal::displayInfo("Rot: " + MString() + tdata.trData->rotation[0] + " " + MString() + tdata.trData->rotation[1] + " " + MString() + tdata.trData->rotation[2]);
-	MGlobal::displayInfo("Sca: " + MString() + tdata.trData->scale[0] + " " + MString() + tdata.trData->scale[1] + " " + MString() + tdata.trData->scale[2]);
+	MGlobal::displayInfo("Pos: " + MString() + tdata.trData.translation[0] + " " + MString() + tdata.trData.translation[1] + " " + MString() + tdata.trData.translation[2]);
+	MGlobal::displayInfo("Rot: " + MString() + tdata.trData.rotation[0] + " " + MString() + tdata.trData.rotation[1] + " " + MString() + tdata.trData.rotation[2]);
+	MGlobal::displayInfo("Sca: " + MString() + tdata.trData.scale[0] + " " + MString() + tdata.trData.scale[1] + " " + MString() + tdata.trData.scale[2]);
 	switch (cfg)
 	{
 	case 1:
@@ -555,7 +555,7 @@ TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, Trans
 	{
 		MGlobal::displayError("Transform name too long!");
 	}
-	outMsg.trData = &tInfo.transformData;
+	outMsg.trData = tInfo.transformData;
 	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
 
 	return outMsg;
