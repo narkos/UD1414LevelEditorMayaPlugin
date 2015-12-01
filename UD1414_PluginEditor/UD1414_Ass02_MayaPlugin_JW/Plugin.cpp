@@ -270,6 +270,7 @@ LightInfo outLightData(std::string name)
 	MSelectionList sList;
 	MDagPath dagPath;
 	LightInfo outLight;
+	MGlobal::displayInfo(MString() + outLight.lightData.colorDiffuse[1]);
 	if (MGlobal::getSelectionListByName(lName, sList))
 	{
 		sList.getDagPath(0, dagPath);
@@ -290,19 +291,21 @@ LightInfo outLightData(std::string name)
 
 			if (dagPath.hasFn(MFn::kDirectionalLight))
 			{
-			
+				outLight.lightData.type = 1;
 				MFnDirectionalLight dLight(dagPath); // Don't think this is necessary dude to probably all relevant data exist within MFnLight
 				MFloatVector dir(baseLight.lightDirection(0, MSpace::kWorld, &result));
 				if(result)
 					MGlobal::displayInfo("Light direction: " + MString() + dir.x + " " + MString() + dir.y + " " + MString() + dir.z);
-				
 			}
 			else if (dagPath.hasFn(MFn::kSpotLight))
 			{
+				outLight.lightData.type = 2;
 				MFnSpotLight sLight(dagPath);
+				outLight.lightData.decayType = sLight.decayRate();
 			}
 			else if (dagPath.hasFn(MFn::kPointLight))
 			{
+				outLight.lightData.type = 3;
 				MFnPointLight(dagPath);
 			}
 		}
