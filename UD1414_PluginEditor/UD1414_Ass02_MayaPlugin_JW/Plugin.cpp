@@ -177,7 +177,7 @@ TransformInfo outTransformData(std::string name)
 		sList.getDagPath(0, dagPath);
 		if (dagPath.hasFn(MFn::kTransform))
 		{
-			MGlobal::displayInfo("Transform found: " + dagPath.fullPathName());
+			//MGlobal::displayInfo("Transform found: " + dagPath.fullPathName());
 		}
 
 	}
@@ -210,10 +210,10 @@ TransformInfo outTransformData(std::string name)
 		outTrans.nodeName = attName;
 		//outTrans.parentName = getParentName()
 
-		MGlobal::displayInfo("TRANSFORM INNER DATA: " + MString(outTrans.nodeName.c_str()));
+		/*MGlobal::displayInfo("TRANSFORM INNER DATA: " + MString(outTrans.nodeName.c_str()));
 		MGlobal::displayInfo("Pos: " + MString() + trans.x + " " + MString() + trans.y + " " + MString() + trans.z);
 		MGlobal::displayInfo("Rot: " + MString() + rotation.x + " " + MString() + rotation.y + " " + MString() + rotation.z);
-		MGlobal::displayInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);
+		MGlobal::displayInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);*/
 		return outTrans;
 	}
 	return outTrans;
@@ -454,6 +454,7 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 		{
 
 		}
+
 	}
 	
 }
@@ -712,14 +713,22 @@ void cbNewNode(MObject& node, void* clientData)
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 	}
+	if (node.apiType() == MFn::kLambert)
+	{
+		MGlobal::displayInfo("Material added");
+	}
 }
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 {
 	//MGlobal::displayInfo("BEEP " + MString() + _CBidArray.length() + " CALLBACKS");
 	_msgVector.clear();
-	MGlobal::displayInfo("--- MESSAGE UPDATE ------------------------------");
-	while (!_msgQueue.empty())
+	int msgCount = _msgQueue.size();
+	MGlobal::displayInfo("--- MESSAGE UPDATE (" +MString()+msgCount +" Messages) ------------------------");
+	bool run = true;
+	int msgID = 0;
+	while (!_msgQueue.empty() && run ==true)
 	{
+		MGlobal::displayInfo("\n****** MESSAGE START (ID: "+MString()+msgID+") **********************");
 		switch (_msgQueue.front().msgType)
 		{
 
@@ -741,12 +750,20 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			}
 			else if(_msgQueue.front().nodeType == nTransform)
 			{
-				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Transform)");
+				MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
 				TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
 				if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
 				{
+#if defined(DEBUG) || defined(_DEBUG)
+					MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
+#endif
 					_msgQueue.pop();
-					MGlobal::displayInfo("SUCCEX!!!!!!!!!!!!!!!!!!!");
+					
+				}
+				else
+				{
+					MGlobal::displayInfo("*** Message result(" + MString(_msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+					run = false;
 				}
 					
 				break;
@@ -789,6 +806,8 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			_msgQueue.pop();
 			break;
 		}
+		msgID++;
+		MGlobal::displayInfo("*** MESSAGE STOP *************************");
 		//_msgQueue.pop();
 	}
 	MGlobal::displayInfo("-------------------------------------------------");
@@ -799,8 +818,6 @@ void cbCameraChange(MObject &cameraSetNode, unsigned int multiIndex, MObject &ol
 {
 	MGlobal::displayInfo("CAMERAAAAAAAAAAAAAAA");
 }
-
-
 
 void loadScene()
 {
@@ -835,6 +852,34 @@ void loadScene()
 			mAddNode(dagPath.fullPathName().asChar(), transname.c_str(), nCamera);
 		}
 
+	}
+	filter = MFn::kLambert;
+	MItDependencyNodes itDep(MFn::kLambert);
+	//MItDag dagIt2(MItDag::kDepthFirst, filter, &stat);
+	while(!itDep.isDone())
+	{
+		switch (itDep.item().apiType())
+		{
+		case MFn::kPhong:
+		{
+			MGlobal::displayInfo("Phong phong phong");
+			break;
+		}
+		case MFn::kLambert:
+		{
+			MGlobal::displayInfo("Lambert lambert lambert");
+			break;
+		}
+		case MFn::kBlinn:
+		{
+			MGlobal::displayInfo("Blinn blinn blinn");
+			break;
+		}
+		default:
+			break;
+		}
+		itDep.next();
+	
 	}
 
 

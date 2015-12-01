@@ -2,6 +2,8 @@
 #ifndef FILEMAP_H
 #define FILEMAP_H
 
+
+
 #include <Windows.h>
 #include <ostream>
 #include <iostream>
@@ -44,9 +46,6 @@ struct TransformInfo
 	std::string nodeName;
 	std::string parentName; //om ingen parent sätt till 0 första bokstav fuck off.
 	TransformData transformData;
-	//
-	//std::string parentName;
-	//int childCount;
 };
 struct TransformMessage
 {
@@ -194,7 +193,7 @@ public:
 	void CreateFileMaps();
 	void SetFilemapInfoValues(size_t headPlacement, size_t tailPlacement, size_t nonAccessMemoryPlacement, size_t messageFileMapTotalSize);
 	void GetFilemapInfoValues();
-
+	void PrintFileMapInfo(bool isPost);
 	MessageHeader createHeaderTransform(MessageInfo& msginfo, TransformInfo &tInfo);
 	MessageHeader createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo);
 	MessageHeader createHeaderCamera(MessageInfo& msginfo, CameraInfo& cInfo);
