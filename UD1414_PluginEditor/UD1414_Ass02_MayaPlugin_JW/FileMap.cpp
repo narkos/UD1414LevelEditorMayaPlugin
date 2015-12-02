@@ -273,10 +273,9 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 
 	case 2:
 		PrintFileMapInfo(false);
-		
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 		localHead = 0;
-		memcpy((unsigned char*)mMessageData, &tdata, hdr.bytePadding - sizeof(MessageHeader));
+		memcpy((unsigned char*)mMessageData, &tdata, hdr.byteSize - sizeof(MessageHeader));
 		localHead += hdr.byteSize + hdr.bytePadding;
 
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
