@@ -214,16 +214,23 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 	{
 		if (hdr.byteSize + hdr.bytePadding + localHead + memoryPadding <= mSize)
 		{
+			hdr.msgConfig = 0;
 			MGlobal::displayInfo("*   MSG Config (CAN WRITE NORMALLY)");
 			return 1;
 		}
-		else if (localHead + sizeof(MessageHeader) <= mSize && makeMultiple(hdr.byteSize - sizeof(MessageHeader), 256)+ memoryPadding <=localTail)
+		else if (localHead + sizeof(MessageHeader) <= mSize && makeMultiple(hdr.byteSize, 256)+ memoryPadding <=localTail)
 		{
 			MGlobal::displayInfo("*   MSG Config (CAN WRITE WITH SPLIT)");
 			size_t tempTotal;
-			tempTotal = makeMultiple(hdr.byteSize - sizeof(MessageHeader), 256);
+			hdr.msgConfig = 1;
+			tempTotal = makeMultiple(hdr.byteSize, 256);
 			hdr.bytePadding = tempTotal - hdr.byteSize;
 			return 2;
+		}
+		else if(hdr.byteTotal + memoryPadding <= localTail)
+		{
+
+			return 3;
 		}
 	}
 	else
@@ -254,9 +261,9 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 		
 		localHead +=sizeof(MessageHeader);
-		memcpy((unsigned char*)mMessageData + localHead, &tdata, hdr.byteSize - sizeof(MessageHeader));
+		memcpy((unsigned char*)mMessageData + localHead, &tdata, hdr.byteSize);
 
-		localHead += hdr.byteSize+hdr.bytePadding - sizeof(MessageHeader);
+		localHead += hdr.byteSize+hdr.bytePadding;
 
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
 		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
@@ -275,7 +282,7 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 		PrintFileMapInfo(false);
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 		localHead = 0;
-		memcpy((unsigned char*)mMessageData, &tdata, hdr.byteSize - sizeof(MessageHeader));
+		memcpy((unsigned char*)mMessageData, &tdata, hdr.byteSize);
 		localHead += hdr.byteSize + hdr.bytePadding;
 
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
@@ -284,10 +291,15 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
+		return true;
 		break;
 
 	case 3:
-
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
+		localHead = sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData+sizeof(MessageHeader), &tdata, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
 		break;
 	}
 
@@ -445,7 +457,8 @@ MessageHeader FileMapping::createHeaderTransform(MessageInfo& msginfo, Transform
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
 	hdr.messageType = msginfo.msgType;
-	hdr.byteSize = msgSize;
+	hdr.byteTotal = totalSize;
+	hdr.byteSize = msgSize-sizeof(MessageHeader);
 	hdr.bytePadding = padding;
 
 	return hdr;
