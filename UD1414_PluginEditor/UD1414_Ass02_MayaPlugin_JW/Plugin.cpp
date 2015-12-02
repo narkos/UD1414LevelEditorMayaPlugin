@@ -32,7 +32,6 @@ MeshInfo outMeshData(std::string name)
 	MIntArray		triCount;
 	MIntArray		triVerts;
 	mNode.getTriangles(triCount, triVerts);
-
 	MIntArray		triNorIndices;
 	MIntArray		triUVIndices;
 	
@@ -70,7 +69,6 @@ MeshInfo outMeshData(std::string name)
 				triNorIndices.append(polyIterator.normalIndex(1, &status));
 				triNorIndices.append(polyIterator.normalIndex(2, &status));
 
-				
 				polyIterator.getUVIndex(0, uId0);
 				polyIterator.getUVIndex(1, uId1);
 				polyIterator.getUVIndex(3, uId2);
@@ -84,9 +82,7 @@ MeshInfo outMeshData(std::string name)
 				triUVIndices.append(uId0);
 				triUVIndices.append(uId1);
 				triUVIndices.append(uId2);
-
-			}
-
+				}
 		}
 	}
 
@@ -452,7 +448,11 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 		}
 		else if (type == nLight)
 		{
+			if (_lightVector.size() > 0)
+				for (std::vector<LightInfo>::size_type i = 0; i != _lightVector.size(); i++)
+				{
 
+				}
 		}
 
 	}

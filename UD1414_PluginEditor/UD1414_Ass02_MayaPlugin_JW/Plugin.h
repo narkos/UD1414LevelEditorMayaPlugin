@@ -81,7 +81,8 @@
 	MCallbackIdArray _CBidArray;
 	std::vector<MeshInfo> _meshVector;
 	std::vector<TransformInfo> _transVector;
-	std::vector<CameraInfo> _camVector;	
+	std::vector<CameraInfo> _camVector;
+	std::vector<LightInfo> _lightVector;
 	std::vector<MessageInfo> _msgVector;
 	std::queue<MessageInfo> _msgQueue;
 	void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
