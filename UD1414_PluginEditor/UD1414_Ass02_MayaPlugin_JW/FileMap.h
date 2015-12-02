@@ -87,7 +87,7 @@ struct MeshMessage
 {
 	char nodeName[100];
 	char transformName[100];
-	MeshData *meshData;
+	MeshData meshData;
 };
 struct CameraData
 {
@@ -260,7 +260,7 @@ private:
 
 	size_t memoryPadding;
 	bool headerFit;
-	size_t _headerSize;
+	//size_t _headerSize;
 
 	MessageHeader messageHeader;
 	

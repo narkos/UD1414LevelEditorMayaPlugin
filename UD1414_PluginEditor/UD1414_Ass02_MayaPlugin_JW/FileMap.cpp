@@ -4,7 +4,7 @@
 FileMapping::FileMapping()
 {
 	//mutexInfo.Unlock();
-	_headerSize = sizeof(MessageHeader);
+	//_headerSize = sizeof(MessageHeader);
 	headerFit;
 }
 
@@ -159,6 +159,21 @@ bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 }
 bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
 {
+	MessageHeader mHeader = createHeaderMesh(msg, minfo);
+	int cfg = findWriteConfig(mHeader);
+	if (cfg != 0)
+	{
+		if (writeMesh(mHeader, createMessageMesh(msg, minfo), cfg) == true)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		return false;
+	}
+	return false;
+
 		/*MGlobal::displayInfo("FileMap Msg: Mesh Message found");
 		MessageHeader mHeader = createHeaderMesh(msg, minfo);
 		int cfg = findWriteConfig(mHeader);
@@ -206,9 +221,9 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 {
 	while (mutexInfo.Lock(1000) == false) Sleep(10);
 	memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
-
 	localHead = fileMapInfo.head_ByteOffset;
 	localTail = fileMapInfo.tail_ByteOffset;
+	mutexInfo.Unlock();
 
 	if (localHead >= localTail)
 	{
@@ -229,21 +244,22 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 		}
 		else if(hdr.byteTotal + memoryPadding <= localTail)
 		{
-
+			hdr.msgConfig = 2;
 			return 3;
 		}
 	}
 	else
 	{
-		if (hdr.byteSize + hdr.bytePadding + localHead + memoryPadding <= localTail)
+		if (hdr.byteTotal + localHead + memoryPadding <= localTail)
 		{
+			hdr.msgConfig = 0;
 			MGlobal::displayInfo("*   MSG Config (CAN WRITE NORMALLY)");
 			return 1;
 		}
 	}
 	MGlobal::displayInfo("*   MSG Config (CANNOT WRITE)");
 	MGlobal::displayInfo("*   HEAD POSITION: " + MString() + localHead + " TAIL POSISH: " +MString() + localTail);
-	mutexInfo.Unlock();
+	
 	return 0;
 
 }
@@ -310,25 +326,57 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 {
 	int cfg = config;
+	/*MGlobal::displayInfo("TRANSFORM OUTER DATA: " + MString(tdata.nodeName));
+	MGlobal::displayInfo("Pos: " + MString() + tdata.trData.translation[0] + " " + MString() + tdata.trData.translation[1] + " " + MString() + tdata.trData.translation[2]);
+	MGlobal::displayInfo("Rot: " + MString() + tdata.trData.rotation[0] + " " + MString() + tdata.trData.rotation[1] + " " + MString() + tdata.trData.rotation[2]);
+	MGlobal::displayInfo("Sca: " + MString() + tdata.trData.scale[0] + " " + MString() + tdata.trData.scale[1] + " " + MString() + tdata.trData.scale[2]);*/
 	switch (cfg)
 	{
-		case 1:
-			memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
-			localHead += sizeof(MessageHeader);
-			memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize - sizeof(MessageHeader));
-			localHead += hdr.byteSize + hdr.bytePadding - sizeof(MessageHeader);
-			fileMapInfo.head_ByteOffset = localHead;
-			memcpy(mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+	case 1:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 
-			break;
+		localHead += sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize);
 
-		case 2:
+		localHead += hdr.byteSize + hdr.bytePadding;
 
-			break;
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		if (localHead == mSize)
+		{
+			localHead = 0;
+		}
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
+		break;
 
-		case 3:
+	case 2:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		localHead = 0;
+		memcpy((unsigned char*)mMessageData, &mdata, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
 
-			break;
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
+		break;
+
+	case 3:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
+		localHead = sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + sizeof(MessageHeader), &mdata, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
+		break;
 	}
 
 
@@ -409,23 +457,24 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	size_t msgSize; 
 	size_t padding;
 	size_t infoSize;
+
 	infoSize = 200 * sizeof(char);
 
 	MeshInfo mInfo = minfo;
-
-	msgSize =		mInfo.meshData.vertCount * sizeof(float);
-	msgSize +=		mInfo.meshData.normalCount * sizeof(float);
+	msgSize =		5 * sizeof(int);
+	msgSize +=		3 * mInfo.meshData.vertCount * sizeof(float);
+	msgSize +=		3 * mInfo.meshData.normalCount * sizeof(float);
 	msgSize +=		2 * (mInfo.meshData.UVCount *sizeof(float));
 	msgSize +=		3 * (mInfo.meshData.indCount * sizeof(int));
 	msgSize +=		mInfo.meshData.triCount * sizeof(int);
 
 	MGlobal::displayInfo(":: Info byte size: " + MString()+infoSize);
 	MGlobal::displayInfo(":: Mesh data byte size: " + MString() + msgSize);
-	MGlobal::displayInfo(":: Header byte size: " + MString() + _headerSize);
+	MGlobal::displayInfo(":: Header byte size: " + MString() + sizeof(MessageHeader));
 	msgSize += infoSize;
-	msgSize += _headerSize;
+	//msgSize += _headerSize;
 	MGlobal::displayInfo(":: MESSAGE BYTE SIZE: " + MString() + msgSize);
-	totalSize = makeMultiple(msgSize, 256);
+	totalSize = makeMultiple(msgSize+sizeof(MessageHeader), 256);
 	padding = totalSize - msgSize;
 	MGlobal::displayInfo(":: Padding byte size: " + MString() + padding);
 	MGlobal::displayInfo(":: TOTAL BYTE SIZE: " + MString() + totalSize);
@@ -434,6 +483,7 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
 	hdr.messageType = msginfo.msgType;
+	hdr.byteTotal = totalSize;
 	hdr.byteSize = msgSize;
 	hdr.bytePadding = padding;
 
@@ -549,8 +599,8 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 	{
 		MGlobal::displayError("Transform name too long!");
 	}
-	msg.meshData = &mInfo.meshData;
-	MGlobal::displayInfo(MString() + msg.meshData->indCount);
+	msg.meshData = mInfo.meshData;
+	MGlobal::displayInfo(MString() + msg.meshData.indCount);
 	return msg;
 }
 TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, TransformInfo &tInfo)
