@@ -217,9 +217,12 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 			MGlobal::displayInfo("*   MSG Config (CAN WRITE NORMALLY)");
 			return 1;
 		}
-		else if (localHead + sizeof(MessageHeader) <= mSize && hdr.byteSize + hdr.bytePadding + memoryPadding <=localTail)
+		else if (localHead + sizeof(MessageHeader) <= mSize && makeMultiple(hdr.byteSize - sizeof(MessageHeader), 256)+ memoryPadding <=localTail)
 		{
 			MGlobal::displayInfo("*   MSG Config (CAN WRITE WITH SPLIT)");
+			size_t tempTotal;
+			tempTotal = makeMultiple(hdr.byteSize - sizeof(MessageHeader), 256);
+			hdr.bytePadding = tempTotal - hdr.byteSize;
 			return 2;
 		}
 	}
@@ -257,18 +260,31 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
 		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		if (localHead == mSize)
+		{
+			localHead = 0;
+		}
 		fileMapInfo.head_ByteOffset = localHead;
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
-		//MGlobal::displayInfo("* !!!FILEMAP_ HEAD POSITION: " + MString() + fileMapInfo.head_ByteOffset);
-		//MGlobal::displayInfo("* !!!FILEMAP_ SIZE " + MString() + fileMapInfo.messageFilemap_Size);
-		//MGlobal::displayInfo("* !!!FILEMAP_ MESSAGE INFO: "+MString()+hdr.nodeType+" " +MString()+hdr.messageType+" "+hdr.byteSize+" " + MString() + hdr.bytePadding +" "+MString()+sizeof(size_t));
-
 		return true;
+		break;
 
 	case 2:
+		PrintFileMapInfo(false);
+		
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		localHead = 0;
+		memcpy((unsigned char*)mMessageData, &tdata, hdr.bytePadding - sizeof(MessageHeader));
+		localHead += hdr.byteSize + hdr.bytePadding;
 
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
 		break;
 
 	case 3:
