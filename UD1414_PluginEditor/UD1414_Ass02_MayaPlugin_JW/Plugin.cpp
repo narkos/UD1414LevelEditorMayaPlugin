@@ -341,14 +341,14 @@ std::string getParentName(MPlug& plug)
 void mAddMessage(std::string name, int msgType, int nodeType)
 {
 	bool exists = false;
-	if (_msgVector.size() > 0)
+	if (msgVector.size() > 0)
 	{
-		for(std::vector<MessageInfo>::size_type i = 0; i != _msgVector.size(); i++)
+		for(std::vector<MessageInfo>::size_type i = 0; i != msgVector.size(); i++)
 			{
-				std::string tmp = _msgVector.at(i).nodeName;
+				std::string tmp = msgVector.at(i).nodeName;
 				if (strcmp(name.c_str(), tmp.c_str()) == 0)
 				{
-					if (_msgVector.at(i).msgType == msgType)
+					if (msgVector.at(i).msgType == msgType)
 					{
 						exists = true;
 						MGlobal::displayWarning("Message" + MString(name.c_str()) + "already exists!");
@@ -360,8 +360,8 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 	if (!exists)
 	{
 		MessageInfo tMsg{ name, nodeType,msgType };
-		_msgVector.push_back(tMsg);
-		_msgQueue.push(tMsg);
+		msgVector.push_back(tMsg);
+		msgQueue.push(tMsg);
 	}
 }
 
@@ -373,11 +373,11 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 		//std::string nodename = name.asChar();
 		if (type == nMesh)
 		{
-			if (_meshVector.size() > 0)
+			if (meshVector.size() > 0)
 			{
-				for (std::vector<MeshInfo>::size_type i = 0; i != _meshVector.size(); i++)
+				for (std::vector<MeshInfo>::size_type i = 0; i != meshVector.size(); i++)
 				{
-					std::string tmp = _meshVector.at(i).nodeName;
+					std::string tmp = meshVector.at(i).nodeName;
 					if (strcmp(name.c_str(), tmp.c_str()) == 0)
 					{
 						exists = true;
@@ -388,18 +388,18 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 			if (!exists)
 			{
 				MeshInfo mesh{ name, parentName };
-				_meshVector.push_back(mesh);
+				meshVector.push_back(mesh);
 				mAddMessage(name, msgAdded, nMesh);
 				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()) + "with " + MString() + vertCount + " vertices.");
 			}
 		}
 		else if (type == nTransform)
 		{
-			if (_transVector.size() > 0)
+			if (transVector.size() > 0)
 			{
-				for (std::vector<TransformInfo>::size_type i = 0; i != _transVector.size(); i++)
+				for (std::vector<TransformInfo>::size_type i = 0; i != transVector.size(); i++)
 				{
-					std::string tmp = _transVector.at(i).nodeName;
+					std::string tmp = transVector.at(i).nodeName;
 					if (strcmp(name.c_str(), tmp.c_str()) == 0)
 					{
 						exists = true;
@@ -411,17 +411,17 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 			{
 				mAddMessage(name, msgAdded, nTransform);
 				TransformInfo trans{ name};
-				_transVector.push_back(trans);
+				transVector.push_back(trans);
 				MGlobal::displayInfo("Added transform: " + MString(name.c_str()));
 			}
 		}
 		else if (type == nCamera)
 		{
-			if (_camVector.size() > 0)
+			if (camVector.size() > 0)
 			{
-				for (std::vector<CameraInfo>::size_type i = 0; i != _camVector.size(); i++)
+				for (std::vector<CameraInfo>::size_type i = 0; i != camVector.size(); i++)
 				{
-					std::string tmp = _camVector.at(i).nodeName;
+					std::string tmp = camVector.at(i).nodeName;
 					if (strcmp(name.c_str(), tmp.c_str()) == 0)
 					{
 						exists = true;
@@ -442,7 +442,7 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 					{
 						MFnTransform trans(dagNode.parent(0));
 						CameraInfo cam {name, trans.fullPathName().asChar()};
-						_camVector.push_back(cam);
+						camVector.push_back(cam);
 						MGlobal::displayInfo("Added camera: " + MString(name.c_str()));
 						mAddMessage(name, msgAdded, nCamera);
 					}
@@ -453,8 +453,8 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 		}
 		else if (type == nLight)
 		{
-			if (_lightVector.size() > 0)
-				for (std::vector<LightInfo>::size_type i = 0; i != _lightVector.size(); i++)
+			if (lightVector.size() > 0)
+				for (std::vector<LightInfo>::size_type i = 0; i != lightVector.size(); i++)
 				{
 
 				}
@@ -516,6 +516,7 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 
 	MString lightName(light.fullPathName());
 	outLightData(lightName.asChar());
+	//MGlobal::displayInfo("WOW CREATED LIGHT" + outLightData);
 	/*else
 	{ }*/
 }
@@ -555,13 +556,13 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 		MFnMesh mesh(node);
 		std::string newNameStr = mesh.fullPathName().asChar();
 		//std::string oldNameStr = str.asChar();
-		for (std::vector<MeshInfo>::size_type i = 0; i != _meshVector.size(); i++)
+		for (std::vector<MeshInfo>::size_type i = 0; i != meshVector.size(); i++)
 		{
-			std::string oldTemp = _meshVector.at(i).nodeName;
+			std::string oldTemp = meshVector.at(i).nodeName;
 			if (strcmp(newNameStr.c_str(), oldTemp.c_str()))
 			{
-				_meshVector.at(i).nodeName = mesh.fullPathName().asChar();
-				mAddMessage(_meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
+				meshVector.at(i).nodeName = mesh.fullPathName().asChar();
+				mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
 				MGlobal::displayInfo("Mesh name: " + str+ " changed to: " + (MString)mesh.name());
 				break;
 			}
@@ -603,15 +604,15 @@ void cbPreRemoveNode(MObject& node, void* clientData)
 	{
 		MFnMesh mesh(node);
 		
-		for (int i = 0; i < _meshVector.size(); i++)
+		for (int i = 0; i < meshVector.size(); i++)
 		{
-			std::string tmp = _meshVector.at(i).nodeName;
+			std::string tmp = meshVector.at(i).nodeName;
 			std::string ntmp = mesh.fullPathName().asChar();
 			//MGlobal::displayInfo(MString(ntmp.c_str()) + " ___ " + MString(tmp.c_str()));
 			if (tmp.find(ntmp) != std::string::npos)
 			{
 				//MGlobal::displayInfo(mesh.fullPathName() + " Node deleted MESH");
-				_meshVector.pop_back();
+				meshVector.pop_back();
 				mAddMessage(mesh.fullPathName().asChar(), msgDeleted, nMesh);
 			}
 		}
@@ -619,15 +620,15 @@ void cbPreRemoveNode(MObject& node, void* clientData)
 	if (node.hasFn(MFn::kTransform))
 	{
 		MFnTransform trans(node);
-		for (int i = 0; i < _transVector.size(); i++)
+		for (int i = 0; i < transVector.size(); i++)
 		{
-			std::string tmp = _transVector.at(i).nodeName;
+			std::string tmp = transVector.at(i).nodeName;
 			std::string ntmp = trans.fullPathName().asChar();
 			//MGlobal::displayInfo(MString(ntmp.c_str()) + " ___ " + MString(tmp.c_str()));
 			if (tmp.find(ntmp) != std::string::npos)
 			{
 				//MGlobal::displayInfo(trans.fullPathName() + " Node deleted TRANSFORM");
-				_transVector.pop_back();
+				transVector.pop_back();
 				mAddMessage(trans.fullPathName().asChar(), msgDeleted, nTransform);
 			}
 		}
@@ -726,22 +727,22 @@ void cbNewNode(MObject& node, void* clientData)
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 {
 	//MGlobal::displayInfo("BEEP " + MString() + _CBidArray.length() + " CALLBACKS");
-	_msgVector.clear();
-	int msgCount = _msgQueue.size();
+	msgVector.clear();
+	int msgCount = msgQueue.size();
 	MGlobal::displayInfo("--- MESSAGE UPDATE (" +MString()+msgCount +" Messages) ------------------------");
 	bool run = true;
 	int msgID = 0;
-	while (!_msgQueue.empty() && run == true)
+	while (!msgQueue.empty() && run == true)
 	{
 		
 		MGlobal::displayInfo("\n****** MESSAGE START (ID: " + MString() + msgID + ") **********************");
-		switch (_msgQueue.front().nodeType)
+		switch (msgQueue.front().nodeType)
 		{
 		case(NodeType::nMesh) :
 		{
-			MeshInfo outMesh = outMeshData(_msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) ("+msgTypeVector[_msgQueue.front().msgType].c_str()+" Mesh)");
-			if (fileMap.tryWriteMesh(_msgQueue.front(), outMesh) == true)
+			MeshInfo outMesh = outMeshData(msgQueue.front().nodeName);
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) ("+msgTypeVector[msgQueue.front().msgType].c_str()+" Mesh)");
+			if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
 			{
 				
 				delete[] outMesh.meshData.uv;
@@ -751,13 +752,13 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 				delete[] outMesh.meshData.triPerFace;
 				//delete[] outMesh.vertices;
 				//MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + fileMap.test[4]);
-				MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
+				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
 				delete[] fileMap.test;
-				_msgQueue.pop();
+				msgQueue.pop();
 			}
 			else
 			{
-				MGlobal::displayInfo("*** Message result(" + MString(_msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
 				run = false;
 			}
 			//MGlobal::displayInfo("-------------------------------------------------");
@@ -765,19 +766,19 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		}
 		case(NodeType::nTransform) :
 		{
-			TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Transform)");
+			TransformInfo outTrans = outTransformData(msgQueue.front().nodeName);
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Transform)");
 
-			if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
+			if (fileMap.tryWriteTransform(msgQueue.front(), outTrans) == true)
 				{
 				//#if defined(DEBUG) || defined(_DEBUG)
-					MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
+					MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
 				//#endif
-					_msgQueue.pop();
+					msgQueue.pop();
 				}
 				else
 				{
-					MGlobal::displayInfo("*** Message result(" + MString(_msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+					MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
 					run = false;
 				}
 								
@@ -787,38 +788,38 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		}
 		case(NodeType::nCamera) :
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Camera)");
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Camera)");
 		
 
-			_msgQueue.pop();
+			msgQueue.pop();
 			break;
 		}
 		case(NodeType::nLight) :
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Light)");
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Light)");
 
-			_msgQueue.pop();
+			msgQueue.pop();
 			break;
 		}
 		case(NodeType::nMaterial) :
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Material)");
-			_msgQueue.pop();
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Material)");
+			msgQueue.pop();
 			break;
 		}
 		}
 		msgID++;
 		MGlobal::displayInfo("*** MESSAGE STOP *************************");
 	}
-								  //	switch (_msgQueue.front().msgType)
+								  //	switch (msgQueue.front().msgType)
 								  //	{
 
 								  //	case (MessageType::msgAdded) :
-								  //		if (_msgQueue.front().nodeType == nMesh)
+								  //		if (msgQueue.front().nodeType == nMesh)
 								  //		{
-								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Mesh)");
-								  //			MeshInfo  outMesh = outMeshData(_msgQueue.front().nodeName);
-								  //			if (fileMap.tryWriteMesh(_msgQueue.front(), outMesh) == true)
+								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (New Mesh)");
+								  //			MeshInfo  outMesh = outMeshData(msgQueue.front().nodeName);
+								  //			if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
 								  //			{
 								  //				delete[] outMesh.meshData.uv;
 								  //				delete[] outMesh.meshData.triIndices;
@@ -826,70 +827,70 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 								  //				delete[] outMesh.meshData.UVIndices;
 								  //				delete[] outMesh.meshData.triPerFace;
 								  //				//delete[] outMesh.vertices;
-								  //				_msgQueue.pop();
+								  //				msgQueue.pop();
 								  //			}
-								  //			//fileMap.createHeaderMesh(_msgQueue.front(),outMesh);
+								  //			//fileMap.createHeaderMesh(msgQueue.front(),outMesh);
 								  //			break;
 								  //		}
-								  //		else if(_msgQueue.front().nodeType == nTransform)
+								  //		else if(msgQueue.front().nodeType == nTransform)
 								  //		{
-								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
-								  //			TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
-								  //			if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
+								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
+								  //			TransformInfo outTrans = outTransformData(msgQueue.front().nodeName);
+								  //			if (fileMap.tryWriteTransform(msgQueue.front(), outTrans) == true)
 								  //			{
 								  //			#if defined(DEBUG) || defined(_DEBUG)
-								  //				MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
+								  //				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
 								  //			#endif
-								  //				_msgQueue.pop();
+								  //				msgQueue.pop();
 								  //			}
 								  //			else
 								  //			{
-								  //				MGlobal::displayInfo("*** Message result(" + MString(_msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+								  //				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
 								  //				run = false;
 								  //			}
 								  //				
 								  //			break;
 								  //		}
-								  //		else if (_msgQueue.front().nodeType == nCamera)
+								  //		else if (msgQueue.front().nodeType == nCamera)
 								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Camera)");
-								  //			_msgQueue.pop();
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (New Camera)");
+								  //			msgQueue.pop();
 								  //		}
 								  //		
 								  //		
 								  //		break;
 								  //	case (MessageType::msgEdited) :
-								  //		if (_msgQueue.front().nodeType == nMesh)
+								  //		if (msgQueue.front().nodeType == nMesh)
 								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Edited)");
-								  //			_msgQueue.pop();
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Mesh Edited)");
+								  //			msgQueue.pop();
 								  //		}
-								  //		else if (_msgQueue.front().nodeType == nTransform)
+								  //		else if (msgQueue.front().nodeType == nTransform)
 								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Edited)");
-								  //			outTransformData(_msgQueue.front().nodeName);
-								  //			_msgQueue.pop();
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Transform Edited)");
+								  //			outTransformData(msgQueue.front().nodeName);
+								  //			msgQueue.pop();
 								  //		}
 								  //		break;
 								  //	case (MessageType::msgDeleted) :
-								  //		if (_msgQueue.front().nodeType == nMesh)
+								  //		if (msgQueue.front().nodeType == nMesh)
 								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Deleted)");
-								  //			_msgQueue.pop();
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Mesh Deleted)");
+								  //			msgQueue.pop();
 								  //		}
-								  //		else if (_msgQueue.front().nodeType == nTransform)
+								  //		else if (msgQueue.front().nodeType == nTransform)
 								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Deleted)");
-								  //			_msgQueue.pop();
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Transform Deleted)");
+								  //			msgQueue.pop();
 								  //		}
 								  //		break;
 								  //	case (MessageType::msgRenamed) :
-								  //		_msgQueue.pop();
+								  //		msgQueue.pop();
 								  //		break;
 								  //	}
 								  //	msgID++;
 								  //	MGlobal::displayInfo("*** MESSAGE STOP *************************");
-								  //	//_msgQueue.pop();
+								  //	//msgQueue.pop();
 								  //}
 }
 
