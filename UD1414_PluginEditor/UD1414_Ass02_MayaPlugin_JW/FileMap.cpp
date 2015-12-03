@@ -328,9 +328,23 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		localHead += sizeof(MessageHeader);
 		
 		memcpy((unsigned char*)mMessageData + localHead, &mdata, sizeof(int)*5+200);
-		memcpy((unsigned char*)mMessageData + localHead+(sizeof(int)*5+200), mdata.meshData.vertices, sizeof(float)*3*mdata.meshData.vertCount);
+		localHead += sizeof(int) * 5 + 200;
+		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.vertices, sizeof(float)*3*mdata.meshData.vertCount);
 		/*float* test;*/
-		test = new float[mdata.meshData.vertCount * 3];
+		localHead += sizeof(float) * 3 * mdata.meshData.vertCount;
+		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
+		localHead += sizeof(float) * 3 * mdata.meshData.normalCount;
+		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.uv, sizeof(float) * 2 * mdata.meshData.UVCount);
+		localHead += sizeof(float) * 2 * mdata.meshData.UVCount;
+		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.triIndices, sizeof(int) * mdata.meshData.indCount);
+		localHead += sizeof(int) * mdata.meshData.indCount;
+		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.norIndices, sizeof(int) * mdata.meshData.indCount);
+		localHead += sizeof(int) * mdata.meshData.indCount;
+		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.UVIndices, sizeof(int) * mdata.meshData.indCount);
+		localHead += sizeof(int) * mdata.meshData.indCount;
+		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
+		localHead += sizeof(int) * mdata.meshData.triCount;
+		//test = new float[mdata.meshData.vertCount * 3];
 		//localHead += sizeof(int) * 5 + 200;
 		//memcpy(test, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
 		//memcpy((unsigned char*)mMessageData+localHead+(sizeof(int)*5+200), test, sizeof(float) * 3 * mdata.meshData.vertCount);

@@ -750,7 +750,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 				delete[] outMesh.meshData.UVIndices;
 				delete[] outMesh.meshData.triPerFace;
 				//delete[] outMesh.vertices;
-				MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + fileMap.test[4]);
+				//MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + fileMap.test[4]);
 				MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
 				delete[] fileMap.test;
 				_msgQueue.pop();
