@@ -324,26 +324,30 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 	case 1:
 		PrintFileMapInfo(false);
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		size_t tempHead;
+		//tempHead = 0;
+		tempHead = sizeof(MessageHeader);
 
-		localHead += sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int)*5+200);
+		tempHead = sizeof(int) * 5;
+		tempHead += 200;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.vertices, sizeof(float)*3*mdata.meshData.vertCount);
+		tempHead += sizeof(float) * 3 * mdata.meshData.vertCount;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
+		tempHead += sizeof(float) * 3 * mdata.meshData.normalCount;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.uv, sizeof(float) * 2 * mdata.meshData.UVCount);
+		tempHead += sizeof(float) * 2 * mdata.meshData.UVCount;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.triIndices, sizeof(int) * mdata.meshData.indCount);
+		tempHead += sizeof(int) * mdata.meshData.indCount;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.norIndices, sizeof(int) * mdata.meshData.indCount);
+		tempHead += sizeof(int) * mdata.meshData.indCount;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.UVIndices, sizeof(int) * mdata.meshData.indCount);
+		tempHead += sizeof(int) * mdata.meshData.indCount;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
+		tempHead += sizeof(int) * mdata.meshData.triCount;
 		
-		memcpy((unsigned char*)mMessageData + localHead, &mdata, sizeof(int)*5+200);
-		localHead += sizeof(int) * 5 + 200;
-		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.vertices, sizeof(float)*3*mdata.meshData.vertCount);
-		/*float* test;*/
-		localHead += sizeof(float) * 3 * mdata.meshData.vertCount;
-		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
-		localHead += sizeof(float) * 3 * mdata.meshData.normalCount;
-		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.uv, sizeof(float) * 2 * mdata.meshData.UVCount);
-		localHead += sizeof(float) * 2 * mdata.meshData.UVCount;
-		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.triIndices, sizeof(int) * mdata.meshData.indCount);
-		localHead += sizeof(int) * mdata.meshData.indCount;
-		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.norIndices, sizeof(int) * mdata.meshData.indCount);
-		localHead += sizeof(int) * mdata.meshData.indCount;
-		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.UVIndices, sizeof(int) * mdata.meshData.indCount);
-		localHead += sizeof(int) * mdata.meshData.indCount;
-		memcpy((unsigned char*)mMessageData + localHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
-		localHead += sizeof(int) * mdata.meshData.triCount;
+		MGlobal::displayInfo("*****" + MString() + (tempHead+hdr.bytePadding) + " " + MString() + hdr.byteTotal);
+		tempHead += hdr.bytePadding;
 		//test = new float[mdata.meshData.vertCount * 3];
 		//localHead += sizeof(int) * 5 + 200;
 		//memcpy(test, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
@@ -351,9 +355,9 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		/*MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + test[4]);*/
 
 		//memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize);
-
-		localHead += hdr.byteSize + hdr.bytePadding;
-
+/*
+		localHead += hdr.byteSize + hdr.bytePadding;*/
+		localHead += tempHead;
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
 		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
 		if (localHead == mSize)
@@ -515,7 +519,7 @@ MessageHeader FileMapping::createHeaderTransform(MessageInfo& msginfo, Transform
 	
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
-	 MGlobal::displayInfo("*   Transform Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(TransformMessage) + " " + sizeof(MessageHeader)
+	 MGlobal::displayInfo("*   Transform Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString()+(msgSize-sizeof(MessageHeader))
 		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
