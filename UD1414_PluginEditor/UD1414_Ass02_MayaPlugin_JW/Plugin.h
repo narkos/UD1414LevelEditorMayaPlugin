@@ -72,7 +72,7 @@
 
 
 
-	
+std::vector<std::string> msgTypeVector;
 
 	FileMapping fileMap;
 

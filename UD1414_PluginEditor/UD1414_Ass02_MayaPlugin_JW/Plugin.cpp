@@ -740,6 +740,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		case(NodeType::nMesh) :
 		{
 			MeshInfo outMesh = outMeshData(_msgQueue.front().nodeName);
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) ("+msgTypeVector[_msgQueue.front().msgType].c_str()+" Mesh)");
 			if (fileMap.tryWriteMesh(_msgQueue.front(), outMesh) == true)
 			{
 				
@@ -751,6 +752,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 				//delete[] outMesh.vertices;
 				MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + fileMap.test[4]);
 				MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
+				delete[] fileMap.test;
 				_msgQueue.pop();
 			}
 			else
@@ -764,7 +766,8 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		case(NodeType::nTransform) :
 		{
 			TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Transform)");
+
 			if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
 				{
 				//#if defined(DEBUG) || defined(_DEBUG)
@@ -779,24 +782,27 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 				}
 								
 				break;
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Mesh)");
+
 			break;
 		}
 		case(NodeType::nCamera) :
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Camera)");
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Camera)");
+		
+
 			_msgQueue.pop();
 			break;
 		}
 		case(NodeType::nLight) :
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Light)");
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Light)");
+
 			_msgQueue.pop();
 			break;
 		}
 		case(NodeType::nMaterial) :
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Material)");
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[_msgQueue.front().msgType].c_str() + " Material)");
 			_msgQueue.pop();
 			break;
 		}
@@ -984,6 +990,13 @@ EXPORT MStatus initializePlugin(MObject obj)
 	MGlobal::displayInfo("Level Editor plugin loaded.");
 	loadScene();
 	debug = true;
+
+	msgTypeVector.push_back("woah");
+	msgTypeVector.push_back("Added");
+	msgTypeVector.push_back("Edited");
+	msgTypeVector.push_back("Deleted");
+	msgTypeVector.push_back("Renamed");
+
 
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
