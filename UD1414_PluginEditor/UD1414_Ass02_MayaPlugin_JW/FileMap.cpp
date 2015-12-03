@@ -331,9 +331,9 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		//memcpy((unsigned char*)mMessageData + localHead+(sizeof(int)*5), mdata.meshData.vertices, sizeof(float)*3*mdata.meshData.vertCount);
 		/*float* test;*/
 		test = new float[mdata.meshData.vertCount * 3];
-
+		//localHead += sizeof(int) * 5 + 200;
 		memcpy(test, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
-		memcpy(mMessageData, test, sizeof(float) * 3 * mdata.meshData.vertCount);
+		memcpy(&mMessageData+localHead+(sizeof(int)*5+200), test, sizeof(float) * 3 * mdata.meshData.vertCount);
 		/*MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + test[4]);*/
 
 		//memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize);
