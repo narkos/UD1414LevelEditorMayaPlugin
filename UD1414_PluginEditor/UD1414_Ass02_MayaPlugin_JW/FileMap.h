@@ -226,6 +226,7 @@ public:
 
 	std::string GetLastErrorAsString();
 
+	float* test;
 
 
 

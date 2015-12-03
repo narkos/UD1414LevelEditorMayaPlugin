@@ -323,7 +323,7 @@ LightInfo outLightData(std::string name)
 
 MaterialInfo outMaterialData(std::string name)
 {
-
+	return MaterialInfo();
 }
 
 std::string getParentName(MPlug& plug)
@@ -742,12 +742,14 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			MeshInfo outMesh = outMeshData(_msgQueue.front().nodeName);
 			if (fileMap.tryWriteMesh(_msgQueue.front(), outMesh) == true)
 			{
+				
 				delete[] outMesh.meshData.uv;
 				delete[] outMesh.meshData.triIndices;
 				delete[] outMesh.meshData.norIndices;
 				delete[] outMesh.meshData.UVIndices;
 				delete[] outMesh.meshData.triPerFace;
 				//delete[] outMesh.vertices;
+				MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + fileMap.test[4]);
 				MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
 				_msgQueue.pop();
 			}
