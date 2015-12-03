@@ -321,6 +321,11 @@ LightInfo outLightData(std::string name)
 	return outLight;
 }
 
+MaterialInfo outMaterialData(std::string name)
+{
+
+}
+
 std::string getParentName(MPlug& plug)
 {
 	MPlug p = plug;
@@ -726,92 +731,158 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 	MGlobal::displayInfo("--- MESSAGE UPDATE (" +MString()+msgCount +" Messages) ------------------------");
 	bool run = true;
 	int msgID = 0;
-	while (!_msgQueue.empty() && run ==true)
+	while (!_msgQueue.empty() && run == true)
 	{
-		MGlobal::displayInfo("\n****** MESSAGE START (ID: "+MString()+msgID+") **********************");
-		switch (_msgQueue.front().msgType)
+		
+		MGlobal::displayInfo("\n****** MESSAGE START (ID: " + MString() + msgID + ") **********************");
+		switch (_msgQueue.front().nodeType)
 		{
-
-		case (MessageType::msgAdded) :
-			if (_msgQueue.front().nodeType == nMesh)
+		case(NodeType::nMesh) :
+		{
+			MeshInfo outMesh = outMeshData(_msgQueue.front().nodeName);
+			if (fileMap.tryWriteMesh(_msgQueue.front(), outMesh) == true)
 			{
-				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Mesh)");
-				MeshInfo  outMesh = outMeshData(_msgQueue.front().nodeName);
-				fileMap.tryWriteMesh(_msgQueue.front(), outMesh);
-				//fileMap.createHeaderMesh(_msgQueue.front(),outMesh);
 				delete[] outMesh.meshData.uv;
 				delete[] outMesh.meshData.triIndices;
 				delete[] outMesh.meshData.norIndices;
 				delete[] outMesh.meshData.UVIndices;
 				delete[] outMesh.meshData.triPerFace;
 				//delete[] outMesh.vertices;
+				MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
 				_msgQueue.pop();
-				break;
 			}
-			else if(_msgQueue.front().nodeType == nTransform)
+			else
 			{
-				MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
-				TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
-				if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
+				MGlobal::displayInfo("*** Message result(" + MString(_msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+				run = false;
+			}
+			//MGlobal::displayInfo("-------------------------------------------------");
+			break;
+		}
+		case(NodeType::nTransform) :
+		{
+			TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
+			if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
 				{
-#if defined(DEBUG) || defined(_DEBUG)
+				//#if defined(DEBUG) || defined(_DEBUG)
 					MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
-#endif
+				//#endif
 					_msgQueue.pop();
-					
 				}
 				else
 				{
 					MGlobal::displayInfo("*** Message result(" + MString(_msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
 					run = false;
 				}
-					
+								
 				break;
-			}
-			else if (_msgQueue.front().nodeType == nCamera)
-			{
-				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Camera)");
-				_msgQueue.pop();
-			}
-			
-			
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Mesh)");
 			break;
-
-		case (MessageType::msgEdited) :
-			if (_msgQueue.front().nodeType == nMesh)
-			{
-				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Edited)");
-				_msgQueue.pop();
-			}
-			else if (_msgQueue.front().nodeType == nTransform)
-			{
-				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Edited)");
-				outTransformData(_msgQueue.front().nodeName);
-				_msgQueue.pop();
-			}
-			break;
-		case (MessageType::msgDeleted) :
-			if (_msgQueue.front().nodeType == nMesh)
-			{
-				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Deleted)");
-				_msgQueue.pop();
-			}
-			else if (_msgQueue.front().nodeType == nTransform)
-			{
-				MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Deleted)");
-				_msgQueue.pop();
-			}
-			break;
-		case (MessageType::msgRenamed) :
+		}
+		case(NodeType::nCamera) :
+		{
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Camera)");
 			_msgQueue.pop();
 			break;
 		}
+		case(NodeType::nLight) :
+		{
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Light)");
+			_msgQueue.pop();
+			break;
+		}
+		case(NodeType::nMaterial) :
+		{
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Material)");
+			_msgQueue.pop();
+			break;
+		}
+		}
 		msgID++;
 		MGlobal::displayInfo("*** MESSAGE STOP *************************");
-		//_msgQueue.pop();
 	}
-	MGlobal::displayInfo("-------------------------------------------------");
+								  //	switch (_msgQueue.front().msgType)
+								  //	{
 
+								  //	case (MessageType::msgAdded) :
+								  //		if (_msgQueue.front().nodeType == nMesh)
+								  //		{
+								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Mesh)");
+								  //			MeshInfo  outMesh = outMeshData(_msgQueue.front().nodeName);
+								  //			if (fileMap.tryWriteMesh(_msgQueue.front(), outMesh) == true)
+								  //			{
+								  //				delete[] outMesh.meshData.uv;
+								  //				delete[] outMesh.meshData.triIndices;
+								  //				delete[] outMesh.meshData.norIndices;
+								  //				delete[] outMesh.meshData.UVIndices;
+								  //				delete[] outMesh.meshData.triPerFace;
+								  //				//delete[] outMesh.vertices;
+								  //				_msgQueue.pop();
+								  //			}
+								  //			//fileMap.createHeaderMesh(_msgQueue.front(),outMesh);
+								  //			break;
+								  //		}
+								  //		else if(_msgQueue.front().nodeType == nTransform)
+								  //		{
+								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(_msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
+								  //			TransformInfo outTrans = outTransformData(_msgQueue.front().nodeName);
+								  //			if (fileMap.tryWriteTransform(_msgQueue.front(), outTrans) == true)
+								  //			{
+								  //			#if defined(DEBUG) || defined(_DEBUG)
+								  //				MGlobal::displayInfo("*** MESSAGE Result( " + MString(_msgQueue.front().nodeName.c_str()) + " ): Success");
+								  //			#endif
+								  //				_msgQueue.pop();
+								  //			}
+								  //			else
+								  //			{
+								  //				MGlobal::displayInfo("*** Message result(" + MString(_msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+								  //				run = false;
+								  //			}
+								  //				
+								  //			break;
+								  //		}
+								  //		else if (_msgQueue.front().nodeType == nCamera)
+								  //		{
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (New Camera)");
+								  //			_msgQueue.pop();
+								  //		}
+								  //		
+								  //		
+								  //		break;
+								  //	case (MessageType::msgEdited) :
+								  //		if (_msgQueue.front().nodeType == nMesh)
+								  //		{
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Edited)");
+								  //			_msgQueue.pop();
+								  //		}
+								  //		else if (_msgQueue.front().nodeType == nTransform)
+								  //		{
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Edited)");
+								  //			outTransformData(_msgQueue.front().nodeName);
+								  //			_msgQueue.pop();
+								  //		}
+								  //		break;
+								  //	case (MessageType::msgDeleted) :
+								  //		if (_msgQueue.front().nodeType == nMesh)
+								  //		{
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Mesh Deleted)");
+								  //			_msgQueue.pop();
+								  //		}
+								  //		else if (_msgQueue.front().nodeType == nTransform)
+								  //		{
+								  //			MGlobal::displayInfo("MESSAGE: " + MString(_msgQueue.front().nodeName.c_str()) + " (Transform Deleted)");
+								  //			_msgQueue.pop();
+								  //		}
+								  //		break;
+								  //	case (MessageType::msgRenamed) :
+								  //		_msgQueue.pop();
+								  //		break;
+								  //	}
+								  //	msgID++;
+								  //	MGlobal::displayInfo("*** MESSAGE STOP *************************");
+								  //	//_msgQueue.pop();
+								  //}
 }
 
 void cbCameraChange(MObject &cameraSetNode, unsigned int multiIndex, MObject &oldCamera, MObject &newCamera, void *clientData)

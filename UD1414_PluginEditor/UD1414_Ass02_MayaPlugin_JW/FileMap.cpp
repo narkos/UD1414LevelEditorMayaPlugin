@@ -266,10 +266,6 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, int config)
 {
 	int cfg = config;
-	/*MGlobal::displayInfo("TRANSFORM OUTER DATA: " + MString(tdata.nodeName));
-	MGlobal::displayInfo("Pos: " + MString() + tdata.trData.translation[0] + " " + MString() + tdata.trData.translation[1] + " " + MString() + tdata.trData.translation[2]);
-	MGlobal::displayInfo("Rot: " + MString() + tdata.trData.rotation[0] + " " + MString() + tdata.trData.rotation[1] + " " + MString() + tdata.trData.rotation[2]);
-	MGlobal::displayInfo("Sca: " + MString() + tdata.trData.scale[0] + " " + MString() + tdata.trData.scale[1] + " " + MString() + tdata.trData.scale[2]);*/
 	switch (cfg)
 	{
 	case 1:
@@ -318,18 +314,11 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 		localHead += hdr.byteSize + hdr.bytePadding;
 		break;
 	}
-
-
-
 	return false;
 }
 bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 {
 	int cfg = config;
-	/*MGlobal::displayInfo("TRANSFORM OUTER DATA: " + MString(tdata.nodeName));
-	MGlobal::displayInfo("Pos: " + MString() + tdata.trData.translation[0] + " " + MString() + tdata.trData.translation[1] + " " + MString() + tdata.trData.translation[2]);
-	MGlobal::displayInfo("Rot: " + MString() + tdata.trData.rotation[0] + " " + MString() + tdata.trData.rotation[1] + " " + MString() + tdata.trData.rotation[2]);
-	MGlobal::displayInfo("Sca: " + MString() + tdata.trData.scale[0] + " " + MString() + tdata.trData.scale[1] + " " + MString() + tdata.trData.scale[2]);*/
 	switch (cfg)
 	{
 	case 1:
@@ -337,7 +326,11 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 
 		localHead += sizeof(MessageHeader);
-		memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize);
+		memcpy((unsigned char*)mMessageData + localHead, &mdata, sizeof(int)*5);
+		memcpy((unsigned char*)mMessageData + localHead+(sizeof(int)*5), &mdata.meshData.vertices, sizeof(float)*3*mdata.meshData.vertCount);
+
+
+		//memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize);
 
 		localHead += hdr.byteSize + hdr.bytePadding;
 
@@ -351,6 +344,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
+		MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshData.vertices[4]);
 		return true;
 		break;
 
@@ -378,7 +372,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		localHead += hdr.byteSize + hdr.bytePadding;
 		break;
 	}
-
+	
 
 
 	return false;
