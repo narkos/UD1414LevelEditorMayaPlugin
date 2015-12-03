@@ -191,12 +191,20 @@ TransformInfo outTransformData(std::string name)
 		outTrans.transformData.translation[1] = trans.y;
 		outTrans.transformData.translation[2] = trans.z;
 
-		MEulerRotation rotation;
-		mNode.getRotation(rotation);
-		outTrans.transformData.rotation[0] = rotation.x;
-		outTrans.transformData.rotation[1] = rotation.y;
+		//MEulerRotation rotation;
+		//MQuaternion rotation();
+		//mNode.getRotation(&rotation, MSpace::kWorld);
+		double rots[4];
+		mNode.getRotationQuaternion(rots[0], rots[1], rots[2], rots[3], MSpace::kTransform);
+		outTrans.transformData.rotation[0] = rots[0];
+		outTrans.transformData.rotation[1] = rots[1];
+		outTrans.transformData.rotation[2] = rots[2];
+		outTrans.transformData.rotation[3] = rots[3];
+		//MGlobal::displayInfo(MString() + rots[0] + " " + MString() + rots[1] + MString() + rots[2] + " " + MString() + rots[3] + " ");
+		//outTrans.transformData.rotation[0] = rotation.x;
+		/*outTrans.transformData.rotation[1] = rotation.y;
 		outTrans.transformData.rotation[2] = rotation.z;
-
+*/
 		double scale[3];
 		mNode.getScale(scale);
 		outTrans.transformData.scale[0] = scale[0];
@@ -231,7 +239,7 @@ CameraInfo outCameraData(std::string name)
 			MFnCamera mNode(dagPath.node(), &result);
 			MFloatMatrix projMtx(mNode.projectionMatrix());
 			//MGlobal::displayInfo(MString() + projMtx);
-			MPoint pos = mNode.eyePoint(MSpace::Space::kWorld);
+			MPoint pos = mNode.eyePoint(MSpace::Space::kPreTransform);
 			MFloatVector dir = mNode.viewDirection(MSpace::Space::kWorld);
 			MFloatVector up = mNode.upDirection(MSpace::Space::kWorld);
 			MFloatVector right = mNode.rightDirection(MSpace::Space::kWorld);
@@ -788,10 +796,19 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		}
 		case(NodeType::nCamera) :
 		{
+			CameraInfo outCam = outCameraData(msgQueue.front().nodeName);
 			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Camera)");
+			if (fileMap.tryWriteCamera(msgQueue.front(), outCam) == true)
+			{
+				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+				msgQueue.pop();
+			}
+			else
+			{
+				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+				run = false;
+			}
 		
-
-			msgQueue.pop();
 			break;
 		}
 		case(NodeType::nLight) :

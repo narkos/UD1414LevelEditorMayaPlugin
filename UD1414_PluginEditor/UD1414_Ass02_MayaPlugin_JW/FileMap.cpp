@@ -184,10 +184,19 @@ bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
 bool FileMapping::tryWriteCamera(MessageInfo& msg, CameraInfo& cinfo)
 {
 	
-		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
-		MessageHeader mHeader = createHeaderCamera(msg, cinfo);
-		int cfg = findWriteConfig(mHeader);
-		createMessageCamera(msg, cinfo);
+	MessageHeader mHeader = createHeaderCamera(msg, cinfo);
+	int cfg = findWriteConfig(mHeader);
+	if (cfg != 0)
+	{
+		if (writeCamera(mHeader, createMessageCamera(msg, cinfo), cfg) == true)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		return false;
+	}
 
 	return false;
 }
@@ -312,6 +321,7 @@ bool FileMapping::writeTransform(MessageHeader& hdr, TransformMessage& tdata, in
 		localHead = sizeof(MessageHeader);
 		memcpy((unsigned char*)mMessageData+sizeof(MessageHeader), &tdata, hdr.byteSize);
 		localHead += hdr.byteSize + hdr.bytePadding;
+		return true;
 		break;
 	}
 	return false;
@@ -451,8 +461,6 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		PrintFileMapInfo(true);
 		return true;
 		break;
-
-		break;
 	}
 	
 
@@ -465,20 +473,51 @@ bool FileMapping::writeCamera(MessageHeader& hdr, CameraMessage& cdata, int conf
 	switch (cfg)
 	{
 	case 1:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 
+		localHead += sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + localHead, &cdata, hdr.byteSize);
+
+		localHead += hdr.byteSize + hdr.bytePadding;
+
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		if (localHead == mSize)
+		{
+			localHead = 0;
+		}
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
 		break;
 
 	case 2:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		localHead = 0;
+		memcpy((unsigned char*)mMessageData, &cdata, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
 
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
 		break;
 
 	case 3:
-
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
+		localHead = sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + sizeof(MessageHeader), &cdata, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
 		break;
 	}
-
-
-
 	return false;
 }
 bool FileMapping::writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int config)
@@ -596,13 +635,19 @@ MessageHeader FileMapping::createHeaderCamera(MessageInfo& msginfo, CameraInfo& 
 	size_t msgSize;
 	size_t padding;
 	size_t infoSize;
-	infoSize = 200 * sizeof(char);
-	msgSize = infoSize;
+	//infoSize = 200 * sizeof(char);
+	msgSize = sizeof(CameraMessage) + sizeof(MessageHeader);
+
+	totalSize = makeMultiple(msgSize, 256);
+	padding = totalSize - msgSize;
+	MGlobal::displayInfo("*   Camera Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
+		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
 	hdr.messageType = msginfo.msgType;
-	hdr.byteSize = msgSize;
+	hdr.byteTotal = totalSize;
+	hdr.byteSize = msgSize - sizeof(MessageHeader);
 	hdr.bytePadding = padding;
 
 	return hdr;
@@ -719,6 +764,38 @@ TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, Trans
 CameraMessage FileMapping::createMessageCamera(MessageInfo& msginfo, CameraInfo& cInfo)
 {
 	CameraMessage outMsg;
+
+	int nodeNameLength = msginfo.nodeName.length();
+	int parentNameLength = cInfo.transformName.length();
+	if (nodeNameLength <= 100)
+	{
+		for (int i = 0; i < nodeNameLength; i++)
+		{
+			outMsg.nodeName[i] = msginfo.nodeName[i];
+		}
+		//MGlobal::displayInfo("Node name added!");
+		outMsg.nodeName[nodeNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("* Node name too long!");
+	}
+	if (parentNameLength <= 100)
+	{
+		for (int i = 0; i < parentNameLength; i++)
+		{
+			outMsg.transformName[i] = cInfo.transformName[i];
+		}
+		outMsg.transformName[parentNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("* Transform name too long!");
+	}
+	outMsg.camData = cInfo.camData;
+	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
+
+
 	return outMsg;
 }
 MaterialMessage FileMapping::createMessageMaterial(MessageInfo& msginfo, MaterialInfo& mInfo)

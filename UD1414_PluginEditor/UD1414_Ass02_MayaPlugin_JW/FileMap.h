@@ -42,7 +42,7 @@ struct MessageInfo
 struct TransformData
 {
 	float translation[3];
-	float rotation[3];
+	float rotation[4];
 	float scale[3];
 };
 struct TransformInfo
@@ -105,7 +105,9 @@ struct CameraInfo
 };
 struct CameraMessage
 {
-
+	char nodeName[100];
+	char transformName[100];
+	CameraData camData;
 };
 struct MaterialData
 {
