@@ -356,17 +356,9 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
 		tempHead += sizeof(int) * mdata.meshData.triCount;
 		
-		MGlobal::displayInfo("*****" + MString() + (tempHead+hdr.bytePadding) + " " + MString() + hdr.byteTotal);
+		MGlobal::displayInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
 		tempHead += hdr.bytePadding;
-		//test = new float[mdata.meshData.vertCount * 3];
-		//localHead += sizeof(int) * 5 + 200;
-		//memcpy(test, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
-		//memcpy((unsigned char*)mMessageData+localHead+(sizeof(int)*5+200), test, sizeof(float) * 3 * mdata.meshData.vertCount);
-		/*MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + test[4]);*/
 
-		//memcpy((unsigned char*)mMessageData + localHead, &mdata, hdr.byteSize);
-/*
-		localHead += hdr.byteSize + hdr.bytePadding;*/
 		localHead += tempHead;
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
 		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
@@ -408,7 +400,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
 		tempHead += sizeof(int) * mdata.meshData.triCount;
 
-		MGlobal::displayInfo("*****" + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
+		MGlobal::displayInfo("***** (CFG "+MString()+cfg+") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
 		tempHead += hdr.bytePadding;
 
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
@@ -447,7 +439,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
 		tempHead += sizeof(int) * mdata.meshData.triCount;
 
-		MGlobal::displayInfo("*****" + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
+		MGlobal::displayInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
 		tempHead += hdr.bytePadding;
 
 		///

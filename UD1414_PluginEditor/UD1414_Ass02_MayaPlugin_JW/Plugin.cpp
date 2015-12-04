@@ -606,7 +606,7 @@ void cbCamAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& pl
 
 void cbNameChange(MObject& node, const MString& str, void* clientData)
 {
-
+	
 	if (node.hasFn(MFn::kMesh))
 	{
 		MFnMesh mesh(node);
@@ -614,13 +614,16 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 		//std::string oldNameStr = str.asChar();
 		for (std::vector<MeshInfo>::size_type i = 0; i != meshVector.size(); i++)
 		{
-			std::string oldTemp = meshVector.at(i).nodeName;
-			if (strcmp(newNameStr.c_str(), oldTemp.c_str()))
+			if (newNameStr.length() > 0)
 			{
-				meshVector.at(i).nodeName = mesh.fullPathName().asChar();
-				mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
-				MGlobal::displayInfo("Mesh name: " + str+ " changed to: " + (MString)mesh.name());
-				break;
+				std::string oldTemp = meshVector.at(i).nodeName;
+				if (strcmp(newNameStr.c_str(), oldTemp.c_str()))
+				{
+					meshVector.at(i).nodeName = mesh.fullPathName().asChar();
+					mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
+					MGlobal::displayInfo("Mesh name: " + str + " changed to: " + (MString)mesh.name());
+					break;
+				}
 			}
 		}
 		
@@ -632,15 +635,20 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 		MFnTransform trans(node);
 		for (int i = 0; i < trans.childCount(); i++)
 		{
-			MObject child = trans.child(i);
-			if (child.hasFn(MFn::kMesh))
+			std::string newNameStr = trans.fullPathName().asChar();
+			if (newNameStr.length() > 0)
 			{
-				hasShapes = true;
+				MObject child = trans.child(i);
+				if (child.hasFn(MFn::kMesh))
+				{
+					hasShapes = true;
+				}
+				if (child.hasFn(MFn::kCamera))
+				{
+					hasShapes = true;
+				}
 			}
-			if(child.hasFn(MFn::kCamera))
-			{
-				hasShapes = true;
-			}
+			
 		}
 		if(hasShapes)
 			MGlobal::displayInfo("Transform name changed to: " + (MString)trans.name());
@@ -809,7 +817,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 				//delete[] outMesh.vertices;
 				//MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + fileMap.test[4]);
 				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-				delete[] fileMap.test;
+				//delete[] fileMap.test;
 				msgQueue.pop();
 			}
 			else
