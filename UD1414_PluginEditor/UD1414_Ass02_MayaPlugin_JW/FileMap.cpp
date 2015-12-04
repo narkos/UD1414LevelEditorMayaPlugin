@@ -213,12 +213,19 @@ bool FileMapping::tryWriteMaterial(MessageInfo& msg, MaterialInfo& minfo)
 }
 bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 {
-
-		MGlobal::displayInfo("FileMap Msg: Mesh Message found");
-		MessageHeader mHeader = createHeaderLight(msg, linfo);
-		int cfg = findWriteConfig(mHeader);
-		createMessageLight(msg, linfo);
-
+	MessageHeader mHeader = createHeaderLight(msg, linfo);
+	int cfg = findWriteConfig(mHeader);
+	if (cfg != 0)
+	{
+		if (writeLight(mHeader, createMessageLight(msg, linfo), cfg) == true)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		return false;
+	}
 	return false;
 }
 
@@ -370,7 +377,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
-		MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshData.vertices[4]);
+		//MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshData.vertices[4]);
 		return true;
 		break;
 
@@ -378,8 +385,6 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		PrintFileMapInfo(false);
 		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 		localHead = 0;
-		//size_t tempHead;
-		//tempHead = 0;
 		tempHead = sizeof(MessageHeader);
 
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 5 + 200);
@@ -415,10 +420,6 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 	case 3:
 		PrintFileMapInfo(false);
 		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
-
-		//localHead = 0;
-		//size_t tempHead;
-		//tempHead = 0;
 		tempHead = sizeof(MessageHeader);
 
 		memcpy((unsigned char*)mMessageData +  tempHead, &mdata, sizeof(int) * 5 + 200);
@@ -441,8 +442,6 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 
 		MGlobal::displayInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
 		tempHead += hdr.bytePadding;
-
-		///
 		localHead += tempHead;
 
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
@@ -540,20 +539,52 @@ bool FileMapping::writeLight(MessageHeader& hdr, LightMessage& ldata, int config
 	switch (cfg)
 	{
 	case 1:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 
+		localHead += sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + localHead, &ldata, hdr.byteSize);
+
+		localHead += hdr.byteSize + hdr.bytePadding;
+
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		if (localHead == mSize)
+		{
+			localHead = 0;
+		}
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
 		break;
 
 	case 2:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		localHead = 0;
+		memcpy((unsigned char*)mMessageData, &ldata, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
 
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
 		break;
 
 	case 3:
-
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
+		localHead = sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + sizeof(MessageHeader), &ldata, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
+		return true;
 		break;
 	}
-
-
-
 	return false;
 }
 
@@ -668,12 +699,19 @@ MessageHeader FileMapping::createHeaderLight(MessageInfo& msginfo, LightInfo& lI
 	size_t msgSize;
 	size_t padding;
 	size_t infoSize;
-	infoSize = 200 * sizeof(char);
-	msgSize = infoSize;
+	//infoSize = 200 * sizeof(char);
+	msgSize = sizeof(LightMessage) + sizeof(MessageHeader);
+
+	totalSize = makeMultiple(msgSize, 256);
+	padding = totalSize - msgSize;
+	MGlobal::displayInfo("*   Light Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
+		+ " " + MString() + padding + " " + MString() + totalSize);
+
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
 	hdr.messageType = msginfo.msgType;
-	hdr.byteSize = msgSize;
+	hdr.byteTotal = totalSize;
+	hdr.byteSize = msgSize - sizeof(MessageHeader);
 	hdr.bytePadding = padding;
 
 	return hdr;
@@ -798,6 +836,37 @@ MaterialMessage FileMapping::createMessageMaterial(MessageInfo& msginfo, Materia
 LightMessage FileMapping::createMessageLight(MessageInfo& msgInfo, LightInfo& lInfo)
 {
 	LightMessage outMsg;
+
+	int nodeNameLength = msgInfo.nodeName.length();
+	int parentNameLength = lInfo.transformName.length();
+	if (nodeNameLength <= 100)
+	{
+		for (int i = 0; i < nodeNameLength; i++)
+		{
+			outMsg.nodeName[i] = msgInfo.nodeName[i];
+		}
+		//MGlobal::displayInfo("Node name added!");
+		outMsg.nodeName[nodeNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("* Node name too long!");
+	}
+	if (parentNameLength <= 100)
+	{
+		for (int i = 0; i < parentNameLength; i++)
+		{
+			outMsg.transformName[i] = lInfo.transformName[i];
+		}
+		outMsg.transformName[parentNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("* Transform name too long!");
+	}
+	outMsg.lightData = lInfo.lightData;
+	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
+
 	return outMsg;
 }
 

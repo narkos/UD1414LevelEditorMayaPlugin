@@ -356,7 +356,8 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 				std::string tmp = msgVector.at(i).nodeName;
 				if (strcmp(name.c_str(), tmp.c_str()) == 0)
 				{
-					if (msgVector.at(i).msgType == msgType)
+					//If a message of this type already exists in the queue OR if a msgAdded is already in queue, no new message should be added.
+					if (msgVector.at(i).msgType == msgType  || msgVector.at(i).msgType == msgAdded)
 					{
 						exists = true;
 						MGlobal::displayWarning("Message" + MString(name.c_str()) + "already exists!");
@@ -505,7 +506,6 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 	std::string plugName(plug_1.name().asChar());
 	if (plugName.find("doubleSided") != std::string::npos && MNodeMessage::AttributeMessage::kAttributeSet )
 	{
-
 		MStatus result;
 		MFnMesh mNode(plug_1.node(), &result);
 		if (result )
@@ -532,14 +532,6 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 			MFnMesh mesh(plug_1.node());
 			std::string tmpname = mesh.fullPathName().asChar();
 			mAddMessage(tmpname, msgEdited, NodeType::nMesh);
-			
-			if (debug)
-			{
-				MGlobal::displayInfo("VERTS VERTS VERTS");
-				MPointArray verts;
-				mesh.getPoints(verts, MSpace::kPostTransform);
-			}
-			
 		}
 	}
 }
@@ -548,33 +540,48 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 {
 	MFnLight light(plug_1.node());
 
-	MString lightName(light.fullPathName());
+	std::string lightName(light.fullPathName().asChar());
 	
 
 	std::string plugName(plug_1.name().asChar());
-	if (msg & MNodeMessage::AttributeMessage::kAttributeSet)
+	//MGlobal::displayInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr());
+	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
 	{
-		outLightData(lightName.asChar());
+		bool sendMsg = false;
+		//outLightData(lightName.asChar());
 		MStatus result;
-		MFnMesh mNode(plug_1.node(), &result);
-		if (result)
-		{	//DO STUFF
-			//MString myCommand = "setAttr -e " + mNode.name() + ".quadSplit 0";
-			//MGlobal::executeCommandOnIdle(myCommand);
+		if (plugName.find(".intensity") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".color") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".decayRate") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".coneAngle") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".dropOff") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".penumbraAngle") != std::string::npos)
+		{
+			sendMsg = true;
+			
+		}
 
-
-			//MPointArray vertices;
-			//mNode.getPoints(vertices, MSpace::kPreTransform);
-			//std::string parentname = getParentName(plug_1);
-			//std::string tmpName = mNode.fullPathName().asChar();
-			//mAddNode(tmpName.c_str(), parentname.c_str(), nMesh, vertices.length());
+		if (sendMsg)
+		{
+			//MGlobal::displayInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr() + "  " + msg);
+			mAddMessage(lightName, msgEdited, nLight);
 		}
 	}
-
-
-	//MGlobal::displayInfo("WOW CREATED LIGHT" + outLightData);
-	/*else
-	{ }*/
 }
 
 void cbEvalAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
@@ -770,16 +777,19 @@ void cbNewNode(MObject& node, void* clientData)
 		if (node.hasFn(MFn::kDirectionalLight))
 		{
 			MGlobal::displayInfo("Directional");
+			mAddNode(light.fullPathName().asChar(), "", nLight);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 		else if (node.hasFn(MFn::kSpotLight))
 		{
 			MGlobal::displayInfo("Spot");
+			mAddNode(light.fullPathName().asChar(), "", nLight);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 		else if (node.hasFn(MFn::kPointLight))
 		{
 			MGlobal::displayInfo("Point");
+			mAddNode(light.fullPathName().asChar(), "", nLight);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 	}
@@ -869,9 +879,18 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		}
 		case(NodeType::nLight) :
 		{
+			LightInfo outLight = outLightData(msgQueue.front().nodeName);
 			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Light)");
-
-			msgQueue.pop();
+			if (fileMap.tryWriteLight(msgQueue.front(), outLight) == true)
+			{
+				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+				msgQueue.pop();
+			}
+			else
+			{
+				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+				run = false;
+			}
 			break;
 		}
 		case(NodeType::nMaterial) :
