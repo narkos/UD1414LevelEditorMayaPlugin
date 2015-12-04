@@ -396,7 +396,7 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 			if (!exists)
 			{
 				MeshInfo mesh{ name, parentName };
-				meshVector.push_back(mesh);
+				meshVector.push_back(mesh); 
 				mAddMessage(name, msgAdded, nMesh);
 				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()) + "with " + MString() + vertCount + " vertices.");
 			}
@@ -462,10 +462,36 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 		else if (type == nLight)
 		{
 			if (lightVector.size() > 0)
+			{
 				for (std::vector<LightInfo>::size_type i = 0; i != lightVector.size(); i++)
 				{
-
+					std::string tmp = camVector.at(i).nodeName;
+					if (strcmp(name.c_str(), tmp.c_str()) == 0)
+					{
+						exists = true;
+						MGlobal::displayWarning("Light " + MString(name.c_str()) + " already exists!");
+					}
 				}
+			}
+			if (!exists)
+			{
+				MString mName(name.c_str());
+				MDagPath dagPath;
+				MSelectionList sList;
+				if (MGlobal::getSelectionListByName(mName, sList))
+				{
+					sList.getDagPath(0, dagPath);
+					MFnDagNode dagNode(dagPath);
+					if (dagNode.parent(0).hasFn(MFn::kTransform))
+					{
+						MFnTransform trans(dagNode.parent(0));
+						LightInfo light{ name, trans.fullPathName().asChar() };
+						lightVector.push_back(light);
+						MGlobal::displayInfo("Added light: " + MString(name.c_str()));
+						mAddMessage(name, msgAdded, nLight);
+					}
+				}
+			}
 		}
 
 	}
@@ -523,7 +549,29 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 	MFnLight light(plug_1.node());
 
 	MString lightName(light.fullPathName());
-	outLightData(lightName.asChar());
+	
+
+	std::string plugName(plug_1.name().asChar());
+	if (msg & MNodeMessage::AttributeMessage::kAttributeSet)
+	{
+		outLightData(lightName.asChar());
+		MStatus result;
+		MFnMesh mNode(plug_1.node(), &result);
+		if (result)
+		{	//DO STUFF
+			//MString myCommand = "setAttr -e " + mNode.name() + ".quadSplit 0";
+			//MGlobal::executeCommandOnIdle(myCommand);
+
+
+			//MPointArray vertices;
+			//mNode.getPoints(vertices, MSpace::kPreTransform);
+			//std::string parentname = getParentName(plug_1);
+			//std::string tmpName = mNode.fullPathName().asChar();
+			//mAddNode(tmpName.c_str(), parentname.c_str(), nMesh, vertices.length());
+		}
+	}
+
+
 	//MGlobal::displayInfo("WOW CREATED LIGHT" + outLightData);
 	/*else
 	{ }*/

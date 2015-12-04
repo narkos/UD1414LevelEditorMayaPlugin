@@ -83,7 +83,7 @@ void FileMapping::CreateFileMaps()
 	else { //first, sätter de första värdena på filemapinfon
 		MGlobal::displayInfo("Creating new infofilemap, JAG SKA INTE VARA FÖRST :'(");
 		//GetFilemapInfoValues();
-		SetFilemapInfoValues(0, 0, 256, 4096);
+		SetFilemapInfoValues(0, 0, 256, 1024*1024);
 	}
 	memoryPadding = fileMapInfo.non_accessmemoryOffset;
 	
