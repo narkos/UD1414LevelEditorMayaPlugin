@@ -371,7 +371,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		{
 			localHead = 0;
 		}
-		fileMapInfo.head_ByteOffset = localHead;
+		fileMapInfo.head_ByteOffset += hdr.byteTotal;
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
