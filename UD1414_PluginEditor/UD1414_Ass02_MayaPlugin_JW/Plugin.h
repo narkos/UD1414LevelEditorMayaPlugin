@@ -39,6 +39,7 @@
 #include <maya/MFnDirectionalLight.h>
 #include <maya/MFnSpotLight.h>
 #include <maya/MFnPointLight.h>
+#include <maya/M3dView.h>
 
 // Wrappers
 #include <maya/MGlobal.h>
@@ -75,6 +76,9 @@
 std::vector<std::string> msgTypeVector;
 
 	FileMapping fileMap;
+
+	M3dView modelPanel;
+	MDagPath activeCamera;
 
 	bool debug;
 	MCallbackId _CBid;

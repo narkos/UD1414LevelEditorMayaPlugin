@@ -132,7 +132,7 @@ MeshInfo outMeshData(std::string name)
 		MGlobal::displayInfo("outMesh Name: " + MString(name.c_str()));
 		MGlobal::displayInfo("outMesh Transform Name: " + MString(outMesh.transformName.c_str()));
 		MGlobal::displayInfo("outMesh Vert/Nor/UV Count: " + MString() + outMesh.meshData.vertCount + " / " + MString() + outMesh.meshData.normalCount + " / " + MString() + outMesh.meshData.UVCount);
-		MGlobal::displayInfo("outMesh Indices / Triangle Count: " + MString() + outMesh.meshData.indCount + " / " + MString() + outMesh.meshData.triCount);
+		MGlobal::displayInfo("outMesh Indices / Triangle Count: " + MString() + outMesh.meshData.indCount + " / "+ MString() + triUVIndices.length() + " / " + MString() + totTris);
 		MString triFaceStr = " ( ";
 		MString triIndStr = "";
 		for (int i = 0; i < triCount.length(); i++)
@@ -155,9 +155,9 @@ MeshInfo outMeshData(std::string name)
 		for (int i = 0; i + 3 < outMesh.meshData.indCount; i += 3)
 		{
 			triIndStr += "(";
-			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
+			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i+2] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
 			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 1] + "," + MString() + outMesh.meshData.norIndices[i + 1] + "," + MString() + outMesh.meshData.UVIndices[i + 1] + ")");
-			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 2] + "," + MString() + outMesh.meshData.norIndices[i + 2] + "," + MString() + outMesh.meshData.UVIndices[i + 2] + ")");
+			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i + 2] + "," + MString() + outMesh.meshData.UVIndices[i + 2] + ")");
 			triIndStr += ")\n";
 		}
 
@@ -404,8 +404,12 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 					//If a message of this type already exists in the queue OR if a msgAdded is already in queue, no new message should be added.
 					if (msgVector.at(i).msgType == msgType  || msgVector.at(i).msgType == msgAdded)
 					{
-						exists = true;
-						MGlobal::displayWarning("Message" + MString(name.c_str()) + "already exists!");
+						if (msgType != msgSwitched)
+						{
+							exists = true;
+							MGlobal::displayWarning("Message" + MString(name.c_str()) + "already exists!");
+						}
+						
 					}
 					
 				}
@@ -648,6 +652,18 @@ void cbCamAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& pl
 {
 	MGlobal::displayInfo("--------------- cam attribute");
 }
+
+void cbCameraPanel(const MString &str, MObject &node, void *clientData)
+{
+	if (node.hasFn(MFn::kCamera))
+	{
+		MFnCamera currCam(node);
+		MGlobal::displayInfo("Current Camera: " + str+" -> " + currCam.fullPathName());
+	}
+
+
+}
+
 
 void cbNameChange(MObject& node, const MString& str, void* clientData)
 {
@@ -939,11 +955,6 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 						
 }
 
-void cbCameraChange(MObject &cameraSetNode, unsigned int multiIndex, MObject &oldCamera, MObject &newCamera, void *clientData)
-{
-	MGlobal::displayInfo("CAMERAAAAAAAAAAAAAAA");
-}
-
 void loadScene()
 {
 	MStatus stat;
@@ -970,14 +981,20 @@ void loadScene()
 				transname = trans.fullPathName().asChar();
 				mAddNode(trans.fullPathName().asChar(),"", nTransform);
 				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(parent, cbTransformModified));
-
-				MString panel;
-				_CBidArray.append(MCameraSetMessage::addCameraChangedCallback(cbCameraChange));
 			}
 			mAddNode(dagPath.fullPathName().asChar(), transname.c_str(), nCamera);
 		}
-
+		
 	}
+	stat = modelPanel.getCamera(activeCamera);
+
+	MGlobal::displayInfo("CURRENT CAMER MOTHER FUCKER" + activeCamera.fullPathName());
+
+	if (stat)
+	{
+		//mAddMessage(activeCamera.fullPathName().asChar(), msgSwitched, nCamera);
+	}
+	
 	filter = MFn::kLambert;
 	MItDependencyNodes itDep(MFn::kLambert);
 	//MItDag dagIt2(MItDag::kDepthFirst, filter, &stat);
@@ -1007,18 +1024,8 @@ void loadScene()
 	
 	}
 
-
 }
-void cbCameraPanel(const MString &str, MObject &node, void *clientData)
-{
-	if (node.hasFn(MFn::kCamera))
-	{
-		MFnCamera currCam(node);
-		MGlobal::displayInfo("Current Camera: " + currCam.fullPathName() );
-	}
-	
 
-}
 EXPORT MStatus initializePlugin(MObject obj)
 {
 	//Error Checking Variable
@@ -1034,8 +1041,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 	fileMap.CreateFileMaps();
 
 	MGlobal::displayInfo("Level Editor plugin loaded.");
+	result = M3dView::getM3dViewFromModelPanel("modelPanel4", modelPanel);
 	loadScene();
-	debug = false;
+	debug = true;
 
 	msgTypeVector.push_back("Invalid msg type");
 	msgTypeVector.push_back("Added");
@@ -1048,9 +1056,11 @@ EXPORT MStatus initializePlugin(MObject obj)
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
 	_CBidArray.append(MTimerMessage::addTimerCallback(5, &cbMessageTimer));	
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
-	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
+	/*_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));	
-	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel3", cbCameraPanel));
+	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel3", cbCameraPanel));*/
+	
+
 	
 
 	return result;

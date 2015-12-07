@@ -11,7 +11,7 @@
 #include <maya/MGlobal.h>
 
 
-enum MessageType { msgAdded = 1, msgEdited = 2, msgDeleted = 3, msgRenamed = 4 };
+enum MessageType { msgAdded = 1, msgEdited = 2, msgDeleted = 3, msgRenamed = 4, msgSwitched = 5};
 enum NodeType { nDefaultNode = 0, nMesh = 1, nTransform = 2, nCamera = 3, nLight = 4, nMaterial = 5 };
 
 
