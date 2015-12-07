@@ -138,8 +138,6 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 	memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));	
 	mutexInfo.Unlock();
 }
-
-
 bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 {
 			MessageHeader mHeader = createHeaderTransform(msg, tinfo);
@@ -752,7 +750,7 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 		MGlobal::displayError("Transform name too long!");
 	}
 	msg.meshData = mInfo.meshData;
-	MGlobal::displayInfo(MString() + msg.meshData.indCount);
+	//MGlobal::displayInfo(MString() + msg.meshData.indCount);
 	return msg;
 }
 TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, TransformInfo &tInfo)

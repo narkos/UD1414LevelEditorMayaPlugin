@@ -3,7 +3,7 @@
 MeshInfo outMeshData(std::string name)
 {
 	// Find mesh node in Dag
-	MStatus			status;
+	MStatus			result;
 	MString			_name(name.c_str());
 	MSelectionList	sList;
 	MDagPath		dagPath;
@@ -17,14 +17,13 @@ MeshInfo outMeshData(std::string name)
 		}
 	}
 
-	MFnMesh			mNode(dagPath.node(), &status);
-	MItMeshPolygon	polyIterator(dagPath.node(), &status);
+	MFnMesh			mNode(dagPath.node(), &result);
+	MItMeshPolygon	polyIterator(dagPath.node(), &result);
 	MeshInfo		outMesh;
-	//MeshData		outMesh;
 	
 	// Variable declaration for mesh analysis
-	const float*	vertices = mNode.getRawPoints(&status);
-	const float*	normals = mNode.getRawNormals(&status);
+	const float*	vertices = mNode.getRawPoints(&result);
+	const float*	normals = mNode.getRawNormals(&result);
 	MFloatArray		uArray;
 	MFloatArray		vArray;
 	mNode.getUVs(uArray, vArray);
@@ -44,14 +43,13 @@ MeshInfo outMeshData(std::string name)
 		{
 
 			polyIterator.numTriangles(trisPerFace);
-			//totTris += trisPerFace;
 			int uId0, uId1, uId2;
 			cout << trisPerFace;
 			if (trisPerFace == 1)
 			{	
-				triNorIndices.append(polyIterator.normalIndex(0, &status));
-				triNorIndices.append(polyIterator.normalIndex(1, &status));
-				triNorIndices.append(polyIterator.normalIndex(2, &status));
+				triNorIndices.append(polyIterator.normalIndex(0, &result));
+				triNorIndices.append(polyIterator.normalIndex(1, &result));
+				triNorIndices.append(polyIterator.normalIndex(2, &result));
 
 				polyIterator.getUVIndex(0, uId0);
 				polyIterator.getUVIndex(1, uId1);
@@ -62,12 +60,12 @@ MeshInfo outMeshData(std::string name)
 			}
 			else
 			{
-				triNorIndices.append(polyIterator.normalIndex(0, &status));
-				triNorIndices.append(polyIterator.normalIndex(1, &status));
-				triNorIndices.append(polyIterator.normalIndex(3, &status));
-				triNorIndices.append(polyIterator.normalIndex(3, &status));
-				triNorIndices.append(polyIterator.normalIndex(1, &status));
-				triNorIndices.append(polyIterator.normalIndex(2, &status));
+				triNorIndices.append(polyIterator.normalIndex(0, &result));
+				triNorIndices.append(polyIterator.normalIndex(1, &result));
+				triNorIndices.append(polyIterator.normalIndex(3, &result));
+				triNorIndices.append(polyIterator.normalIndex(3, &result));
+				triNorIndices.append(polyIterator.normalIndex(1, &result));
+				triNorIndices.append(polyIterator.normalIndex(2, &result));
 
 				polyIterator.getUVIndex(0, uId0);
 				polyIterator.getUVIndex(1, uId1);
@@ -88,9 +86,16 @@ MeshInfo outMeshData(std::string name)
 
 	if (mNode.parent(0).hasFn(MFn::kTransform))
 	{
-		MFnTransform mTrans(mNode.parent(0));
-		outMesh.transformName = mTrans.fullPathName().asChar();
-		MGlobal::displayInfo(outMesh.transformName.c_str());
+		MFnTransform mTrans(mNode.parent(0), &result);
+		if (!result)
+		{
+			MGlobal::displayError(MString(name.c_str()) + " parent not found!");
+		}
+		else
+		{
+			outMesh.transformName = mTrans.fullPathName().asChar();
+			MGlobal::displayInfo(outMesh.transformName.c_str());
+		}
 	}
 
 	outMesh.meshData.vertCount = mNode.numVertices();
@@ -182,8 +187,23 @@ TransformInfo outTransformData(std::string name)
 	TransformInfo outTrans;
 	if (result)
 	{
+		if (mNode.parent(0).hasFn(MFn::kTransform))
+		{
+			MFnTransform parent(mNode.parent(0), &result);
+			 if(!result)
+			 {
+				 MGlobal::displayWarning(MString(name.c_str()) + " parent not found!");
+			 }
+			 else
+			 {
+				 outTrans.parentName = parent.fullPathName().asChar();
+			 }
+		}
+		else
+		{
+			outTrans.parentName[0] = 0;
+		}
 		
-		outTrans.parentName[0] = 0;
 
 		std::string attName(mNode.fullPathName().asChar());
 		MVector trans = mNode.getTranslation(MSpace::kPostTransform, &result);
@@ -218,8 +238,7 @@ TransformInfo outTransformData(std::string name)
 		MGlobal::displayInfo("Pos: " + MString() + trans.x + " " + MString() + trans.y + " " + MString() + trans.z);
 		MGlobal::displayInfo("Rot: " + MString() + rotation.x + " " + MString() + rotation.y + " " + MString() + rotation.z);
 		MGlobal::displayInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);*/
-		return outTrans;
-	}
+		}
 	return outTrans;
 }
 
@@ -235,22 +254,40 @@ CameraInfo outCameraData(std::string name)
 		sList.getDagPath(0, dagPath);
 		if (dagPath.hasFn(MFn::kCamera))
 		{
-			MGlobal::displayInfo("Camera found: " + dagPath.fullPathName());
+			if(debug) MGlobal::displayInfo("Camera found: " + dagPath.fullPathName());
 			MFnCamera mNode(dagPath.node(), &result);
+
+			// Get the node's parent
+			if (mNode.parent(0).hasFn(MFn::kTransform))
+			{
+				MFnTransform parent(mNode.parent(0), &result);
+				if (!result)
+				{
+					MGlobal::displayError(MString(name.c_str()) + " parent not found!");
+				}
+				else
+				{
+					outCam.transformName = parent.fullPathName().asChar();
+				}
+			}
+
 			MFloatMatrix projMtx(mNode.projectionMatrix());
-			//MGlobal::displayInfo(MString() + projMtx);
 			MPoint pos = mNode.eyePoint(MSpace::Space::kPreTransform);
 			MFloatVector dir = mNode.viewDirection(MSpace::Space::kWorld);
 			MFloatVector up = mNode.upDirection(MSpace::Space::kWorld);
 			MFloatVector right = mNode.rightDirection(MSpace::Space::kWorld);
-			MGlobal::displayInfo("Pos(" + MString() + pos.x + " , " + MString() + pos.y + " , " + MString() + pos.z + ")");
-			MGlobal::displayInfo("Dir(" + MString() + dir.x + " , " + MString() + dir.y + " , " + MString() + dir.z + ")");
-			MGlobal::displayInfo("Up(" + MString() + up.x + " , " + MString() + up.y + " , " + MString() + up.z + ")");
+			
 			bool isOrtho = mNode.isOrtho();
 			double fov = mNode.horizontalFieldOfView();
-			MGlobal::displayInfo("Fov: " + MString() + fov);
-			MGlobal::displayInfo("Orthographic: " + MString() + isOrtho);
-			
+			if (debug)
+			{
+				MGlobal::displayInfo("Pos(" + MString() + pos.x + " , " + MString() + pos.y + " , " + MString() + pos.z + ")");
+				MGlobal::displayInfo("Dir(" + MString() + dir.x + " , " + MString() + dir.y + " , " + MString() + dir.z + ")");
+				MGlobal::displayInfo("Up(" + MString() + up.x + " , " + MString() + up.y + " , " + MString() + up.z + ")");
+				MGlobal::displayInfo("Fov: " + MString() + fov);
+				MGlobal::displayInfo("Orthographic: " + MString() + isOrtho);
+			}
+	
 			outCam.camData.isOrtho = isOrtho;
 			outCam.camData.hAngle = fov;
 			for (int i = 0; i < 3; i++)
@@ -281,16 +318,25 @@ LightInfo outLightData(std::string name)
 		if (dagPath.hasFn(MFn::kLight))
 		{
 			MFnLight baseLight(dagPath);
+			if (baseLight.parent(0).hasFn(MFn::kTransform))
+			{
+				MFnTransform trans(baseLight.parent(0),&result);
+				if (!result)
+				{
+					MGlobal::displayError(MString(name.c_str()) + " parent not found!");
+				}
+				outLight.transformName = trans.fullPathName().asChar();
+			}
 			
 			// Get diffuse color data
 			MColor diffColor = baseLight.color();
 			float RGBColor[3];
 			diffColor.get(MColor::MColorType::kRGB, RGBColor[0], RGBColor[1], RGBColor[2]);
 			std::copy(RGBColor, RGBColor+3, outLight.lightData.colorDiffuse);
-			MGlobal::displayInfo("Light Color Diffuse: " + MString() + outLight.lightData.colorDiffuse[0] + " " + MString() + outLight.lightData.colorDiffuse[1] + " " + MString() + outLight.lightData.colorDiffuse[2]);
+			if(debug) MGlobal::displayInfo("Light Color Diffuse: " + MString() + outLight.lightData.colorDiffuse[0] + " " + MString() + outLight.lightData.colorDiffuse[1] + " " + MString() + outLight.lightData.colorDiffuse[2]);
 			//Get light intensity
 			outLight.lightData.intensity = baseLight.intensity();
-			MGlobal::displayInfo("Light intensity: " + MString() + outLight.lightData.intensity);
+			if(debug) MGlobal::displayInfo("Light intensity: " + MString() + outLight.lightData.intensity);
 
 
 			if (dagPath.hasFn(MFn::kDirectionalLight))
@@ -301,8 +347,7 @@ LightInfo outLightData(std::string name)
 				outLight.lightData.direction[0] = dir.x;
 				outLight.lightData.direction[1] = dir.y;
 				outLight.lightData.direction[2] = dir.z;
-				if(result)
-					MGlobal::displayInfo("Light direction: " + MString() + dir.x + " " + MString() + dir.y + " " + MString() + dir.z);
+				if(debug && result) MGlobal::displayInfo("Light direction: " + MString() + dir.x + " " + MString() + dir.y + " " + MString() + dir.z);
 			}
 			else if (dagPath.hasFn(MFn::kSpotLight))
 			{
@@ -399,7 +444,7 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 				MeshInfo mesh{ name, parentName };
 				meshVector.push_back(mesh); 
 				mAddMessage(name, msgAdded, nMesh);
-				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()) + "with " + MString() + vertCount + " vertices.");
+				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()));
 			}
 		}
 		else if (type == nTransform)
@@ -512,13 +557,9 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 		{	//DO STUFF
 			MString myCommand = "setAttr -e " + mNode.name() + ".quadSplit 0";
 			MGlobal::executeCommandOnIdle(myCommand);
-
-
-			MPointArray vertices;
-			mNode.getPoints(vertices, MSpace::kPreTransform);
 			std::string parentname = getParentName(plug_1);
 			std::string tmpName = mNode.fullPathName().asChar();
-			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh, vertices.length());
+			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh);
 		}
 	}
 	//Finds changes to vertex positions
@@ -541,10 +582,7 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 	MFnLight light(plug_1.node());
 
 	std::string lightName(light.fullPathName().asChar());
-	
-
 	std::string plugName(plug_1.name().asChar());
-	//MGlobal::displayInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr());
 	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
 	{
 		bool sendMsg = false;
@@ -800,7 +838,6 @@ void cbNewNode(MObject& node, void* clientData)
 }
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 {
-	//MGlobal::displayInfo("BEEP " + MString() + _CBidArray.length() + " CALLBACKS");
 	msgVector.clear();
 	int msgCount = msgQueue.size();
 	MGlobal::displayInfo("--- MESSAGE UPDATE (" +MString()+msgCount +" Messages) ------------------------");
@@ -818,16 +855,12 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) ("+msgTypeVector[msgQueue.front().msgType].c_str()+" Mesh)");
 			if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
 			{
-				
 				delete[] outMesh.meshData.uv;
 				delete[] outMesh.meshData.triIndices;
 				delete[] outMesh.meshData.norIndices;
 				delete[] outMesh.meshData.UVIndices;
 				delete[] outMesh.meshData.triPerFace;
-				//delete[] outMesh.vertices;
-				//MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + fileMap.test[4]);
 				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-				//delete[] fileMap.test;
 				msgQueue.pop();
 			}
 			else
@@ -903,87 +936,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		msgID++;
 		MGlobal::displayInfo("*** MESSAGE STOP *************************");
 	}
-								  //	switch (msgQueue.front().msgType)
-								  //	{
-
-								  //	case (MessageType::msgAdded) :
-								  //		if (msgQueue.front().nodeType == nMesh)
-								  //		{
-								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (New Mesh)");
-								  //			MeshInfo  outMesh = outMeshData(msgQueue.front().nodeName);
-								  //			if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
-								  //			{
-								  //				delete[] outMesh.meshData.uv;
-								  //				delete[] outMesh.meshData.triIndices;
-								  //				delete[] outMesh.meshData.norIndices;
-								  //				delete[] outMesh.meshData.UVIndices;
-								  //				delete[] outMesh.meshData.triPerFace;
-								  //				//delete[] outMesh.vertices;
-								  //				msgQueue.pop();
-								  //			}
-								  //			//fileMap.createHeaderMesh(msgQueue.front(),outMesh);
-								  //			break;
-								  //		}
-								  //		else if(msgQueue.front().nodeType == nTransform)
-								  //		{
-								  //			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (New Transform)");
-								  //			TransformInfo outTrans = outTransformData(msgQueue.front().nodeName);
-								  //			if (fileMap.tryWriteTransform(msgQueue.front(), outTrans) == true)
-								  //			{
-								  //			#if defined(DEBUG) || defined(_DEBUG)
-								  //				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-								  //			#endif
-								  //				msgQueue.pop();
-								  //			}
-								  //			else
-								  //			{
-								  //				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-								  //				run = false;
-								  //			}
-								  //				
-								  //			break;
-								  //		}
-								  //		else if (msgQueue.front().nodeType == nCamera)
-								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (New Camera)");
-								  //			msgQueue.pop();
-								  //		}
-								  //		
-								  //		
-								  //		break;
-								  //	case (MessageType::msgEdited) :
-								  //		if (msgQueue.front().nodeType == nMesh)
-								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Mesh Edited)");
-								  //			msgQueue.pop();
-								  //		}
-								  //		else if (msgQueue.front().nodeType == nTransform)
-								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Transform Edited)");
-								  //			outTransformData(msgQueue.front().nodeName);
-								  //			msgQueue.pop();
-								  //		}
-								  //		break;
-								  //	case (MessageType::msgDeleted) :
-								  //		if (msgQueue.front().nodeType == nMesh)
-								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Mesh Deleted)");
-								  //			msgQueue.pop();
-								  //		}
-								  //		else if (msgQueue.front().nodeType == nTransform)
-								  //		{
-								  //			MGlobal::displayInfo("MESSAGE: " + MString(msgQueue.front().nodeName.c_str()) + " (Transform Deleted)");
-								  //			msgQueue.pop();
-								  //		}
-								  //		break;
-								  //	case (MessageType::msgRenamed) :
-								  //		msgQueue.pop();
-								  //		break;
-								  //	}
-								  //	msgID++;
-								  //	MGlobal::displayInfo("*** MESSAGE STOP *************************");
-								  //	//msgQueue.pop();
-								  //}
+						
 }
 
 void cbCameraChange(MObject &cameraSetNode, unsigned int multiIndex, MObject &oldCamera, MObject &newCamera, void *clientData)
@@ -1082,9 +1035,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 	MGlobal::displayInfo("Level Editor plugin loaded.");
 	loadScene();
-	debug = true;
+	debug = false;
 
-	msgTypeVector.push_back("woah");
+	msgTypeVector.push_back("Invalid msg type");
 	msgTypeVector.push_back("Added");
 	msgTypeVector.push_back("Edited");
 	msgTypeVector.push_back("Deleted");
