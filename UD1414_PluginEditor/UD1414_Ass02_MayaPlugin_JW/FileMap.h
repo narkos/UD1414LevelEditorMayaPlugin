@@ -257,6 +257,7 @@ private:
 	HANDLE hInfoFileMap = nullptr;;
 	LPVOID mInfoData = nullptr;
 	unsigned int mInfoSize = 256;
+
 	size_t localHead = 0;
 	size_t localTail = 0;
 	Mutex mutexInfo;

@@ -57,34 +57,39 @@ FileMapping::~FileMapping()
 
 void FileMapping::CreateFileMaps()
 {
-	mInfoSize = 1 << 6;
+	mutexInfo.Create("__info_Mutex__");
+	mInfoSize = 256;
 	//info filemapen
+	SECURITY_ATTRIBUTES security;
+	security.lpSecurityDescriptor = nullptr;
 	hInfoFileMap = CreateFileMapping(INVALID_HANDLE_VALUE,
-		NULL,
+		nullptr,
 		PAGE_READWRITE,
 		(DWORD)0,
 		mInfoSize,
-		(LPCWSTR) "infoFileMap"); 
+		(LPCWSTR)"Global\\infoFileMap"); 
+	//hInfoFileMap = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, (LPCWSTR)"infoFileMap");
 
 	mInfoData = MapViewOfFile(hInfoFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	//MGlobal::displayInfo("mInfoSize: " + MString() + mInfoSize);
-	mutexInfo.Create("__info_Mutex__");
 	
-	//SetFilemapInfoValues(0, 0, 0, mSize); //storar de i filemapen oxå! sätt negativa värden om man inte vill nått värde ska ändras :)
+	
 
 	if (hInfoFileMap == NULL) {
 		MGlobal::displayInfo("Couldn't create infofilemap");
 	}
-	//FilemapInfo fmInfo;
-	if (GetLastError() == ERROR_ALREADY_EXISTS) {
+
+	if (GetLastError() == ERROR_ALREADY_EXISTS ) {
 		MGlobal::displayInfo("Infofilemap exists, you get a handle to it!");
 		GetFilemapInfoValues();
 	}
 	else { //first, sätter de första värdena på filemapinfon
 		MGlobal::displayInfo("Creating new infofilemap, JAG SKA INTE VARA FÖRST :'(");
-		//GetFilemapInfoValues();
+		MGlobal::displayError(GetLastErrorAsString().c_str());
 		SetFilemapInfoValues(0, 0, 256, 1024*1024);
 	}
+
+	
+	MGlobal::displayInfo("MSIZE " + MString() + mSize);
 	memoryPadding = fileMapInfo.non_accessmemoryOffset;
 	
 	//mSize = 2048; //denna ska hämtas
@@ -93,7 +98,7 @@ void FileMapping::CreateFileMaps()
 		PAGE_READWRITE,
 		(DWORD)0,
 		mSize,
-		(LPCWSTR) "messageFileMap");
+		(LPCWSTR) "Global\\messageFileMap");
 
 	mMessageData = MapViewOfFile(hMessageFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
