@@ -155,13 +155,40 @@ MeshInfo outMeshData(std::string name)
 		for (int i = 0; i + 3 < outMesh.meshData.indCount; i += 3)
 		{
 			triIndStr += "(";
-			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i+2] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
+			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i+2] + "," + MString() + outMesh.meshData.norIndices[i+2] + "," + MString() + outMesh.meshData.UVIndices[i+2] + ")");
 			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 1] + "," + MString() + outMesh.meshData.norIndices[i + 1] + "," + MString() + outMesh.meshData.UVIndices[i + 1] + ")");
-			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i + 2] + "," + MString() + outMesh.meshData.UVIndices[i + 2] + ")");
+			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
 			triIndStr += ")\n";
 		}
+		bool dbug2 = false;
 
+		MString iDataStr = "";
+		if (dbug2)
+		{
+			
+			for (int i = 0; i < outMesh.meshData.normalCount*3; i+=3)
+			{
+				iDataStr += "Pos ";
+				iDataStr += "(" + MString() + outMesh.meshData.vertices[i] + " , ";
+				iDataStr += MString() + outMesh.meshData.vertices[i+1] + " , ";
+				iDataStr += MString() + outMesh.meshData.vertices[i+2] + ")";
+
+				iDataStr += "Nor ";
+				iDataStr += "(" + MString() + outMesh.meshData.normals[i] + " , ";
+				iDataStr += MString() + outMesh.meshData.normals[i + 1] + " , ";
+				iDataStr += MString() + outMesh.meshData.normals[i + 2] +")";
+
+				iDataStr += "UV ";
+				iDataStr += "(" + MString() + outMesh.meshData.uv[i][0] + " , ";
+				iDataStr += MString() + outMesh.meshData.uv[i][1] + ")\n";
+
+				
+			}
+
+		}
 		MGlobal::displayInfo("outMesh Indices per triangle: " + triIndStr);
+		if(dbug2)MGlobal::displayInfo(iDataStr);
+		
 	}
 	
 	return outMesh;
@@ -206,7 +233,7 @@ TransformInfo outTransformData(std::string name)
 		
 
 		std::string attName(mNode.fullPathName().asChar());
-		MVector trans = mNode.getTranslation(MSpace::kPostTransform, &result);
+		MVector trans = mNode.getTranslation(MSpace::kTransform, &result);
 		outTrans.transformData.translation[0] = trans.x;
 		outTrans.transformData.translation[1] = trans.y;
 		outTrans.transformData.translation[2] = trans.z;
@@ -234,10 +261,10 @@ TransformInfo outTransformData(std::string name)
 		outTrans.nodeName = attName;
 		//outTrans.parentName = getParentName()
 
-		/*MGlobal::displayInfo("TRANSFORM INNER DATA: " + MString(outTrans.nodeName.c_str()));
+		MGlobal::displayInfo("TRANSFORM INNER DATA: " + MString(outTrans.nodeName.c_str()));
 		MGlobal::displayInfo("Pos: " + MString() + trans.x + " " + MString() + trans.y + " " + MString() + trans.z);
-		MGlobal::displayInfo("Rot: " + MString() + rotation.x + " " + MString() + rotation.y + " " + MString() + rotation.z);
-		MGlobal::displayInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);*/
+		MGlobal::displayInfo("Rot: " + MString() + rots[0]+ " " + MString() + rots[1] + " " + MString() + rots[2] + " " + MString() + rots[3]);
+		MGlobal::displayInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);
 		}
 	return outTrans;
 }
@@ -272,10 +299,10 @@ CameraInfo outCameraData(std::string name)
 			}
 
 			MFloatMatrix projMtx(mNode.projectionMatrix());
-			MPoint pos = mNode.eyePoint(MSpace::Space::kPreTransform);
-			MFloatVector dir = mNode.viewDirection(MSpace::Space::kWorld);
-			MFloatVector up = mNode.upDirection(MSpace::Space::kWorld);
-			MFloatVector right = mNode.rightDirection(MSpace::Space::kWorld);
+			MPoint pos = mNode.eyePoint(MSpace::Space::kPostTransform);
+			MFloatVector dir = mNode.viewDirection(MSpace::Space::kPostTransform);
+			MFloatVector up = mNode.upDirection(MSpace::Space::kPostTransform);
+			MFloatVector right = mNode.rightDirection(MSpace::Space::kPostTransform);
 			
 			bool isOrtho = mNode.isOrtho();
 			double fov = mNode.horizontalFieldOfView();

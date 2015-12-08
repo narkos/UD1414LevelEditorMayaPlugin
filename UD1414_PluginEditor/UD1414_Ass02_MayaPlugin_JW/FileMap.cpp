@@ -69,7 +69,7 @@ void FileMapping::CreateFileMaps()
 		mInfoSize,
 		(LPCWSTR)"Global\\infoFileMap"); 
 	//hInfoFileMap = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, (LPCWSTR)"infoFileMap");
-
+															
 	mInfoData = MapViewOfFile(hInfoFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 	
 	
