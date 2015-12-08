@@ -190,6 +190,29 @@ MeshInfo outMeshData(std::string name)
 		if(dbug2)MGlobal::displayInfo(iDataStr);
 		
 	}
+	MObjectArray connectedShaders;
+	MIntArray shaderIndices;
+	mNode.getConnectedShaders(0, connectedShaders, shaderIndices);
+	
+	MFnLambertShader mat;
+	
+	MGlobal::displayInfo(connectedShaders[0].apiTypeStr());
+	MFnDependencyNode shaderGrou(connectedShaders[0]);
+	MPlug plug = shaderGrou.findPlug("surfaceShader");
+	MPlugArray connections;
+	plug.connectedTo(connections, true, false);
+	for (uint i = 0; i < connections.length(); i++)
+	{
+		if (connections[i].node().hasFn(MFn::kLambert))
+		{
+			MGlobal::displayInfo("WHAHHA" + MString()+connections[i].name().asChar());
+			//mat = connections[i].node();
+		}
+	}
+		
+	MGlobal::displayInfo("Mesh connected shaders#  " + MString() + connectedShaders.length() + " "+ mat.name().asChar());
+
+
 	
 	return outMesh;
 }
@@ -655,10 +678,17 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 
 void cbEvalAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
-	if (msg & MNodeMessage::AttributeMessage::kAttributeEval)
+	//MGlobal::displayInfo("AFHDIFHIUDHFIADSHFIDSHIFSDHIFHSDIFHSIDHFISDHIFHSDIH" + MString()+msg);
+	//std::string plugname(plug_1.name().asChar());
+	//if (plugname.find("outMesh") == std::string::npos)
+	//{
+	//	MGlobal::displayInfo("OUTMESH");
+	//}
+	//MGlobal::displayInfo(plug_1.name().asChar() + MString("   ") + plug_2.name().asChar());
+	if (msg & MNodeMessage::kIncomingDirection + MNodeMessage::AttributeMessage::kAttributeEval || msg & MNodeMessage::kIncomingDirection + MNodeMessage::AttributeMessage::kAttributeSet)
 	{
-		MGlobal::displayInfo(plug_1.info().asChar());
-		MMessage::removeCallback(MPolyMessage::currentCallbackId());
+		MGlobal::displayInfo("EVAL");
+		MMessage::removeCallback(MMessage::currentCallbackId());
 	}
 }
 
