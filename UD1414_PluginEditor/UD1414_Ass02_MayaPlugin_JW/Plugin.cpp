@@ -194,26 +194,33 @@ MeshInfo outMeshData(std::string name)
 	MIntArray shaderIndices;
 	mNode.getConnectedShaders(0, connectedShaders, shaderIndices);
 	
-	MFnLambertShader mat;
 	
 	MGlobal::displayInfo(connectedShaders[0].apiTypeStr());
-	MFnDependencyNode shaderGrou(connectedShaders[0]);
-	MPlug plug = shaderGrou.findPlug("surfaceShader");
+	MFnDependencyNode shaderGroup(connectedShaders[0]);
+	MPlug plug = shaderGroup.findPlug("surfaceShader");
 	MPlugArray connections;
 	plug.connectedTo(connections, true, false);
 	for (uint i = 0; i < connections.length(); i++)
 	{
 		if (connections[i].node().hasFn(MFn::kLambert))
 		{
-			MGlobal::displayInfo("WHAHHA" + MString()+connections[i].name().asChar());
+			MGlobal::displayInfo("Num of connections "+MString()+connections.length() + MString()+connections[i].name().asChar()+ MString()+shaderGroup.name().asChar());
 			//mat = connections[i].node();
 		}
 	}
-		
+	MFnDependencyNode mat(connections[0].node());
+	MGlobal::displayInfo(mat.name().asChar());
+
+	MObject objickt;
 	MGlobal::displayInfo("Mesh connected shaders#  " + MString() + connectedShaders.length() + " "+ mat.name().asChar());
-
-
-	
+	if (MGlobal::getSelectionListByName(mat.name().asChar(), sList))
+	{
+		sList.getDependNode(0, objickt);
+		MFnDependencyNode mat2(objickt);
+		MGlobal::displayInfo(mat2.name().asChar());
+	}
+	outMesh.meshID = 0;
+	outMesh.materialID = 0;
 	return outMesh;
 }
 
@@ -426,6 +433,20 @@ LightInfo outLightData(std::string name)
 
 MaterialInfo outMaterialData(std::string name)
 {
+
+	MString mName(name.c_str());
+	
+	MDagPath dagPath;
+	MSelectionList sList;
+	if (MGlobal::getSelectionListByName(mName, sList))
+	{
+		MObject obj;
+		sList.getDependNode(0, obj);
+		MFnDependencyNode depNode(obj);
+		MGlobal::displayInfo(depNode.name().asChar());
+	}
+
+
 	return MaterialInfo();
 }
 
@@ -473,7 +494,7 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 	}
 }
 
-void mAddNode(std::string name, std::string parentName, int type, int vertCount = 0, char* childname=nullptr)
+void mAddNode(std::string name, std::string parentName, int type, int extra = 0, char* childname=nullptr)
 {
 	if (!name.empty())
 	{
@@ -495,7 +516,7 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 			}
 			if (!exists)
 			{
-				MeshInfo mesh{ name, parentName };
+				MeshInfo mesh{0, name, parentName };
 				meshVector.push_back(mesh); 
 				mAddMessage(name, msgAdded, nMesh);
 				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()));
@@ -593,7 +614,28 @@ void mAddNode(std::string name, std::string parentName, int type, int vertCount 
 				}
 			}
 		}
-
+		else if (type == nMaterial)
+		{
+			if (lightVector.size() > 0)
+			{
+				for (std::vector<MaterialInfo>::size_type i = 0; i != materialVector.size(); i++)
+				{
+					std::string tmp = materialVector[i].nodeName;
+					if (strcmp(name.c_str(), tmp.c_str()) == 0)
+					{
+						exists = true;
+						MGlobal::displayWarning("Material " + MString(name.c_str()) + " already exists!");
+					}
+				}
+			}
+			if (!exists)
+			{
+				MaterialInfo material{ name, extra };
+				materialVector.push_back(material);
+				MGlobal::displayInfo("Added material: " + MString(name.c_str()));
+				mAddMessage(name, msgAdded, nMaterial);			
+			}
+		}
 	}
 	
 }
@@ -675,6 +717,54 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 		}
 	}
 }
+
+
+void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+{
+	MFnDependencyNode mat(plug_1.node());
+
+	std::string lightName(mat.name().asChar());
+	std::string plugName(plug_1.name().asChar());
+	MGlobal::displayError("MATERIAL CHANGE");
+	//if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
+	//{
+	//	bool sendMsg = false;
+	//	//outLightData(lightName.asChar());
+	//	MStatus result;
+	//	if (plugName.find(".intensity") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".color") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".decayRate") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".coneAngle") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".dropOff") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".penumbraAngle") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+
+	//	}
+
+	//	if (sendMsg)
+	//	{
+	//		//MGlobal::displayInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr() + "  " + msg);
+	//		mAddMessage(lightName, msgEdited, nLight);
+	//	}
+	//}
+}
+
 
 void cbEvalAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
@@ -904,9 +994,28 @@ void cbNewNode(MObject& node, void* clientData)
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
 		}
 	}
-	if (node.apiType() == MFn::kLambert)
+	if (node.hasFn(MFn::kLambert))
 	{
-		MGlobal::displayInfo("Material added");
+		MFnDependencyNode mat(node);
+		if (node.apiType() == MFn::kLambert)
+		{
+			mAddNode(mat.name().asChar(), "", nMaterial, 1);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMaterialAttribute));
+			MGlobal::displayInfo("Material added (Lambert)");
+		}
+		else if (node.apiType() == MFn::kPhong)
+		{
+			mAddNode(mat.name().asChar(), "", nMaterial, 2);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMaterialAttribute));
+			MGlobal::displayInfo("Material added (Phong)");
+		}
+		else if (node.apiType() == MFn::kBlinn)
+		{
+			mAddNode(mat.name().asChar(), "", nMaterial, 3);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMaterialAttribute));
+			MGlobal::displayInfo("Material added (Blinn)");
+		}
+		
 	}
 }
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
@@ -1054,33 +1163,28 @@ void loadScene()
 	
 	filter = MFn::kLambert;
 	MItDependencyNodes itDep(MFn::kLambert);
-	//MItDag dagIt2(MItDag::kDepthFirst, filter, &stat);
 	while(!itDep.isDone())
 	{
-		switch (itDep.item().apiType())
+		if (itDep.thisNode().apiType() == MFn::kLambert)
 		{
-		case MFn::kPhong:
-		{
-			MGlobal::displayInfo("Phong phong phong");
-			break;
+			MFnDependencyNode mat(itDep.thisNode());
+			//MGlobal::displayInfo("Found Material " + MString() + mat.name().asChar());
+			mAddNode(mat.name().asChar(), "", nMaterial, 1);
 		}
-		case MFn::kLambert:
+		else if (itDep.thisNode().apiType() == MFn::kPhong )
 		{
-			MGlobal::displayInfo("Lambert lambert lambert");
-			break;
+			MFnDependencyNode mat(itDep.thisNode());
+			//MGlobal::displayInfo("Found Material " + MString() + mat.name().asChar());
+			mAddNode(mat.name().asChar(), "", nMaterial, 2);
 		}
-		case MFn::kBlinn:
+		else if (itDep.thisNode().apiType() == MFn::kBlinn)
 		{
-			MGlobal::displayInfo("Blinn blinn blinn");
-			break;
-		}
-		default:
-			break;
+			MFnDependencyNode mat(itDep.thisNode());
+			//MGlobal::displayInfo("Found Material " + MString() + mat.name().asChar());
+			mAddNode(mat.name().asChar(), "", nMaterial, 3);
 		}
 		itDep.next();
-	
 	}
-
 }
 
 EXPORT MStatus initializePlugin(MObject obj)

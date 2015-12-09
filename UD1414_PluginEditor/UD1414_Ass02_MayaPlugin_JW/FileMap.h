@@ -79,14 +79,20 @@ struct MeshData
 };
 struct MeshInfo
 {
+	int meshID;
 	std::string nodeName;
 	std::string transformName;
+	std::string materialName;
+	int materialID;
 	MeshData meshData;
 };
 struct MeshMessage
 {
+	int meshID;
 	char nodeName[100];
 	char transformName[100];
+	char materialName[100];
+	int materialID;
 	MeshData meshData;
 };
 struct CameraData
@@ -115,11 +121,15 @@ struct MaterialData
 };
 struct MaterialInfo
 {
-	
+	std::string nodeName;
+	int type;
+	MaterialData matData;
 };
 struct MaterialMessage
 {
-
+	char nodeName[50];
+	int type;
+	MaterialData matData;
 };
 struct LightData
 {
