@@ -219,6 +219,7 @@ MeshInfo outMeshData(std::string name)
 		MFnDependencyNode mat2(objickt);
 		MGlobal::displayInfo(mat2.name().asChar());
 	}
+	outMesh.materialName = mat.name().asChar();
 	outMesh.meshID = 5;
 	outMesh.materialID = 8;
 	MGlobal::displayInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID);

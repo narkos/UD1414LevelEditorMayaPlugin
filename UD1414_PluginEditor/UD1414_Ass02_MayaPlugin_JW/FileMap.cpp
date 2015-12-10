@@ -383,7 +383,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
-		MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshID +" "+ MString()+mdata.materialID);
+		MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshID +" "+ MString()+mdata.materialID+" "+mdata.materialName);
 		return true;
 		break;
 
@@ -777,7 +777,7 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 	}
 	else
 	{
-		MGlobal::displayError("Transform name too long!");
+		MGlobal::displayError("Material name too long!");
 	}
 	msg.meshData = mInfo.meshData;
 	msg.materialID = mInfo.materialID;
