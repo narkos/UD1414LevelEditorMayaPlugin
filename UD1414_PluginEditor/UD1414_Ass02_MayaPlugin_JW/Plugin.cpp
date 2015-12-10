@@ -193,36 +193,34 @@ MeshInfo outMeshData(std::string name)
 	MObjectArray connectedShaders;
 	MIntArray shaderIndices;
 	mNode.getConnectedShaders(0, connectedShaders, shaderIndices);
-	
-	
-	MGlobal::displayInfo(connectedShaders[0].apiTypeStr());
 	MFnDependencyNode shaderGroup(connectedShaders[0]);
 	MPlug plug = shaderGroup.findPlug("surfaceShader");
 	MPlugArray connections;
 	plug.connectedTo(connections, true, false);
+	int matindex = -1;
 	for (uint i = 0; i < connections.length(); i++)
 	{
 		if (connections[i].node().hasFn(MFn::kLambert))
 		{
+			matindex = i;
 			MGlobal::displayInfo("Num of connections "+MString()+connections.length() + MString()+connections[i].name().asChar()+ MString()+shaderGroup.name().asChar());
 			//mat = connections[i].node();
 		}
 	}
-	MFnDependencyNode mat(connections[0].node());
-	MGlobal::displayInfo(mat.name().asChar());
-
-	MObject objickt;
-	MGlobal::displayInfo("Mesh connected shaders#  " + MString() + connectedShaders.length() + " "+ mat.name().asChar());
-	if (MGlobal::getSelectionListByName(mat.name().asChar(), sList))
+	if (matindex >= 0)
 	{
-		sList.getDependNode(0, objickt);
-		MFnDependencyNode mat2(objickt);
-		MGlobal::displayInfo(mat2.name().asChar());
+		MFnDependencyNode mat(connections[matindex].node());
+		MGlobal::displayInfo(mat.name().asChar());
+		outMesh.materialName = mat.name().asChar();
 	}
-	outMesh.materialName = mat.name().asChar();
+	else
+	{
+		outMesh.materialName = "ERROR NONE";
+	}
+
 	outMesh.meshID = 5;
 	outMesh.materialID = 8;
-	MGlobal::displayInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID);
+	MGlobal::displayInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID + outMesh.materialName.c_str());
 	return outMesh;
 }
 
@@ -460,14 +458,116 @@ MaterialInfo outMaterialData(std::string name)
 			if (plg.isConnected())
 			{
 				MGlobal::displayInfo("IS CONNECTED");
+				MPlugArray plgArray;
+				plg.connectedTo(plgArray, true, false);
+				for (int i = 0; i < plgArray.length(); i++)
+				{
+					if (plgArray[i].node().apiType() == MFn::kFileTexture)
+					{
+						MFnDependencyNode texture(plgArray[i].node());
+						plg = texture.findPlug("fileTextureName", & status);
+						if (status)
+						{
+							MString name = plg.asString();
+							if (name.length() < 1)
+							{
+								MGlobal::displayWarning("TEXTURE PATH NOT SET");
+							}
+							else if(name.length() < 100)
+							{
+								MGlobal::displayInfo("FOUND TEXTURE MAP " + name);
+								//std::string strname = name.asChar();
+								for (int i = 0; i < name.length(); i++)
+								{
+									outMat.matData.diffuseTexturePath[i] = name.asChar()[i];
+								}
+								outMat.matData.diffuseTexturePath[name.length()] = 0;
+								outMat.matData.mapMasks |= (int)bitmask::COLORMAP;
+								MGlobal::displayInfo(outMat.matData.diffuseTexturePath);	
+							}
+							else
+							{
+								MGlobal::displayError("File texture path name too long");
+							}
+						}
+					}
+				}
 			}
 			else
 			{
-				MGlobal::displayInfo("IS NOT CONNECTED");
+				plg = mat.findPlug("colorR", &status);
+				if (status)
+					plg.getValue(outMat.matData.color[0]);
+				plg = mat.findPlug("colorG", &status);
+				if(status)
+					plg.getValue(outMat.matData.color[1]);
+				plg = mat.findPlug("colorB", &status);
+				if (status)
+					plg.getValue(outMat.matData.color[2]);
+				MGlobal::displayInfo("IS NOT CONNECTED " + MString() + outMat.matData.color[0]);
+				MGlobal::displayInfo("IS NOT CONNECTED " + MString() + outMat.matData.color[1]);
+				MGlobal::displayInfo("IS NOT CONNECTED " + MString() + outMat.matData.color[2]);
+				
 			}			
 		}
+		plg = mat.findPlug("specularColor", &status);
+		if (status)
+		{
+			if (plg.isConnected())
+			{
+				MGlobal::displayInfo("IS CONNECTED");
+			}
+			else
+			{
+				plg = mat.findPlug("specularColorR", &status);
+				if (status)
+					plg.getValue(outMat.matData.specColor[0]);
+				plg = mat.findPlug("specularColorG", &status);
+				if (status)
+					plg.getValue(outMat.matData.specColor[1]);
+				plg = mat.findPlug("specularColorB", &status);
+				if (status)
+					plg.getValue(outMat.matData.specColor[2]);
+				MGlobal::displayInfo("IS NOT CONNECTED " + MString() + outMat.matData.specColor[0]);
+				MGlobal::displayInfo("IS NOT CONNECTED " + MString() + outMat.matData.specColor[1]);
+				MGlobal::displayInfo("IS NOT CONNECTED " + MString() + outMat.matData.specColor[2]);
+
+			}
+		}
+		plg = mat.findPlug("cosinePower", &status);
+		if (status)
+		{
+			MGlobal::displayInfo("Material has cosine power");
+			plg.getValue(outMat.matData.specCosine);
+		}
+		plg = mat.findPlug("eccentricity", &status);
+		if (status)
+		{
+			MGlobal::displayInfo("Material has eccentricity");
+			plg.getValue(outMat.matData.specEccentricity);
+		}
+		plg = mat.findPlug("specularRollOff", &status);
+		if (status)
+		{
+			MGlobal::displayInfo("Material has specular roll off");
+			plg.getValue(outMat.matData.specRollOff);
+		}
+
+
+		if (debug)
+		{
+			MGlobal::displayInfo("Color: ");
+			MGlobal::displayInfo("Specular color: ");
+			MGlobal::displayInfo("Cosine Power: " +  MString()+outMat.matData.specCosine);
+			MGlobal::displayInfo("Eccentricity: " + MString() + outMat.matData.specEccentricity);
+			MGlobal::displayInfo("Specular Roll Off: " + MString() + outMat.matData.specRollOff);
+		}
+
 		
-		int mask = 0;
+		
+		
+		
+		/*int mask = 0;
 		if ((mask & (int)bitmask::COLORMAP))
 		{
 			MGlobal::displayInfo("BITS "+MString()+mask);
@@ -490,7 +590,7 @@ MaterialInfo outMaterialData(std::string name)
 			MGlobal::displayInfo("RIGHT " + MString() + mask);
 		}
 
-		plg = mat.findPlug("ambient");
+		plg = mat.findPlug("ambient");*/
 		
 
 
@@ -798,15 +898,24 @@ void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 		{
 			sendMsg = true;
 		}
-	/*	else if (plugName.find(".dropOff") != std::string::npos)
+		else if (plugName.find(".specularColor") != std::string::npos)
 		{
 			sendMsg = true;
 		}
-		else if (plugName.find(".penumbraAngle") != std::string::npos)
+		else if (plugName.find(".eccentricity") != std::string::npos)
 		{
 			sendMsg = true;
+		}
+		else if (plugName.find(".specularRollOff") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".cosinePower") != std::string::npos)
+		{
+			sendMsg = true;
+		}
 
-		}*/
+
 
 		if (sendMsg)
 		{
