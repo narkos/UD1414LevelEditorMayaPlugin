@@ -435,15 +435,63 @@ MaterialInfo outMaterialData(std::string name)
 {
 
 	MString mName(name.c_str());
-	
 	MDagPath dagPath;
 	MSelectionList sList;
+	MaterialInfo outMat;
+	MStatus status;
 	if (MGlobal::getSelectionListByName(mName, sList))
 	{
 		MObject obj;
 		sList.getDependNode(0, obj);
-		MFnDependencyNode depNode(obj);
-		MGlobal::displayInfo(depNode.name().asChar());
+		MFnDependencyNode mat(obj);
+		//MGlobal::displayInfo(depNode.name().asChar());
+		MPlug plg = mat.findPlug("diffuse", &status);
+		if (status)
+		{
+			float val;
+			plg.getValue(val);
+			MGlobal::displayInfo(MString() + val);
+		}
+		plg = mat.findPlug("color", &status);
+		if(status)
+		{
+			if (plg.isConnected())
+			{
+				MGlobal::displayInfo("IS CONNECTED");
+			}
+			else
+			{
+				MGlobal::displayInfo("IS NOT CONNECTED");
+			}			
+		}
+		
+		int mask = 0;
+		if ((mask & (int)bitmask::COLORMAP))
+		{
+			MGlobal::displayInfo("BITS "+MString()+mask);
+		}
+		mask |= (int)bitmask::SPECULARMAP;
+		if((mask & ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP)) == ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP))
+		{
+			MGlobal::displayInfo("BITS2 " + MString() + mask);
+		}
+
+		int removeMask = (int)bitmask::COLORMAP;
+		removeMask &= mask;
+		mask ^= removeMask;
+		if ((mask & ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP)) == ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP))
+		{
+			MGlobal::displayInfo("WRONG " + MString() + mask);
+		}
+		if ((mask &(int)bitmask::SPECULARMAP) == (int)bitmask::SPECULARMAP)
+		{
+			MGlobal::displayInfo("RIGHT " + MString() + mask);
+		}
+
+		plg = mat.findPlug("ambient");
+		
+
+
 	}
 
 
@@ -516,7 +564,7 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 			}
 			if (!exists)
 			{
-				MeshInfo mesh{0, name, parentName };
+				MeshInfo mesh{0,0, name, parentName };
 				meshVector.push_back(mesh); 
 				mAddMessage(name, msgAdded, nMesh);
 				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()));
@@ -725,44 +773,47 @@ void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 
 	std::string lightName(mat.name().asChar());
 	std::string plugName(plug_1.name().asChar());
-	MGlobal::displayError("MATERIAL CHANGE");
-	//if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
-	//{
-	//	bool sendMsg = false;
-	//	//outLightData(lightName.asChar());
-	//	MStatus result;
-	//	if (plugName.find(".intensity") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".color") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".decayRate") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".coneAngle") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".dropOff") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".penumbraAngle") != std::string::npos)
-	//	{
-	//		sendMsg = true;
+	
+	
+	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
+	{
+		bool sendMsg = false;
+		//outLightData(lightName.asChar());
+		MStatus result;
+		if (plugName.find(".diffuse") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".color") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".transparency") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".ambient") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+	/*	else if (plugName.find(".dropOff") != std::string::npos)
+		{
+			sendMsg = true;
+		}
+		else if (plugName.find(".penumbraAngle") != std::string::npos)
+		{
+			sendMsg = true;
 
-	//	}
+		}*/
 
-	//	if (sendMsg)
-	//	{
-	//		//MGlobal::displayInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr() + "  " + msg);
-	//		mAddMessage(lightName, msgEdited, nLight);
-	//	}
-	//}
+		if (sendMsg)
+		{
+			MGlobal::displayInfo("MATERIAL CHANGE "+ MString(plugName.c_str()));
+			outMaterialData(mat.name().asChar());
+			//MGlobal::displayInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr() + "  " + msg);
+			mAddMessage(lightName, msgEdited, nMaterial);
+		}
+	}
 }
 
 
@@ -1170,18 +1221,21 @@ void loadScene()
 			MFnDependencyNode mat(itDep.thisNode());
 			//MGlobal::displayInfo("Found Material " + MString() + mat.name().asChar());
 			mAddNode(mat.name().asChar(), "", nMaterial, 1);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(itDep.thisNode(), cbMaterialAttribute));
 		}
 		else if (itDep.thisNode().apiType() == MFn::kPhong )
 		{
 			MFnDependencyNode mat(itDep.thisNode());
 			//MGlobal::displayInfo("Found Material " + MString() + mat.name().asChar());
 			mAddNode(mat.name().asChar(), "", nMaterial, 2);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(itDep.thisNode(), cbMaterialAttribute));
 		}
 		else if (itDep.thisNode().apiType() == MFn::kBlinn)
 		{
 			MFnDependencyNode mat(itDep.thisNode());
 			//MGlobal::displayInfo("Found Material " + MString() + mat.name().asChar());
 			mAddNode(mat.name().asChar(), "", nMaterial, 3);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(itDep.thisNode(), cbMaterialAttribute));
 		}
 		itDep.next();
 	}
