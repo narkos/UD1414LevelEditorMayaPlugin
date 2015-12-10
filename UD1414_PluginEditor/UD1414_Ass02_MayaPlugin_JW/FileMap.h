@@ -84,20 +84,20 @@ struct MeshData
 };
 struct MeshInfo
 {
-	int meshID;
-	int materialID;
 	std::string nodeName;
 	std::string transformName;
 	std::string materialName;
+	int meshID;
+	int materialID;
 	MeshData meshData;
 };
 struct MeshMessage
 {
-	int meshID;
-	int materialID;
 	char nodeName[100];
 	char transformName[100];
 	char materialName[100];
+	int meshID;
+	int materialID;
 	MeshData meshData;
 };
 struct CameraData

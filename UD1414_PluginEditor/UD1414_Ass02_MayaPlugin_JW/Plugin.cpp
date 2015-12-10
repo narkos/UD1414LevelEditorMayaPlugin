@@ -566,7 +566,7 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 			}
 			if (!exists)
 			{
-				MeshInfo mesh{0,0, name, parentName };
+				MeshInfo mesh{name, parentName, "" ,0,0};
 				meshVector.push_back(mesh); 
 				mAddMessage(name, msgAdded, nMesh);
 				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()));
