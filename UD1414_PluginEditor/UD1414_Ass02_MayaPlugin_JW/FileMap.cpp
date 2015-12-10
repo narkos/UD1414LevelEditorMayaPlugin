@@ -348,9 +348,12 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		//tempHead = 0;
 		tempHead = sizeof(MessageHeader);
 
-		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int)*7+300);
-		tempHead += sizeof(int) * 7;
-		tempHead += 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 2);
+		tempHead += sizeof(int) * 2;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 300);
+		tempHead += sizeof(char) * 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 5);
+		tempHead += sizeof(int) * 5;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.vertices, sizeof(float)*3*mdata.meshData.vertCount);
 		tempHead += sizeof(float) * 3 * mdata.meshData.vertCount;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
@@ -390,9 +393,13 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		localHead = 0;
 		tempHead = sizeof(MessageHeader);
 
-		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 7 + 300);
-		tempHead += sizeof(int) * 7;
-		tempHead += 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 2);
+		tempHead += sizeof(int) * 2;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char)* 300);
+		tempHead += sizeof(char) * 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 5 );
+		tempHead += sizeof(int) * 5;
+	
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
 		tempHead += sizeof(float) * 3 * mdata.meshData.vertCount;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
@@ -425,9 +432,12 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
 		tempHead = sizeof(MessageHeader);
 
-		memcpy((unsigned char*)mMessageData +  tempHead, &mdata, sizeof(int) * 7 + 300);
-		tempHead += sizeof(int) * 7;
-		tempHead += 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 2);
+		tempHead += sizeof(int) * 2;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 300);
+		tempHead += sizeof(char) * 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(int) * 5);
+		tempHead += sizeof(int) * 5;
 		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
 		tempHead += sizeof(float) * 3 * mdata.meshData.vertCount;
 		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
