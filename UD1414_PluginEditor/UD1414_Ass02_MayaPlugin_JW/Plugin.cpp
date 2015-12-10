@@ -1,6 +1,6 @@
 #include "Plugin.h"
 
-MeshInfo outMeshData(std::string name)
+MeshInfo outMeshData(std::string name, bool getDynamicData)
 {
 	// Find mesh node in Dag
 	MStatus			result;

@@ -250,6 +250,28 @@ bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 	}
 	return false;
 }
+bool FileMapping::tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg)
+{
+	MessageHeader mHeader = createHeaderRenameDelete(info);
+	int cfg = findWriteConfig(mHeader);
+	if (cfg != 0)
+	{
+		if (writeNodeRenamedDelete(mHeader, createMessageRenameDelete(info, msg), cfg) == true)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		return false;
+	}
+	return false;
+}
+//bool FileMapping::tryWriteDelete(MessageInfo& info, RenameDeleteMessage& msg)
+//{
+//
+//}
+
 
 // Write config return values
 // 0: Can't write
@@ -723,7 +745,73 @@ bool FileMapping::writeLight(MessageHeader& hdr, LightMessage& ldata, int config
 	}
 	return false;
 }
+bool FileMapping::writeNodeRenamedDelete(MessageHeader& hdr, RenameDeleteMessage& msg, int config)
+{
+	int cfg = config;
+	switch (cfg)
+	{
+	case 1:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
 
+		localHead += sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + localHead, &msg, hdr.byteSize);
+
+		localHead += hdr.byteSize + hdr.bytePadding;
+
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		if (localHead == mSize)
+		{
+			localHead = 0;
+		}
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
+		break;
+
+	case 2:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData + localHead, &hdr, sizeof(MessageHeader));
+		localHead = 0;
+		memcpy((unsigned char*)mMessageData, &msg, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
+
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
+		break;
+
+	case 3:
+		PrintFileMapInfo(false);
+		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
+		localHead = sizeof(MessageHeader);
+		memcpy((unsigned char*)mMessageData + sizeof(MessageHeader), &msg, hdr.byteSize);
+		localHead += hdr.byteSize + hdr.bytePadding;
+
+		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
+		fileMapInfo.head_ByteOffset = localHead;
+		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
+		mutexInfo.Unlock();
+		PrintFileMapInfo(true);
+		return true;
+
+
+		break;
+	}
+	return false;
+}
+//bool FileMapping::writeNodeDelete(MessageHeader& hdr, RenameDeleteMessage& msg)
+//{
+//	return true;
+//}
 
 MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo)
 {
@@ -861,7 +949,27 @@ MessageHeader FileMapping::createHeaderLight(MessageInfo& msginfo, LightInfo& lI
 	return hdr;
 	//return 0;
 }
+MessageHeader FileMapping::createHeaderRenameDelete(MessageInfo& msginfo)
+{
+	size_t totalSize;
+	size_t msgSize;
+	msgSize = sizeof(MessageHeader) + sizeof(RenameDeleteMessage);
+	totalSize=makeMultiple( msgSize, 256);
+	msgSize = msgSize - sizeof(MessageHeader);
 
+	MessageHeader hdr;
+	hdr.nodeType = msginfo.nodeType;
+	hdr.messageType = msginfo.msgType;
+	hdr.bytePadding = totalSize;
+	hdr.byteSize = msgSize;
+	hdr.bytePadding = totalSize - msgSize;
+
+	return hdr;
+}
+//MessageHeader FileMapping::createHeaderDelete(std::string name1, MessageInfo& msginfo)
+//{
+//	return MessageHeader();
+//}
 
 MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo)
 {
@@ -1061,7 +1169,25 @@ LightMessage FileMapping::createMessageLight(MessageInfo& msgInfo, LightInfo& lI
 
 	return outMsg;
 }
+RenameDeleteMessage FileMapping::createMessageRenameDelete(MessageInfo& msgInfo, RenameDeleteInfo& info)
+{
+	RenameDeleteMessage outMsg;
+	size_t name1Length = info.nodeName1.length();
+	size_t name2Length = info.nodeName2.length();
 
+	memcpy(outMsg.nodeName1, &info.nodeName1, name1Length);
+	outMsg.nodeName1[name1Length] = 0;
+
+	memcpy(outMsg.nodeName2, &info.nodeName2, name2Length);
+	outMsg.nodeName1[name2Length] = 0;
+
+
+	return outMsg;
+}
+//RenameDeleteMessage FileMapping::createMessageDelete(std::string name1)
+//{
+//	return RenameDeleteMessage();
+//}
 
 size_t FileMapping::makeMultiple(size_t size, size_t multiple)
 {

@@ -102,6 +102,9 @@ std::vector<std::string> msgTypeVector;
 
 	void loadScene();
 
+
+	MeshInfo outMeshData(std::string name, bool getDynamicData = true);
+
 	void outTransFormData(MObject& obj);
 	void outMeshData(MObject& obj);
 	void outCameraData(MObject& obj);

@@ -37,7 +37,17 @@ struct MessageHeader
 	size_t byteSize;
 	size_t bytePadding;
 };
-
+struct MessageInfo
+{
+	std::string nodeName;
+	int nodeType;
+	int msgType;
+};
+struct RenameDeleteInfo
+{
+	std::string nodeName1;
+	std::string nodeName2;
+};
 struct RenameDeleteMessage
 {
 	char nodeName1[100];
@@ -45,12 +55,7 @@ struct RenameDeleteMessage
 };
 
 
-struct MessageInfo
-{
-	std::string nodeName;
-	int nodeType;
-	int msgType;
-};
+
 struct TransformData
 {
 	float translation[3];
@@ -265,9 +270,14 @@ public:
 	bool writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int config);
 	bool writeLight(MessageHeader& hdr, LightMessage& ldata, int config);
 
-	/*MessageHeader createHeaderRename(std::string name1, std::string name2);
-	RenameDeleteMessage createMessageRename(std::string name1, std::string name2);
-	bool writeNodeRenamed()*/
+	bool tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg);
+	//bool tryWriteDelete(MessageInfo& info, RenameDeleteMessage& msg);
+	MessageHeader createHeaderRenameDelete(MessageInfo& msginfo);
+	//MessageHeader createHeaderDelete(std::string name1, MessageInfo& msginfo);
+	RenameDeleteMessage createMessageRenameDelete(MessageInfo& msgInfo, RenameDeleteInfo& info);
+	//RenameDeleteMessage createMessageDelete(std::string name1);
+	bool writeNodeRenamedDelete(MessageHeader& hdr, RenameDeleteMessage& msg, int config);
+	//bool writeNodeDelete(MessageHeader& hdr, RenameDeleteMessage& msg);
 
 
 	std::string GetLastErrorAsString();
