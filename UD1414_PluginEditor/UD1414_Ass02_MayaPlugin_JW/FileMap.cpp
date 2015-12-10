@@ -383,7 +383,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
-		//MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshData.vertices[4]);
+		MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshID +" "+ MString()+mdata.materialID);
 		return true;
 		break;
 
@@ -739,6 +739,7 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 
 	int nodeNameLength = msginfo.nodeName.length();
 	int transformNameLength = mInfo.transformName.length();
+	int materialNameLength = mInfo.materialName.length();
 	if (nodeNameLength <= 100)
 	{
 		for (int i = 0; i < nodeNameLength; i++)
@@ -765,7 +766,22 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 	{
 		MGlobal::displayError("Transform name too long!");
 	}
+	if (materialNameLength <= 100)
+	{
+		for (int i = 0; i < materialNameLength; i++)
+		{
+			msg.materialName[i] = mInfo.materialName[i];
+		}
+		//msg.nodeName[nodeNameLength] = (char)"\0";
+		msg.materialName[materialNameLength] = '\0';
+	}
+	else
+	{
+		MGlobal::displayError("Transform name too long!");
+	}
 	msg.meshData = mInfo.meshData;
+	msg.materialID = mInfo.materialID;
+	msg.meshID = mInfo.meshID;
 	//MGlobal::displayInfo(MString() + msg.meshData.indCount);
 	return msg;
 }

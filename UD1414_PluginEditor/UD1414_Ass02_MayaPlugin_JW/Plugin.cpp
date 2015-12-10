@@ -221,6 +221,7 @@ MeshInfo outMeshData(std::string name)
 	}
 	outMesh.meshID = 5;
 	outMesh.materialID = 8;
+	MGlobal::displayInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID);
 	return outMesh;
 }
 
