@@ -149,7 +149,7 @@ struct MaterialInfo
 };
 struct MaterialMessage
 {
-	char nodeName[50];
+	char nodeName[100];
 	int type;
 	MaterialData matData;
 };

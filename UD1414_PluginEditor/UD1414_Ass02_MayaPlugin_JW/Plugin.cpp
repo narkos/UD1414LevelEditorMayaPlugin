@@ -472,6 +472,7 @@ MaterialInfo outMaterialData(std::string name)
 							if (name.length() < 1)
 							{
 								MGlobal::displayWarning("TEXTURE PATH NOT SET");
+								outMat.matData.diffuseTexturePath[0] = 0;
 							}
 							else if(name.length() < 100)
 							{
@@ -495,6 +496,7 @@ MaterialInfo outMaterialData(std::string name)
 			}
 			else
 			{
+				outMat.matData.diffuseTexturePath[0] = 0;
 				plg = mat.findPlug("colorR", &status);
 				if (status)
 					plg.getValue(outMat.matData.color[0]);
@@ -595,9 +597,7 @@ plg.getValue(outMat.matData.specCosine);
 
 
 	}
-
-
-	return MaterialInfo();
+	return outMat;
 }
 
 std::string getParentName(MPlug& plug)
@@ -1276,8 +1276,18 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		}
 		case(NodeType::nMaterial) :
 		{
+			MaterialInfo outMat =  outMaterialData(msgQueue.front().nodeName);
 			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Material)");
-			msgQueue.pop();
+			if (fileMap.tryWriteMaterial(msgQueue.front(), outMat) == true)
+			{
+				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+				msgQueue.pop();
+			}
+			else
+			{
+				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+				run = false;
+			}
 			break;
 		}
 		}
