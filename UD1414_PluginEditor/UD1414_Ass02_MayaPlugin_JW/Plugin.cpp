@@ -537,8 +537,8 @@ MaterialInfo outMaterialData(std::string name)
 		plg = mat.findPlug("cosinePower", &status);
 		if (status)
 		{
-			MGlobal::displayInfo("Material has cosine power");
-			plg.getValue(outMat.matData.specCosine);
+MGlobal::displayInfo("Material has cosine power");
+plg.getValue(outMat.matData.specCosine);
 		}
 		plg = mat.findPlug("eccentricity", &status);
 		if (status)
@@ -558,15 +558,15 @@ MaterialInfo outMaterialData(std::string name)
 		{
 			MGlobal::displayInfo("Color: ");
 			MGlobal::displayInfo("Specular color: ");
-			MGlobal::displayInfo("Cosine Power: " +  MString()+outMat.matData.specCosine);
+			MGlobal::displayInfo("Cosine Power: " + MString() + outMat.matData.specCosine);
 			MGlobal::displayInfo("Eccentricity: " + MString() + outMat.matData.specEccentricity);
 			MGlobal::displayInfo("Specular Roll Off: " + MString() + outMat.matData.specRollOff);
 		}
 
-		
-		
-		
-		
+
+
+
+
 		/*int mask = 0;
 		if ((mask & (int)bitmask::COLORMAP))
 		{
@@ -591,7 +591,7 @@ MaterialInfo outMaterialData(std::string name)
 		}
 
 		plg = mat.findPlug("ambient");*/
-		
+
 
 
 	}
@@ -617,23 +617,26 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 	bool exists = false;
 	if (msgVector.size() > 0)
 	{
-		for(std::vector<MessageInfo>::size_type i = 0; i != msgVector.size(); i++)
+		for (std::vector<MessageInfo>::size_type i = 0; i != msgVector.size(); i++)
+		{
+			std::string tmp = msgVector.at(i).nodeName;
+			if (strcmp(name.c_str(), tmp.c_str()) == 0)
 			{
-				std::string tmp = msgVector.at(i).nodeName;
-				if (strcmp(name.c_str(), tmp.c_str()) == 0)
+				//If a message of this type already exists in the queue OR if a msgAdded is already in queue, no new message should be added.
+				if (msgVector.at(i).msgType == msgType || msgVector.at(i).msgType == msgAdded)
 				{
-					//If a message of this type already exists in the queue OR if a msgAdded is already in queue, no new message should be added.
-					if (msgVector.at(i).msgType == msgType  || msgVector.at(i).msgType == msgAdded)
+					if (msgType != msgSwitched)
 					{
-						if (msgType != msgSwitched)
-						{
-							exists = true;
-							MGlobal::displayWarning("Message" + MString(name.c_str()) + "already exists!");
-						}
-						
+						exists = true;
+						MGlobal::displayWarning("Message" + MString(name.c_str()) + "already exists!");
 					}
-					
 				}
+				else if (msgVector.at(i).msgType == msgSwitched && msgType == msgSwitched)
+				{
+					msgVector.at(i).nodeName = name;
+					exists = true;
+				}
+			}
 			}
 	}
 	if (!exists)
@@ -968,6 +971,7 @@ void cbCameraPanel(const MString &str, MObject &node, void *clientData)
 	{
 		MFnCamera currCam(node);
 		MGlobal::displayInfo("Current Camera: " + str+" -> " + currCam.fullPathName());
+		mAddMessage(currCam.fullPathName().asChar(), msgSwitched, nCamera);
 	}
 
 
@@ -1320,7 +1324,7 @@ void loadScene()
 
 	if (stat)
 	{
-		//mAddMessage(activeCamera.fullPathName().asChar(), msgSwitched, nCamera);
+		mAddMessage(activeCamera.fullPathName().asChar(), msgSwitched, nCamera);
 	}
 	
 	filter = MFn::kLambert;
@@ -1376,6 +1380,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	msgTypeVector.push_back("Edited");
 	msgTypeVector.push_back("Deleted");
 	msgTypeVector.push_back("Renamed");
+	msgTypeVector.push_back("Switched");
 
 
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
