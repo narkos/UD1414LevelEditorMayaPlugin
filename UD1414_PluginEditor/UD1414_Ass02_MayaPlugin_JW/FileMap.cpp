@@ -145,19 +145,31 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 }
 bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 {
-			MessageHeader mHeader = createHeaderTransform(msg, tinfo);
-			int cfg = findWriteConfig(mHeader);
-			if (cfg != 0)
+	if (msg.msgType == MessageType::msgDeleted)
+	{
+
+	}
+	else if (msg.msgType == MessageType::msgRenamed)
+	{
+
+	}
+	else
+	{
+		MessageHeader mHeader = createHeaderTransform(msg, tinfo);
+		int cfg = findWriteConfig(mHeader);
+		if (cfg != 0)
+		{
+			if (writeTransform(mHeader, createMessageTransform(msg, tinfo), cfg) == true)
 			{
-				if (writeTransform(mHeader, createMessageTransform(msg, tinfo), cfg) == true)
-				{
-					return true;
-				}
+				return true;
 			}
-			else
-			{
-				return false;
-			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+			
 	return false;
 }
 bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)

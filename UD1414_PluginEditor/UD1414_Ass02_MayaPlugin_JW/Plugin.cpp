@@ -335,7 +335,8 @@ CameraInfo outCameraData(std::string name)
 			MFloatVector right = mNode.rightDirection(MSpace::Space::kPostTransform);
 			
 			bool isOrtho = mNode.isOrtho();
-			double fov = mNode.horizontalFieldOfView();
+			//double fov = mNode.horizontalFieldOfView();
+			double fov = mNode.verticalFieldOfView();
 			if (debug)
 			{
 				MGlobal::displayInfo("Pos(" + MString() + pos.x + " , " + MString() + pos.y + " , " + MString() + pos.z + ")");

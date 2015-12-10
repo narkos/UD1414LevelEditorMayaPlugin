@@ -38,6 +38,13 @@ struct MessageHeader
 	size_t bytePadding;
 };
 
+struct RenameDeleteMessage
+{
+	char nodeName1[100];
+	char nodeName2[100];
+};
+
+
 struct MessageInfo
 {
 	std::string nodeName;
@@ -257,6 +264,11 @@ public:
 	bool writeCamera(MessageHeader& hdr, CameraMessage& cdata, int config);
 	bool writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int config);
 	bool writeLight(MessageHeader& hdr, LightMessage& ldata, int config);
+
+	/*MessageHeader createHeaderRename(std::string name1, std::string name2);
+	RenameDeleteMessage createMessageRename(std::string name1, std::string name2);
+	bool writeNodeRenamed()*/
+
 
 	std::string GetLastErrorAsString();
 
