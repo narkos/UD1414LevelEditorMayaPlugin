@@ -145,6 +145,7 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 }
 bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 {
+	bool returnBool = false;
 	if (msg.msgType == MessageType::msgDeleted)
 	{
 
@@ -161,16 +162,17 @@ bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 		{
 			if (writeTransform(mHeader, createMessageTransform(msg, tinfo), cfg) == true)
 			{
-				return true;
+				MGlobal::displayWarning("COULD WRITE FUCKER");
+				returnBool = true;
 			}
 		}
 		else
 		{
-			return false;
+			returnBool = false;
 		}
 	}
 			
-	return false;
+	return returnBool;
 }
 bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
 {
@@ -252,17 +254,28 @@ bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 }
 bool FileMapping::tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg)
 {
+	MGlobal::displayInfo("\n****** MESSAGE START (ID:" +MString(info.nodeName.c_str())+ ") **********************");
 	MessageHeader mHeader = createHeaderRenameDelete(info);
 	int cfg = findWriteConfig(mHeader);
 	if (cfg != 0)
 	{
+		if (info.msgType == MessageType::msgRenamed)
+		{
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msg.nodeName2.c_str()) + " -> "+MString(msg.nodeName1.c_str())+ " ) ( Node Rename )");
+		}
+		else if(info.msgType == MessageType::msgDeleted)
+		{
+			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msg.nodeName1.c_str()) + " ) ( Node Delete )");
+		}
 		if (writeNodeRenamedDelete(mHeader, createMessageRenameDelete(info, msg), cfg) == true)
 		{
+			MGlobal::displayInfo("*** MESSAGE Result( " + MString(info.nodeName.c_str()) + " ): Success");
 			return true;
 		}
 	}
 	else
 	{
+		MGlobal::displayInfo("*** MESSAGE Result( " + MString(info.nodeName.c_str()) + " ): Failed");
 		return false;
 	}
 	return false;

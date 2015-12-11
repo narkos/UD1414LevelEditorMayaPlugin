@@ -99,7 +99,7 @@ std::vector<std::string> msgTypeVector;
 	void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
 
 	void mAddNode(char* name, int type, int vertCount = 0, char* childname = nullptr);
-
+	void mAddMessage(std::string name, int msgType, int nodeType, std::string oldName = "");
 	void loadScene();
 	bool deleteNode();
 	bool renameNode(MString newName, MString oldName, int type);

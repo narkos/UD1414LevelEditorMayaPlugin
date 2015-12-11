@@ -612,7 +612,7 @@ std::string getParentName(MPlug& plug)
 
 
 // MESSAGE AND NODE HANDLERS
-void mAddMessage(std::string name, int msgType, int nodeType)
+void mAddMessage(std::string name, int msgType, int nodeType, std::string oldName)
 {
 	bool exists = false;
 	if (msgVector.size() > 0)
@@ -643,7 +643,7 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 	{
 		MessageInfo tMsg{ name, nodeType,msgType };
 		msgVector.push_back(tMsg);
-		msgQueue.push(tMsg);
+		//msgQueue.push(tMsg);
 	}
 }
 void mAddNode(std::string name, std::string parentName, int type, int extra = 0, char* childname=nullptr)
@@ -670,7 +670,13 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 			{
 				MeshInfo mesh{name, parentName, "" ,0,0};
 				meshVector.push_back(mesh); 
-				mAddMessage(name, msgAdded, nMesh);
+				MessageInfo msginfo{ name, NodeType::nMesh, MessageType::msgAdded };
+				if (fileMap.tryWriteMesh(msginfo, outMeshData(name)) == false)
+				{
+					MGlobal::displayWarning("Could not sent message immediately");
+					mAddMessage(name, msgAdded, nMesh);
+				}
+				
 				MGlobal::displayInfo("Added mesh: " + MString(name.c_str()));
 			}
 		}
@@ -690,9 +696,14 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 			}
 			if (!exists)
 			{
-				mAddMessage(name, msgAdded, nTransform);
 				TransformInfo trans{ name};
 				transVector.push_back(trans);
+				MessageInfo msginfo{ name, NodeType::nTransform, MessageType::msgAdded };
+				if (fileMap.tryWriteTransform(msginfo, outTransformData(name)) == false)
+				{
+					MGlobal::displayWarning("Could not sent message immediately");
+					mAddMessage(name, msgAdded, nTransform);
+				}
 				MGlobal::displayInfo("Added transform: " + MString(name.c_str()));
 			}
 		}
@@ -820,11 +831,10 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 			std::string tmpName = mNode.fullPathName().asChar();
 			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(plug_1.node(), cbMeshAttributeChange));
+			MMessage::removeCallback(MMessage::currentCallbackId());
 		}
 	}
-	
 }
-
 void cbMeshAttributeChange(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	// Validates new mesh
@@ -997,55 +1007,108 @@ void cbCameraPanel(const MString &str, MObject &node, void *clientData)
 }
 void cbNameChange(MObject& node, const MString& str, void* clientData)
 {
-	
 	if (node.hasFn(MFn::kMesh))
 	{
 		MFnMesh mesh(node);
 		std::string newNameStr = mesh.fullPathName().asChar();
+		std::string oldName;
 		//std::string oldNameStr = str.asChar();
 		for (std::vector<MeshInfo>::size_type i = 0; i != meshVector.size(); i++)
 		{
 			if (newNameStr.length() > 0)
 			{
 				std::string oldTemp = meshVector.at(i).nodeName;
-				if (strcmp(newNameStr.c_str(), oldTemp.c_str())==0)
+				std::string oldStr = str.asChar();
+				int oldStrLen = oldStr.length();
+				if(strspn(oldStr.c_str(), meshVector[i].nodeName.c_str()) == oldStrLen)
+				//if (strcmp(newNameStr.c_str(), oldTemp.c_str())==0)
 				{
 					meshVector.at(i).nodeName = mesh.fullPathName().asChar();
-					mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
-					MGlobal::displayInfo("Mesh name: " + str + " changed to: " + (MString)mesh.name());
+					MessageInfo minfo{ oldTemp, NodeType::nMesh, MessageType::msgRenamed };
+					RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
+					if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
+					{
+						mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
+					}
+					for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+					{
+						if (strspn(oldStr.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+						{
+							if (msgVector[o].nodeType == NodeType::nMesh)
+							{
+								msgVector[o].nodeName = newNameStr;
+							}
+						}
+					}
+					MGlobal::displayInfo("Mesh name: " + str + " changed to: " + (MString)mesh.name() + " "+ meshVector[i].nodeName.c_str());
+					i = meshVector.size();
 					break;
 				}
 			}
 		}
-		//MMessage::removeCallback(MMessage::currentCallbackId());
 	}
 	else if (node.hasFn(MFn::kTransform) == true)
 	{
 		bool hasShapes = false;
 		MFnTransform trans(node);
-		for (int i = 0; i < trans.childCount(); i++)
+		std::string newNameStr = trans.fullPathName().asChar();
+		int newNameLength = newNameStr.length();
+		if (newNameStr.c_str()[newNameLength - 1] != '#')
 		{
-			std::string newNameStr = trans.fullPathName().asChar();
-			if (newNameStr.length() > 0)
+			for (int i = 0; i < trans.childCount(); i++)
 			{
-				MObject child = trans.child(i);
-				if (child.hasFn(MFn::kMesh))
+				if (newNameStr.length() > 0)
 				{
-					hasShapes = true;
-				}
-				if (child.hasFn(MFn::kCamera))
-				{
-					hasShapes = true;
+					MObject child = trans.child(i);
+					if (child.hasFn(MFn::kMesh))
+					{
+						hasShapes = true;
+					}
+					if (child.hasFn(MFn::kCamera))
+					{
+						hasShapes = true;
+					}
 				}
 			}
-			
+			if (hasShapes)
+			{
+				std::string oldStr = str.asChar();
+				int oldStrLen = oldStr.length();
+				for (int i = 0; i < transVector.size(); i++)
+				{
+					std::string oldTemp = transVector.at(i).nodeName;
+					if (strspn(oldStr.c_str(), transVector[i].nodeName.c_str()) == oldStrLen)
+					{
+						transVector.at(i).nodeName = trans.fullPathName().asChar();
+						MessageInfo minfo{ oldTemp, NodeType::nTransform, MessageType::msgRenamed };
+						RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
+						if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
+						{
+							mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
+						}
+						for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+						{
+							if (strspn(oldStr.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+							{
+								if (msgVector[o].nodeType == NodeType::nTransform)
+								{
+									msgVector[o].nodeName = newNameStr;
+								}
+							}
+						}
+						MGlobal::displayInfo("Transform name changed to: " + (MString)trans.name() + " from: " + str);
+						// To exit for loop
+						i = transVector.size();
+						break;
+					}
+				}
+			}
 		}
-		if(hasShapes)
-			MGlobal::displayInfo("Transform name changed to: " + (MString)trans.name());
+		else
+		{
+			MGlobal::displayError("# IDENTIFIER FAILED");
+		}
 	}
-	
-
-
 }
 void cbRemovedNode(MObject& node, void* clientData)
 {
@@ -1203,9 +1266,16 @@ void cbNewNode(MObject& node, void* clientData)
 }
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 {
+	if (msgVector.size() > 0)
+	{
+		for (std::vector<MessageInfo>::size_type i = 0; i != msgVector.size(); i++)
+		{
+			msgQueue.push(msgVector[i]);
+		}
+	}
 	msgVector.clear();
 	int msgCount = msgQueue.size();
-	MGlobal::displayInfo("--- MESSAGE UPDATE (" +MString()+msgCount +" Messages) ------------------------");
+	MGlobal::displayInfo("--- TIMED MESSAGE UPDATE (" +MString()+msgCount +" Messages) ------------------------");
 	bool run = true;
 	int msgID = 0;
 	while (!msgQueue.empty() && run == true)
@@ -1412,7 +1482,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
-	_CBidArray.append(MTimerMessage::addTimerCallback(1.0f, &cbMessageTimer));	
+	_CBidArray.append(MTimerMessage::addTimerCallback(8.0f, &cbMessageTimer));	
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
 	/*_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));	
