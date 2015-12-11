@@ -42,6 +42,7 @@ struct MessageInfo
 	std::string nodeName;
 	int nodeType;
 	int msgType;
+	std::string oldName;
 };
 struct RenameDeleteInfo
 {

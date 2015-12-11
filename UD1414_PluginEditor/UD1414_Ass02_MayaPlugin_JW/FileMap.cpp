@@ -254,7 +254,7 @@ bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 }
 bool FileMapping::tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg)
 {
-	MGlobal::displayInfo("\n****** MESSAGE START (ID:" +MString(info.nodeName.c_str())+ ") **********************");
+	MGlobal::displayInfo("****** MESSAGE START (ID:" +MString(info.nodeName.c_str())+ ") **********************");
 	MessageHeader mHeader = createHeaderRenameDelete(info);
 	int cfg = findWriteConfig(mHeader);
 	if (cfg != 0)

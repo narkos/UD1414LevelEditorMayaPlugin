@@ -639,9 +639,14 @@ void mAddMessage(std::string name, int msgType, int nodeType, std::string oldNam
 			}
 			}
 	}
+	std::string oldN = "";
+	if (msgType == MessageType::msgRenamed)
+	{
+		oldN = oldName;
+	}
 	if (!exists)
 	{
-		MessageInfo tMsg{ name, nodeType,msgType };
+		MessageInfo tMsg{ name, nodeType,msgType, oldN};
 		msgVector.push_back(tMsg);
 		//msgQueue.push(tMsg);
 	}
@@ -812,7 +817,20 @@ bool deleteNode()
 
 	return true;
 }
-
+bool removeFromQueue(std::string name)
+{
+	std::string nName = name;
+	for (std::vector<MessageInfo>::size_type i = 0; i < msgVector.size(); i++)
+	{
+		MGlobal::displayInfo("Mesgvector: " + MString(msgVector[i].nodeName.c_str()));
+		if (strcmp(name.c_str(), msgVector[i].nodeName.c_str()) == 0)
+		{
+			MGlobal::displayInfo("Removed message for: " + MString(msgVector[i].nodeName.c_str()));
+			msgVector.erase(msgVector.begin() + i);
+		}
+	}
+	return true;
+}
 // CALLBACKS
 void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
@@ -840,26 +858,37 @@ void cbMeshAttributeChange(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MP
 	// Validates new mesh
 	// Standard string for use with find() function
 	std::string plugName(plug_1.name().asChar());
-	
-	//Finds changes to vertex positions
-	if (plugName.find("pnts") != std::string::npos  && plugName.find("[") != std::string::npos)
+	bool exists = false;
+	for (std::vector<MeshInfo>::size_type i = 0; i < meshVector.size(); i++)
 	{
-		std::size_t lIndex = plug_1.logicalIndex();
-		std::string apiStr(plug_1.node().apiTypeStr());
-		if (apiStr.find("kMesh") != std::string::npos)
+		if (strcmp(plugName.c_str(), meshVector[i].nodeName.c_str()) == 0)
 		{
-			MGlobal::displayInfo(plug_1.node().apiTypeStr());
-			MFnMesh mesh(plug_1.node());
-			std::string tmpname = mesh.fullPathName().asChar();
-			mAddMessage(tmpname, msgEdited, NodeType::nMesh);
+			exists = true;
 		}
 	}
-	if (plugName.find("surfaceShader"))
+	if (exists)
 	{
-		MFnMesh mNode(plug_1.node());
-		MGlobal::displayInfo("MESH MATERIAL CHANGED:" + mNode.fullPathName());
-		mAddMessage(mNode.fullPathName().asChar(), MessageType::msgEdited, NodeType::nMesh);
+		//Finds changes to vertex positions
+		if (plugName.find("pnts") != std::string::npos  && plugName.find("[") != std::string::npos)
+		{
+			std::size_t lIndex = plug_1.logicalIndex();
+			std::string apiStr(plug_1.node().apiTypeStr());
+			if (apiStr.find("kMesh") != std::string::npos)
+			{
+				MGlobal::displayInfo(plug_1.node().apiTypeStr());
+				MFnMesh mesh(plug_1.node());
+				std::string tmpname = mesh.fullPathName().asChar();
+				mAddMessage(tmpname, MessageType::msgEdited, NodeType::nMesh);
+			}
+		}
+		if (plugName.find("surfaceShader"))
+		{
+			MFnMesh mNode(plug_1.node());
+			MGlobal::displayInfo("MESH MATERIAL CHANGED:" + mNode.fullPathName());
+			mAddMessage(mNode.fullPathName().asChar(), MessageType::msgEdited, NodeType::nMesh);
+		}
 	}
+
 }
 
 void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
@@ -1028,7 +1057,7 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 					RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
 					if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
 					{
-						mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
+						mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh,oldTemp);
 					}
 					for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
 					{
@@ -1068,6 +1097,10 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 					{
 						hasShapes = true;
 					}
+					if (child.hasFn(MFn::kLight))
+					{
+						hasShapes = true;
+					}
 				}
 			}
 			if (hasShapes)
@@ -1084,7 +1117,7 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 						RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
 						if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
 						{
-							mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
+							mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh, oldTemp);
 						}
 						for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
 						{
@@ -1114,45 +1147,117 @@ void cbRemovedNode(MObject& node, void* clientData)
 {
 	/*MFnDependencyNode n(node);
 	MGlobal::displayInfo(n.name() + " Node deleted");*/
-	
+	//MGlobal::displayInfo("REMOOOOOOOOOOOOOOOOOOOOOOOOVed");
 }
 void cbPreRemoveNode(MObject& node, void* clientData)
 {
 	if (node.hasFn(MFn::kMesh))
 	{
 		MFnMesh mesh(node);
-		
+		//MGlobal::displayError("WOW????????????????");
+		std::string ntmp = mesh.fullPathName().asChar();
 		for (int i = 0; i < meshVector.size(); i++)
 		{
 			std::string tmp = meshVector.at(i).nodeName;
-			std::string ntmp = mesh.fullPathName().asChar();
 			//MGlobal::displayInfo(MString(ntmp.c_str()) + " ___ " + MString(tmp.c_str()));
 			if (tmp.find(ntmp) != std::string::npos)
 			{
-				//MGlobal::displayInfo(mesh.fullPathName() + " Node deleted MESH");
-				meshVector.pop_back();
-				mAddMessage(mesh.fullPathName().asChar(), msgDeleted, nMesh);
+				MGlobal::displayInfo(mesh.fullPathName() + " Node deleted MESH");
+				meshVector.erase(meshVector.begin() + i);
+				removeFromQueue(mesh.fullPathName().asChar());
+				if (!fileMap.tryWriteRenameDelete(MessageInfo{ ntmp, NodeType::nMesh, MessageType::msgDeleted }, RenameDeleteInfo{ ntmp,"" }))
+				{
+					mAddMessage(ntmp, msgDeleted, nMesh);
+				}
+				
 			}
 		}
 	}
-	if (node.hasFn(MFn::kTransform))
+	else if (node.hasFn(MFn::kTransform))
 	{
 		MFnTransform trans(node);
+		std::string ntmp = trans.fullPathName().asChar();
 		for (int i = 0; i < transVector.size(); i++)
 		{
 			std::string tmp = transVector.at(i).nodeName;
-			std::string ntmp = trans.fullPathName().asChar();
+			
 			//MGlobal::displayInfo(MString(ntmp.c_str()) + " ___ " + MString(tmp.c_str()));
 			if (tmp.find(ntmp) != std::string::npos)
 			{
-				//MGlobal::displayInfo(trans.fullPathName() + " Node deleted TRANSFORM");
-				transVector.pop_back();
-				mAddMessage(trans.fullPathName().asChar(), msgDeleted, nTransform);
+				MGlobal::displayInfo(trans.fullPathName() + " Node deleted TRANSFORM");
+				transVector.erase(transVector.begin() + i);
+				removeFromQueue(trans.fullPathName().asChar());
+				if (!fileMap.tryWriteRenameDelete(MessageInfo{ ntmp, NodeType::nTransform, MessageType::msgDeleted }, RenameDeleteInfo{ ntmp,"" }))
+				{
+					mAddMessage(ntmp, msgDeleted, nTransform);
+				}
+			}
+		}
+	}
+	else if (node.hasFn(MFn::kCamera))
+	{
+		MFnCamera cam(node);
+		std::string ntmp = cam.fullPathName().asChar();
+		for (int i = 0; i < camVector.size(); i++)
+		{
+			std::string tmp = camVector.at(i).nodeName;
+			
+			//MGlobal::displayInfo(MString(ntmp.c_str()) + " ___ " + MString(tmp.c_str()));
+			if (tmp.find(ntmp) != std::string::npos)
+			{
+				MGlobal::displayInfo(cam.fullPathName() + " Node deleted CAMERA");
+				camVector.erase(camVector.begin() + i);
+				removeFromQueue(cam.fullPathName().asChar());
+				if (!fileMap.tryWriteRenameDelete(MessageInfo{ ntmp, NodeType::nCamera, MessageType::msgDeleted }, RenameDeleteInfo{ ntmp,"" }))
+				{
+					mAddMessage(ntmp, msgDeleted, nCamera);
+				}
+			}
+		}
+	}
+	else if (node.hasFn(MFn::kLight))
+	{
+		MFnLight light(node);
+		std::string ntmp = light.fullPathName().asChar();
+		for (int i = 0; i <lightVector.size(); i++)
+		{
+			std::string tmp = lightVector.at(i).nodeName;
+
+			//MGlobal::displayInfo(MString(ntmp.c_str()) + " ___ " + MString(tmp.c_str()));
+			if (tmp.find(ntmp) != std::string::npos)
+			{
+				MGlobal::displayInfo(MString(ntmp.c_str()) + " Node deleted LIGHT");
+				lightVector.erase(lightVector.begin() + i);
+				removeFromQueue(ntmp);
+				if (!fileMap.tryWriteRenameDelete(MessageInfo{ ntmp, NodeType::nLight, MessageType::msgDeleted }, RenameDeleteInfo{ ntmp,"" }))
+				{
+					mAddMessage(ntmp, msgDeleted, nLight);
+				}
+			}
+		}
+	}
+	else if (node.hasFn(MFn::kLambert))
+	{
+		MFnDependencyNode mat(node);
+		std::string ntmp = mat.name().asChar();
+		for (int i = 0; i < materialVector.size(); i++)
+		{
+			std::string tmp = materialVector.at(i).nodeName;
+
+			//MGlobal::displayInfo(MString(ntmp.c_str()) + " ___ " + MString(tmp.c_str()));
+			if (tmp.find(ntmp) != std::string::npos)
+			{
+				MGlobal::displayInfo(MString(ntmp.c_str()) + " Node deleted MATERIAL");
+				materialVector.erase(materialVector.begin() + i);
+				removeFromQueue(ntmp);
+				if (!fileMap.tryWriteRenameDelete(MessageInfo{ ntmp, NodeType::nMaterial, MessageType::msgDeleted }, RenameDeleteInfo{ ntmp,"" }))
+				{
+					mAddMessage(ntmp, msgDeleted, nMaterial);
+				}
 			}
 		}
 	}
 	_CBidArray.remove(MNodeMessage::currentCallbackId());
-
 }
 void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
@@ -1226,18 +1331,24 @@ void cbNewNode(MObject& node, void* clientData)
 			MGlobal::displayInfo("Directional");
 			mAddNode(light.fullPathName().asChar(), "", nLight);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 		}
 		else if (node.hasFn(MFn::kSpotLight))
 		{
 			MGlobal::displayInfo("Spot");
 			mAddNode(light.fullPathName().asChar(), "", nLight);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 		}
 		else if (node.hasFn(MFn::kPointLight))
 		{
 			MGlobal::displayInfo("Point");
 			mAddNode(light.fullPathName().asChar(), "", nLight);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 		}
 	}
 	if (node.hasFn(MFn::kLambert))
@@ -1247,18 +1358,24 @@ void cbNewNode(MObject& node, void* clientData)
 		{
 			mAddNode(mat.name().asChar(), "", nMaterial, 1);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMaterialAttribute));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 			MGlobal::displayInfo("Material added (Lambert)");
 		}
 		else if (node.apiType() == MFn::kPhong)
 		{
 			mAddNode(mat.name().asChar(), "", nMaterial, 2);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMaterialAttribute));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 			MGlobal::displayInfo("Material added (Phong)");
 		}
 		else if (node.apiType() == MFn::kBlinn)
 		{
 			mAddNode(mat.name().asChar(), "", nMaterial, 3);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMaterialAttribute));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 			MGlobal::displayInfo("Material added (Blinn)");
 		}
 		
@@ -1281,41 +1398,97 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 	while (!msgQueue.empty() && run == true)
 	{
 		
-		MGlobal::displayInfo("\n****** MESSAGE START (ID: " + MString() + msgID + ") **********************");
-		switch (msgQueue.front().nodeType)
+		MGlobal::displayInfo("****** MESSAGE START (ID: " + MString() + msgID + ") **********************");
+		if (msgQueue.front().msgType == MessageType::msgDeleted)
 		{
-		case(NodeType::nMesh) :
-		{
-			MeshInfo outMesh = outMeshData(msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) ("+msgTypeVector[msgQueue.front().msgType].c_str()+" Mesh)");
-			if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
+			if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
 			{
-				delete[] outMesh.meshData.uv;
-				delete[] outMesh.meshData.triIndices;
-				delete[] outMesh.meshData.norIndices;
-				delete[] outMesh.meshData.UVIndices;
-				delete[] outMesh.meshData.triPerFace;
-				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
 				msgQueue.pop();
 			}
-			else
-			{
-				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-				run = false;
-			}
-			//MGlobal::displayInfo("-------------------------------------------------");
-			break;
 		}
-		case(NodeType::nTransform) :
+		else if (msgQueue.front().msgType == MessageType::msgRenamed)
 		{
-			TransformInfo outTrans = outTransformData(msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Transform)");
-
-			if (fileMap.tryWriteTransform(msgQueue.front(), outTrans) == true)
+			if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
+			{
+				msgQueue.pop();
+			}
+		}
+		else
+		{
+			switch (msgQueue.front().nodeType)
+			{
+			case(NodeType::nMesh) :
+			{
+				/*if (msgQueue.front().msgType != MessageType::msgDeleted)
+				{*/
+					MeshInfo outMesh = outMeshData(msgQueue.front().nodeName);
+					MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Mesh)");
+					if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
+					{
+						delete[] outMesh.meshData.uv;
+						delete[] outMesh.meshData.triIndices;
+						delete[] outMesh.meshData.norIndices;
+						delete[] outMesh.meshData.UVIndices;
+						delete[] outMesh.meshData.triPerFace;
+						MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+						msgQueue.pop();
+					}
+					else
+					{
+						MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+						run = false;
+					}
+				//}
+				/*else
 				{
-				//#if defined(DEBUG) || defined(_DEBUG)
+					if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
+					{
+						msgQueue.pop();
+					}
+				}*/
+
+				//MGlobal::displayInfo("-------------------------------------------------");
+				break;
+			}
+			case(NodeType::nTransform) :
+			{
+
+			/*	if (msgQueue.front().msgType != MessageType::msgDeleted)
+				{*/
+					TransformInfo outTrans = outTransformData(msgQueue.front().nodeName);
+					MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Transform)");
+
+					if (fileMap.tryWriteTransform(msgQueue.front(), outTrans) == true)
+					{
+						//#if defined(DEBUG) || defined(_DEBUG)
+						MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+						//#endif
+						msgQueue.pop();
+					}
+					else
+					{
+						MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+						run = false;
+					}
+
+					break;
+				//}
+				/*else
+				{
+					if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
+					{
+						msgQueue.pop();
+					}
+				}*/
+				break;
+			}
+			case(NodeType::nCamera) :
+			{
+				CameraInfo outCam = outCameraData(msgQueue.front().nodeName);
+				MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Camera)");
+				if (fileMap.tryWriteCamera(msgQueue.front(), outCam) == true)
+				{
 					MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-				//#endif
 					msgQueue.pop();
 				}
 				else
@@ -1323,61 +1496,44 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 					MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
 					run = false;
 				}
-								
-				break;
 
-			break;
+				break;
+			}
+			case(NodeType::nLight) :
+			{
+				LightInfo outLight = outLightData(msgQueue.front().nodeName);
+				MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Light)");
+				if (fileMap.tryWriteLight(msgQueue.front(), outLight) == true)
+				{
+					MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+					msgQueue.pop();
+				}
+				else
+				{
+					MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+					run = false;
+				}
+				break;
+			}
+			case(NodeType::nMaterial) :
+			{
+				MaterialInfo outMat = outMaterialData(msgQueue.front().nodeName);
+				MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Material)");
+				if (fileMap.tryWriteMaterial(msgQueue.front(), outMat) == true)
+				{
+					MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+					msgQueue.pop();
+				}
+				else
+				{
+					MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+					run = false;
+				}
+				break;
+			}
+			}
 		}
-		case(NodeType::nCamera) :
-		{
-			CameraInfo outCam = outCameraData(msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Camera)");
-			if (fileMap.tryWriteCamera(msgQueue.front(), outCam) == true)
-			{
-				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-				msgQueue.pop();
-			}
-			else
-			{
-				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-				run = false;
-			}
 		
-			break;
-		}
-		case(NodeType::nLight) :
-		{
-			LightInfo outLight = outLightData(msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Light)");
-			if (fileMap.tryWriteLight(msgQueue.front(), outLight) == true)
-			{
-				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-				msgQueue.pop();
-			}
-			else
-			{
-				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-				run = false;
-			}
-			break;
-		}
-		case(NodeType::nMaterial) :
-		{
-			MaterialInfo outMat =  outMaterialData(msgQueue.front().nodeName);
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Material)");
-			if (fileMap.tryWriteMaterial(msgQueue.front(), outMat) == true)
-			{
-				MGlobal::displayInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-				msgQueue.pop();
-			}
-			else
-			{
-				MGlobal::displayInfo("*** Message result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-				run = false;
-			}
-			break;
-		}
-		}
 		msgID++;
 		MGlobal::displayInfo("*** MESSAGE STOP *************************");
 	}
