@@ -449,6 +449,7 @@ MaterialInfo outMaterialData(std::string name)
 			float val;
 			plg.getValue(val);
 			MGlobal::displayInfo(MString() + val);
+			outMat.matData.diffuse = val;
 		}
 		plg = mat.findPlug("color", &status);
 		if(status)
@@ -818,12 +819,22 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 			std::string parentname = getParentName(plug_1);
 			std::string tmpName = mNode.fullPathName().asChar();
 			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(plug_1.node(), cbMeshAttributeChange));
 		}
 	}
+	
+}
+
+void cbMeshAttributeChange(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+{
+	// Validates new mesh
+	// Standard string for use with find() function
+	std::string plugName(plug_1.name().asChar());
+	
 	//Finds changes to vertex positions
 	if (plugName.find("pnts") != std::string::npos  && plugName.find("[") != std::string::npos)
 	{
-		std::size_t lIndex = plug_1.logicalIndex();	
+		std::size_t lIndex = plug_1.logicalIndex();
 		std::string apiStr(plug_1.node().apiTypeStr());
 		if (apiStr.find("kMesh") != std::string::npos)
 		{
@@ -833,7 +844,14 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 			mAddMessage(tmpname, msgEdited, NodeType::nMesh);
 		}
 	}
+	if (plugName.find("surfaceShader"))
+	{
+		MFnMesh mNode(plug_1.node());
+		MGlobal::displayInfo("MESH MATERIAL CHANGED:" + mNode.fullPathName());
+		mAddMessage(mNode.fullPathName().asChar(), MessageType::msgEdited, NodeType::nMesh);
+	}
 }
+
 void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	MFnLight light(plug_1.node());
@@ -1394,7 +1412,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
-	_CBidArray.append(MTimerMessage::addTimerCallback(0.3f, &cbMessageTimer));	
+	_CBidArray.append(MTimerMessage::addTimerCallback(1.0f, &cbMessageTimer));	
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
 	/*_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));	

@@ -95,7 +95,7 @@ std::vector<std::string> msgTypeVector;
 	void cbNewNode(MObject& node, void* clientData);
 	void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
 	void cbNameChange(MObject& node, const MString& str, void* clientData);
-
+	void cbMeshAttributeChange(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
 	void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
 
 	void mAddNode(char* name, int type, int vertCount = 0, char* childname = nullptr);
