@@ -1,5 +1,6 @@
 #include "Plugin.h"
 
+// OUT DATA FUNCTIONS
 MeshInfo outMeshData(std::string name, bool getDynamicData)
 {
 	// Find mesh node in Dag
@@ -223,7 +224,6 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 	MGlobal::displayInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID + outMesh.materialName.c_str());
 	return outMesh;
 }
-
 TransformInfo outTransformData(std::string name)
 {
 	MStatus result;
@@ -298,7 +298,6 @@ TransformInfo outTransformData(std::string name)
 		}
 	return outTrans;
 }
-
 CameraInfo outCameraData(std::string name)
 {
 	MStatus result;
@@ -361,7 +360,6 @@ CameraInfo outCameraData(std::string name)
 
 	return outCam;
 }
-
 LightInfo outLightData(std::string name)
 {
 	MStatus result;
@@ -431,7 +429,6 @@ LightInfo outLightData(std::string name)
 	}
 	return outLight;
 }
-
 MaterialInfo outMaterialData(std::string name)
 {
 
@@ -600,7 +597,6 @@ plg.getValue(outMat.matData.specCosine);
 	}
 	return outMat;
 }
-
 std::string getParentName(MPlug& plug)
 {
 	MPlug p = plug;
@@ -613,6 +609,8 @@ std::string getParentName(MPlug& plug)
 		return "";
 }
 
+
+// MESSAGE AND NODE HANDLERS
 void mAddMessage(std::string name, int msgType, int nodeType)
 {
 	bool exists = false;
@@ -647,7 +645,6 @@ void mAddMessage(std::string name, int msgType, int nodeType)
 		msgQueue.push(tMsg);
 	}
 }
-
 void mAddNode(std::string name, std::string parentName, int type, int extra = 0, char* childname=nullptr)
 {
 	if (!name.empty())
@@ -793,7 +790,18 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 	}
 	
 }
+bool renameNode(MString newName, MString oldName, int type)
+{
 
+	return true;
+}
+bool deleteNode()
+{
+
+	return true;
+}
+
+// CALLBACKS
 void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	// Validates new mesh
@@ -826,7 +834,6 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 		}
 	}
 }
-
 void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	MFnLight light(plug_1.node());
@@ -871,8 +878,6 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 		}
 	}
 }
-
-
 void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	MFnDependencyNode mat(plug_1.node());
@@ -930,8 +935,6 @@ void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 		}
 	}
 }
-
-
 void cbEvalAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	//MGlobal::displayInfo("AFHDIFHIUDHFIADSHFIDSHIFSDHIFHSDIFHSIDHFISDHIFHSDIH" + MString()+msg);
@@ -947,7 +950,6 @@ void cbEvalAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 		MMessage::removeCallback(MMessage::currentCallbackId());
 	}
 }
-
 void cbPolyChanged(MObject& node, void* clientData)
 {
 	if (node.hasFn(MFn::kMesh))
@@ -960,12 +962,10 @@ void cbPolyChanged(MObject& node, void* clientData)
 		_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbEvalAttribute));
 	}
 }
-
 void cbCamAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	MGlobal::displayInfo("--------------- cam attribute");
 }
-
 void cbCameraPanel(const MString &str, MObject &node, void *clientData)
 {
 	if (node.hasFn(MFn::kCamera))
@@ -977,8 +977,6 @@ void cbCameraPanel(const MString &str, MObject &node, void *clientData)
 
 
 }
-
-
 void cbNameChange(MObject& node, const MString& str, void* clientData)
 {
 	
@@ -992,7 +990,7 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 			if (newNameStr.length() > 0)
 			{
 				std::string oldTemp = meshVector.at(i).nodeName;
-				if (strcmp(newNameStr.c_str(), oldTemp.c_str()))
+				if (strcmp(newNameStr.c_str(), oldTemp.c_str())==0)
 				{
 					meshVector.at(i).nodeName = mesh.fullPathName().asChar();
 					mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh);
@@ -1001,7 +999,6 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 				}
 			}
 		}
-		
 		//MMessage::removeCallback(MMessage::currentCallbackId());
 	}
 	else if (node.hasFn(MFn::kTransform) == true)
@@ -1028,6 +1025,7 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 		if(hasShapes)
 			MGlobal::displayInfo("Transform name changed to: " + (MString)trans.name());
 	}
+	
 
 
 }

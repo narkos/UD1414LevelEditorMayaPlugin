@@ -101,7 +101,8 @@ std::vector<std::string> msgTypeVector;
 	void mAddNode(char* name, int type, int vertCount = 0, char* childname = nullptr);
 
 	void loadScene();
-
+	bool deleteNode();
+	bool renameNode(MString newName, MString oldName, int type);
 
 	MeshInfo outMeshData(std::string name, bool getDynamicData = true);
 
