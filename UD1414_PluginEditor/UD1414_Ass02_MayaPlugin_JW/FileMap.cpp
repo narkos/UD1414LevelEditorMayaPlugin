@@ -1115,9 +1115,9 @@ MaterialMessage FileMapping::createMessageMaterial(MessageInfo& msginfo, Materia
 	{
 		MGlobal::displayError("* Node name too long!");
 	}
-	memcpy(&outMsg.matData.diffuseTexturePath, &mInfo.matData.diffuseTexturePath, sizeof(char) * 100);
+	memcpy(&outMsg.diffuseTexturePath, &mInfo.diffuseTexturePath, sizeof(char) * 100);
 	
-	MGlobal::displayInfo("TEXTURE PATH: " + MString(outMsg.matData.diffuseTexturePath));
+	MGlobal::displayInfo("TEXTURE PATH: " + MString(outMsg.diffuseTexturePath));
 	
 	/*for (int i = 0; i < 100; i++)
 	{

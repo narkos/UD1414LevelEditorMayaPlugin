@@ -151,17 +151,19 @@ struct MaterialData
 	float specCosine;
 	float specEccentricity;
 	float specRollOff;	
-	char diffuseTexturePath[100];
+	
 };
 struct MaterialInfo
 {
 	std::string nodeName;
+	char diffuseTexturePath[100];
 	int type;
 	MaterialData matData;
 };
 struct MaterialMessage
 {
 	char nodeName[100];
+	char diffuseTexturePath[100];
 	int type;
 	MaterialData matData;
 };

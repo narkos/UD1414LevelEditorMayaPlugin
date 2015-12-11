@@ -470,7 +470,7 @@ MaterialInfo outMaterialData(std::string name)
 							if (name.length() < 1)
 							{
 								MGlobal::displayWarning("TEXTURE PATH NOT SET");
-								outMat.matData.diffuseTexturePath[0] = 0;
+								outMat.diffuseTexturePath[0] = 0;
 							}
 							else if(name.length() < 100)
 							{
@@ -478,11 +478,11 @@ MaterialInfo outMaterialData(std::string name)
 								//std::string strname = name.asChar();
 								for (int i = 0; i < name.length(); i++)
 								{
-									outMat.matData.diffuseTexturePath[i] = name.asChar()[i];
+									outMat.diffuseTexturePath[i] = name.asChar()[i];
 								}
-								outMat.matData.diffuseTexturePath[name.length()] = 0;
+								outMat.diffuseTexturePath[name.length()] = 0;
 								outMat.matData.mapMasks |= (int)bitmask::COLORMAP;
-								MGlobal::displayInfo(outMat.matData.diffuseTexturePath);	
+								MGlobal::displayInfo(outMat.diffuseTexturePath);	
 							}
 							else
 							{
@@ -494,7 +494,7 @@ MaterialInfo outMaterialData(std::string name)
 			}
 			else
 			{
-				outMat.matData.diffuseTexturePath[0] = 0;
+				outMat.diffuseTexturePath[0] = 0;
 				plg = mat.findPlug("colorR", &status);
 				if (status)
 					plg.getValue(outMat.matData.color[0]);
