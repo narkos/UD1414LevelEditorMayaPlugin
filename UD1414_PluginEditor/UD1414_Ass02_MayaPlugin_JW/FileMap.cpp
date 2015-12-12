@@ -254,36 +254,31 @@ bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 }
 bool FileMapping::tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg)
 {
-	MGlobal::displayInfo("****** MESSAGE START (ID:" +MString(info.nodeName.c_str())+ ") **********************");
+	
 	MessageHeader mHeader = createHeaderRenameDelete(info);
 	int cfg = findWriteConfig(mHeader);
 	if (cfg != 0)
 	{
 		if (info.msgType == MessageType::msgRenamed)
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msg.nodeName2.c_str()) + " -> "+MString(msg.nodeName1.c_str())+ " ) ( Node Rename )");
+			
 		}
 		else if(info.msgType == MessageType::msgDeleted)
 		{
-			MGlobal::displayInfo("*** MESSAGE: ( " + MString(msg.nodeName1.c_str()) + " ) ( Node Delete )");
+			
 		}
 		if (writeNodeRenamedDelete(mHeader, createMessageRenameDelete(info, msg), cfg) == true)
 		{
-			MGlobal::displayInfo("*** MESSAGE Result( " + MString(info.nodeName.c_str()) + " ): Success");
 			return true;
 		}
 	}
 	else
 	{
-		MGlobal::displayInfo("*** MESSAGE Result( " + MString(info.nodeName.c_str()) + " ): Failed");
 		return false;
 	}
 	return false;
 }
-//bool FileMapping::tryWriteDelete(MessageInfo& info, RenameDeleteMessage& msg)
-//{
-//
-//}
+
 
 
 // Write config return values
@@ -821,10 +816,7 @@ bool FileMapping::writeNodeRenamedDelete(MessageHeader& hdr, RenameDeleteMessage
 	}
 	return false;
 }
-//bool FileMapping::writeNodeDelete(MessageHeader& hdr, RenameDeleteMessage& msg)
-//{
-//	return true;
-//}
+
 
 MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo)
 {
