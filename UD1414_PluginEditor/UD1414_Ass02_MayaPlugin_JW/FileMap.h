@@ -247,6 +247,9 @@ public:
 	void SetFilemapInfoValues(size_t headPlacement, size_t tailPlacement, size_t nonAccessMemoryPlacement, size_t messageFileMapTotalSize);
 	void GetFilemapInfoValues();
 	void PrintFileMapInfo(bool isPost);
+	static void printInfo(MString instr);
+	static void printError(MString instr);
+	static void printWarning(MString instr);
 	MessageHeader createHeaderTransform(MessageInfo& msginfo, TransformInfo &tInfo);
 	MessageHeader createHeaderMesh(MessageInfo& msginfo, MeshInfo& minfo);
 	MessageHeader createHeaderCamera(MessageInfo& msginfo, CameraInfo& cInfo);

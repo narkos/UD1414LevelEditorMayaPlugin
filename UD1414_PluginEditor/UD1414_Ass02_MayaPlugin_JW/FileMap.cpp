@@ -15,42 +15,42 @@ FileMapping::~FileMapping()
 	std::string str;
 	bool m = UnmapViewOfFile((LPCVOID)mMessageData);
 	/*str = GetLastErrorAsString();
-	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	FileMapping::printInfo("Last Error: " + MString(str.c_str()));*/
 	if (GetLastError() != 0)
 	{
-		MGlobal::displayInfo("Error");
+		FileMapping::printInfo("Error");
 	}
 	if (m!=0) 
-		MGlobal::displayInfo("Filemap closed");
+		FileMapping::printInfo("Filemap closed");
 	m = CloseHandle(hMessageFileMap);
 	/*str = GetLastErrorAsString();
-	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	FileMapping::printInfo("Last Error: " + MString(str.c_str()));*/
 	if (GetLastError() != 0)
 	{
-		MGlobal::displayInfo("Error");
+		FileMapping::printInfo("Error");
 	}
 	if (m != 0)
-		MGlobal::displayInfo("Filemap closed");
+		FileMapping::printInfo("Filemap closed");
 	
 
 	bool n = UnmapViewOfFile((LPCVOID)mInfoData);
 	/*str = GetLastErrorAsString();
-	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	FileMapping::printInfo("Last Error: " + MString(str.c_str()));*/
 	if (GetLastError() != 0)
 	{
-		MGlobal::displayInfo("Error");
+		FileMapping::printInfo("Error");
 	}
 	if (n != 0)
-		MGlobal::displayInfo("InfoFilemap closed");
+		FileMapping::printInfo("InfoFilemap closed");
 	n = CloseHandle(hInfoFileMap);
 	/*str = GetLastErrorAsString();
-	MGlobal::displayInfo("Last Error: " + MString(str.c_str()));*/
+	FileMapping::printInfo("Last Error: " + MString(str.c_str()));*/
 	if (GetLastError() != 0)
 	{
-		MGlobal::displayInfo("Error");
+		FileMapping::printInfo("Error");
 	}
 	if (n != 0)
-		MGlobal::displayInfo("InfoFilemap closed");
+		FileMapping::printInfo("InfoFilemap closed");
 
 	
 }
@@ -75,21 +75,21 @@ void FileMapping::CreateFileMaps()
 	
 
 	if (hInfoFileMap == NULL) {
-		MGlobal::displayInfo("Couldn't create infofilemap");
+		FileMapping::printInfo("Couldn't create infofilemap");
 	}
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS ) {
-		MGlobal::displayInfo("Infofilemap exists, you get a handle to it!");
+		FileMapping::printInfo("Infofilemap exists, you get a handle to it!");
 		GetFilemapInfoValues();
 	}
 	else { //first, sätter de första värdena på filemapinfon
-		MGlobal::displayInfo("Creating new infofilemap, JAG SKA INTE VARA FÖRST :'(");
+		FileMapping::printInfo("Creating new infofilemap, JAG SKA INTE VARA FÖRST :'(");
 		MGlobal::displayError(GetLastErrorAsString().c_str());
 		SetFilemapInfoValues(0, 0, 256, 1024*1024);
 	}
 
 	
-	MGlobal::displayInfo("MSIZE " + MString() + mSize);
+	FileMapping::printInfo("MSIZE " + MString() + mSize);
 	memoryPadding = fileMapInfo.non_accessmemoryOffset;
 	
 	//mSize = 2048; //denna ska hämtas
@@ -103,19 +103,19 @@ void FileMapping::CreateFileMaps()
 	mMessageData = MapViewOfFile(hMessageFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
 	if (hMessageFileMap == NULL) {
-		MGlobal::displayInfo("Couldn't create filemap");
+		FileMapping::printInfo("Couldn't create filemap");
 	}
 	else if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		MGlobal::displayInfo("Filemap exists, you get a handle to it!");
+		FileMapping::printInfo("Filemap exists, you get a handle to it!");
 
 	}
 	else {
 	
-		MGlobal::displayInfo("Creating new filemap");
+		FileMapping::printInfo("Creating new filemap");
 	}
 
 
-	MGlobal::displayInfo("FileMapSize: " + MString() + mSize +" "+ MString()+fileMapInfo.non_accessmemoryOffset);
+	FileMapping::printInfo("FileMapSize: " + MString() + mSize +" "+ MString()+fileMapInfo.non_accessmemoryOffset);
 }
 
 void FileMapping::GetFilemapInfoValues()
@@ -123,8 +123,8 @@ void FileMapping::GetFilemapInfoValues()
 	while (mutexInfo.Lock(1000) == false) Sleep(10);
 	memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo)); //får inget värde!!!!!!! default värdet är fortfarande kvar
 	mSize = fileMapInfo.messageFilemap_Size;
-	MGlobal::displayInfo("MessageFMMemorySize: " + MString() + fileMapInfo.messageFilemap_Size);
-	MGlobal::displayInfo("Nonaccess: " + MString()+fileMapInfo.non_accessmemoryOffset);
+	FileMapping::printInfo("MessageFMMemorySize: " + MString() + fileMapInfo.messageFilemap_Size);
+	FileMapping::printInfo("Nonaccess: " + MString()+fileMapInfo.non_accessmemoryOffset);
 	mutexInfo.Unlock();
 }
 
@@ -162,7 +162,6 @@ bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 		{
 			if (writeTransform(mHeader, createMessageTransform(msg, tinfo), cfg) == true)
 			{
-				MGlobal::displayWarning("COULD WRITE FUCKER");
 				returnBool = true;
 			}
 		}
@@ -191,7 +190,7 @@ bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
 	}
 	return false;
 
-		/*MGlobal::displayInfo("FileMap Msg: Mesh Message found");
+		/*FileMapping::printInfo("FileMap Msg: Mesh Message found");
 		MessageHeader mHeader = createHeaderMesh(msg, minfo);
 		int cfg = findWriteConfig(mHeader);
 		createMessageMesh(msg, minfo);*/
@@ -259,14 +258,6 @@ bool FileMapping::tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg)
 	int cfg = findWriteConfig(mHeader);
 	if (cfg != 0)
 	{
-		if (info.msgType == MessageType::msgRenamed)
-		{
-			
-		}
-		else if(info.msgType == MessageType::msgDeleted)
-		{
-			
-		}
 		if (writeNodeRenamedDelete(mHeader, createMessageRenameDelete(info, msg), cfg) == true)
 		{
 			return true;
@@ -279,7 +270,18 @@ bool FileMapping::tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg)
 	return false;
 }
 
-
+void FileMapping::printInfo(MString instr)
+{
+	MGlobal::displayInfo("[DRM] " + instr);
+}
+void FileMapping::printError(MString instr)
+{
+	MGlobal::displayError("[DRM] " + instr);
+}
+void FileMapping::printWarning(MString instr)
+{
+	MGlobal::displayWarning("[DRM] " + instr);
+}
 
 // Write config return values
 // 0: Can't write
@@ -298,12 +300,12 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 		if (hdr.byteSize + hdr.bytePadding + localHead + memoryPadding <= mSize)
 		{
 			hdr.msgConfig = 0;
-			MGlobal::displayInfo("*   MSG Config (CAN WRITE NORMALLY)");
+			FileMapping::printInfo("*   MSG Config (CAN WRITE NORMALLY)");
 			return 1;
 		}
 		else if (localHead + sizeof(MessageHeader) <= mSize && makeMultiple(hdr.byteSize, 256)+ memoryPadding <=localTail)
 		{
-			MGlobal::displayInfo("*   MSG Config (CAN WRITE WITH SPLIT)");
+			FileMapping::printInfo("*   MSG Config (CAN WRITE WITH SPLIT)");
 			size_t tempTotal;
 			hdr.msgConfig = 1;
 			tempTotal = makeMultiple(hdr.byteSize, 256);
@@ -321,12 +323,12 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 		if (hdr.byteTotal + localHead + memoryPadding <= localTail)
 		{
 			hdr.msgConfig = 0;
-			MGlobal::displayInfo("*   MSG Config (CAN WRITE NORMALLY)");
+			FileMapping::printInfo("*   MSG Config (CAN WRITE NORMALLY)");
 			return 1;
 		}
 	}
-	MGlobal::displayInfo("*   MSG Config (CANNOT WRITE)");
-	MGlobal::displayInfo("*   HEAD POSITION: " + MString() + localHead + " TAIL POSISH: " +MString() + localTail);
+	FileMapping::printInfo("*   MSG Config (CANNOT WRITE)");
+	FileMapping::printInfo("*   HEAD POSITION: " + MString() + localHead + " TAIL POSISH: " +MString() + localTail);
 	
 	return 0;
 
@@ -444,7 +446,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
 		tempHead += sizeof(int) * mdata.meshData.triCount;
 		
-		MGlobal::displayInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
+		FileMapping::printInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
 		tempHead += hdr.bytePadding;
 
 		localHead += tempHead;
@@ -458,7 +460,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
-		MGlobal::displayInfo("* WOW EN VERTEX: " + MString() + mdata.meshData.vertCount +" "+ MString()+mdata.materialID+" "+mdata.materialName);
+		FileMapping::printInfo("* WOW EN VERTEX: " + MString() + mdata.meshData.vertCount +" "+ MString()+mdata.materialID+" "+mdata.materialName);
 		return true;
 		break;
 
@@ -501,7 +503,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
 		tempHead += sizeof(int) * mdata.meshData.triCount;
 
-		MGlobal::displayInfo("***** (CFG "+MString()+cfg+") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
+		FileMapping::printInfo("***** (CFG "+MString()+cfg+") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
 		tempHead += hdr.bytePadding;
 
 		while (mutexInfo.Lock(1000) == false) Sleep(10);
@@ -549,7 +551,7 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
 		tempHead += sizeof(int) * mdata.meshData.triCount;
 
-		MGlobal::displayInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
+		FileMapping::printInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
 		tempHead += hdr.bytePadding;
 		localHead += tempHead;
 
@@ -836,17 +838,17 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	msgSize +=		3 * (mInfo.meshData.indCount * sizeof(int));
 	msgSize +=		mInfo.meshData.triCount * sizeof(int);
 
-	MGlobal::displayInfo(":: Info byte size: " + MString()+infoSize);
-	MGlobal::displayInfo(":: Mesh data byte size: " + MString() + msgSize);
-	MGlobal::displayInfo(":: Header byte size: " + MString() + sizeof(MessageHeader));
+	FileMapping::printInfo(":: Info byte size: " + MString()+infoSize);
+	FileMapping::printInfo(":: Mesh data byte size: " + MString() + msgSize);
+	FileMapping::printInfo(":: Header byte size: " + MString() + sizeof(MessageHeader));
 	msgSize += infoSize;
 	//msgSize += _headerSize;
-	MGlobal::displayInfo(":: MESSAGE BYTE SIZE: " + MString() + msgSize);
+	FileMapping::printInfo(":: MESSAGE BYTE SIZE: " + MString() + msgSize);
 	totalSize = makeMultiple(msgSize+sizeof(MessageHeader), 256);
 	padding = totalSize - msgSize;
-	MGlobal::displayInfo(":: Padding byte size: " + MString() + padding);
-	MGlobal::displayInfo(":: TOTAL BYTE SIZE: " + MString() + totalSize);
-	MGlobal::displayInfo(":: Node Name Length: " + MString(msginfo.nodeName.c_str()) + MString() + mInfo.nodeName.length());
+	FileMapping::printInfo(":: Padding byte size: " + MString() + padding);
+	FileMapping::printInfo(":: TOTAL BYTE SIZE: " + MString() + totalSize);
+	FileMapping::printInfo(":: Node Name Length: " + MString(msginfo.nodeName.c_str()) + MString() + mInfo.nodeName.length());
 
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
@@ -869,7 +871,7 @@ MessageHeader FileMapping::createHeaderTransform(MessageInfo& msginfo, Transform
 	
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
-	 MGlobal::displayInfo("*   Transform Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString()+(msgSize-sizeof(MessageHeader))
+	 FileMapping::printInfo("*   Transform Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString()+(msgSize-sizeof(MessageHeader))
 		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
@@ -893,7 +895,7 @@ MessageHeader FileMapping::createHeaderCamera(MessageInfo& msginfo, CameraInfo& 
 
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
-	MGlobal::displayInfo("*   Camera Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
+	FileMapping::printInfo("*   Camera Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
 		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
@@ -917,7 +919,7 @@ MessageHeader FileMapping::createHeaderMaterial(MessageInfo& msginfo, MaterialIn
 
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
-	MGlobal::displayInfo("*   Material Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
+	FileMapping::printInfo("*   Material Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
 		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
@@ -941,7 +943,7 @@ MessageHeader FileMapping::createHeaderLight(MessageInfo& msginfo, LightInfo& lI
 
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
-	MGlobal::displayInfo("*   Light Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
+	FileMapping::printInfo("*   Light Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
 		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
@@ -1025,7 +1027,7 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 	msg.meshData = mInfo.meshData;
 	msg.materialID = mInfo.materialID;
 	msg.meshID = mInfo.meshID;
-	//MGlobal::displayInfo(MString() + msg.meshData.indCount);
+	//FileMapping::printInfo(MString() + msg.meshData.indCount);
 	return msg;
 }
 TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, TransformInfo &tInfo)
@@ -1040,12 +1042,11 @@ TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, Trans
 		{
 			outMsg.nodeName[i] = msginfo.nodeName[i];
 		}
-		//MGlobal::displayInfo("Node name added!");
 		outMsg.nodeName[nodeNameLength] = '\0';
 	}
 	else
 	{
-		MGlobal::displayError("* Node name too long!");
+		FileMapping::printError("* Node name too long!");
 	}
 	if (parentNameLength <= 100)
 	{
@@ -1057,10 +1058,10 @@ TransformMessage FileMapping::createMessageTransform(MessageInfo& msginfo, Trans
 	}
 	else
 	{
-		MGlobal::displayError("* Transform name too long!");
+		FileMapping::printError("* Transform name too long!");
 	}
 	outMsg.trData = tInfo.transformData;
-	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
+
 
 	return outMsg;
 }
@@ -1076,12 +1077,12 @@ CameraMessage FileMapping::createMessageCamera(MessageInfo& msginfo, CameraInfo&
 		{
 			outMsg.nodeName[i] = msginfo.nodeName[i];
 		}
-		//MGlobal::displayInfo("Node name added!");
+		//FileMapping::printInfo("Node name added!");
 		outMsg.nodeName[nodeNameLength] = '\0';
 	}
 	else
 	{
-		MGlobal::displayError("* Node name too long!");
+		FileMapping::printError("* Node name too long!");
 	}
 	if (parentNameLength <= 100)
 	{
@@ -1093,12 +1094,9 @@ CameraMessage FileMapping::createMessageCamera(MessageInfo& msginfo, CameraInfo&
 	}
 	else
 	{
-		MGlobal::displayError("* Transform name too long!");
+		FileMapping::printError("* Transform name too long!");
 	}
 	outMsg.camData = cInfo.camData;
-	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
-
-
 	return outMsg;
 }
 MaterialMessage FileMapping::createMessageMaterial(MessageInfo& msginfo, MaterialInfo& mInfo)
@@ -1106,36 +1104,25 @@ MaterialMessage FileMapping::createMessageMaterial(MessageInfo& msginfo, Materia
 	MaterialMessage outMsg;
 
 	int nodeNameLength = msginfo.nodeName.length();
-	//int parentNameLength = lInfo.transformName.length();
 	if (nodeNameLength <= 100)
 	{
 		for (int i = 0; i < nodeNameLength; i++)
 		{
 			outMsg.nodeName[i] = msginfo.nodeName[i];
 		}
-		//MGlobal::displayInfo("Node name added!");
+		//FileMapping::printInfo("Node name added!");
 		outMsg.nodeName[nodeNameLength] = '\0';
 	}
 	else
 	{
-		MGlobal::displayError("* Node name too long!");
+		FileMapping::printError("* Node name too long!");
 	}
 	memcpy(&outMsg.diffuseTexturePath, &mInfo.diffuseTexturePath, sizeof(char) * 100);
 	
-	MGlobal::displayInfo("TEXTURE PATH: " + MString(outMsg.diffuseTexturePath));
-	
-	/*for (int i = 0; i < 100; i++)
-	{
-		outMsg.matData.diffuseTexturePath[i] = mInfo.matData.diffuseTexturePath[i];
-	}
-	
-	else
-	{
-		MGlobal::displayError("* Transform name too long!");
-	}*/
-	outMsg.matData = mInfo.matData;
-	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
+	FileMapping::printInfo("TEXTURE PATH: " + MString(outMsg.diffuseTexturePath));
 
+	outMsg.matData = mInfo.matData;
+	
 	return outMsg;
 }
 LightMessage FileMapping::createMessageLight(MessageInfo& msgInfo, LightInfo& lInfo)
@@ -1150,12 +1137,12 @@ LightMessage FileMapping::createMessageLight(MessageInfo& msgInfo, LightInfo& lI
 		{
 			outMsg.nodeName[i] = msgInfo.nodeName[i];
 		}
-		//MGlobal::displayInfo("Node name added!");
+		//FileMapping::printInfo("Node name added!");
 		outMsg.nodeName[nodeNameLength] = '\0';
 	}
 	else
 	{
-		MGlobal::displayError("* Node name too long!");
+		FileMapping::printError("* Node name too long!");
 	}
 	if (parentNameLength <= 100)
 	{
@@ -1167,10 +1154,10 @@ LightMessage FileMapping::createMessageLight(MessageInfo& msgInfo, LightInfo& lI
 	}
 	else
 	{
-		MGlobal::displayError("* Transform name too long!");
+		FileMapping::printError("* Transform name too long!");
 	}
 	outMsg.lightData = lInfo.lightData;
-	//MGlobal::displayInfo(MString() + outMsg.meshData->indCount);
+	//FileMapping::printInfo(MString() + outMsg.meshData->indCount);
 
 	return outMsg;
 }
@@ -1180,13 +1167,19 @@ RenameDeleteMessage FileMapping::createMessageRenameDelete(MessageInfo& msgInfo,
 	size_t name1Length = info.nodeName1.length();
 	size_t name2Length = info.nodeName2.length();
 
-	memcpy(outMsg.nodeName1, &info.nodeName1, name1Length);
+	for (int i = 0; i < name1Length; i++)
+	{
+		outMsg.nodeName1[i] = info.nodeName1[i];
+	}
 	outMsg.nodeName1[name1Length] = 0;
 
-	memcpy(outMsg.nodeName2, &info.nodeName2, name2Length);
-	outMsg.nodeName1[name2Length] = 0;
-
-
+	for (int i = 0; i < name2Length; i++)
+	{
+		outMsg.nodeName2[i] = info.nodeName2[i];
+	}
+	outMsg.nodeName2[name2Length] = 0;
+	
+	FileMapping::printInfo(MString(outMsg.nodeName2) + " " + MString(outMsg.nodeName1));
 	return outMsg;
 }
 //RenameDeleteMessage FileMapping::createMessageDelete(std::string name1)
@@ -1218,7 +1211,7 @@ void FileMapping::PrintFileMapInfo(bool isPost)
 	{
 		str = "PRE";
 	}
-	MGlobal::displayInfo("* ! Infovalues " + MString(str.c_str()) + " message(HEAD, TAIL, NAM, SIZE): " +
+	FileMapping::printInfo("* ! Infovalues " + MString(str.c_str()) + " message(HEAD, TAIL, NAM, SIZE): " +
 		MString() + fileMapInfo.head_ByteOffset + " " + MString() + fileMapInfo.tail_ByteOffset + " " +
 		MString() + fileMapInfo.non_accessmemoryOffset + " " + MString() + fileMapInfo.messageFilemap_Size);
 
