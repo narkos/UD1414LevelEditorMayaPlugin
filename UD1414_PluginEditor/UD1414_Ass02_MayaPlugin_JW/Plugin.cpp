@@ -641,7 +641,7 @@ void mAddMessage(std::string name, int msgType, int nodeType, std::string oldNam
 			}
 			}
 	}
-	std::string oldN = "";
+	//std::string oldN = "";
 	if (msgType == MessageType::msgRenamed)
 	{
 		FileMapping::printInfo("****** MESSAGE Start (Node Rename: " + MString(name.c_str()) + ")");
@@ -791,7 +791,7 @@ void mAddMessage(std::string name, int msgType, int nodeType, std::string oldNam
 	
 	if (!exists && addToVector == true)
 	{
-		MessageInfo tMsg{ name, nodeType,msgType, oldN};
+		MessageInfo tMsg{ name, nodeType,msgType, oldName};
 		msgVector.push_back(tMsg);
 		//msgQueue.push(tMsg);
 	}
@@ -1215,12 +1215,12 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 				//if (strcmp(newNameStr.c_str(), oldTemp.c_str())==0)
 				{
 					meshVector.at(i).nodeName = mesh.fullPathName().asChar();
-					MessageInfo minfo{ oldTemp, NodeType::nMesh, MessageType::msgRenamed };
+					//MessageInfo minfo{ oldTemp, NodeType::nMesh, MessageType::msgRenamed, oldTemp };
 					RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
-					if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
-					{
-						mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh,oldTemp);
-					}
+					//if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
+					//{
+					mAddMessage(meshVector.at(i).nodeName, MessageType::msgRenamed, NodeType::nMesh,oldTemp);
+					//}
 					for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
 					{
 						if (strspn(oldStr.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
@@ -1233,6 +1233,84 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 					}
 					FileMapping::printInfo("Mesh name: " + str + " changed to: " + (MString)mesh.name() + " "+ meshVector[i].nodeName.c_str());
 					i = meshVector.size();
+					break;
+				}
+			}
+		}
+	}
+	else if (node.hasFn(MFn::kCamera))
+	{
+		MFnCamera cam(node);
+		std::string newNameStr = cam.fullPathName().asChar();
+		std::string oldName;
+		//std::string oldNameStr = str.asChar();
+		for (std::vector<CameraInfo>::size_type i = 0; i != camVector.size(); i++)
+		{
+			if (newNameStr.length() > 0)
+			{
+				std::string oldTemp = camVector.at(i).nodeName;
+				std::string oldStr = str.asChar();
+				int oldStrLen = oldStr.length();
+				if (strspn(oldStr.c_str(), camVector[i].nodeName.c_str()) == oldStrLen)
+				{
+					camVector.at(i).nodeName = cam.fullPathName().asChar();
+					//MessageInfo minfo{ oldTemp, NodeType::nMesh, MessageType::msgRenamed, oldTemp };
+					RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
+					//if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
+					//{
+					mAddMessage(camVector.at(i).nodeName, MessageType::msgRenamed, NodeType::nCamera, oldTemp);
+					//}
+					for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+					{
+						if (strspn(oldStr.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+						{
+							if (msgVector[o].nodeType == NodeType::nCamera)
+							{
+								msgVector[o].nodeName = newNameStr;
+							}
+						}
+					}
+					FileMapping::printInfo("Camera name: " + str + " changed to: " + (MString)cam.name() + " " + camVector[i].nodeName.c_str());
+					i = camVector.size();
+					break;
+				}
+			}
+		}
+	}
+	else if (node.hasFn(MFn::kLight))
+	{
+		MFnLight light(node);
+		std::string newNameStr = light.fullPathName().asChar();
+		std::string oldName;
+		//std::string oldNameStr = str.asChar();
+		for (std::vector<LightInfo>::size_type i = 0; i != lightVector.size(); i++)
+		{
+			if (newNameStr.length() > 0)
+			{
+				std::string oldTemp = lightVector.at(i).nodeName;
+				std::string oldStr = str.asChar();
+				int oldStrLen = oldStr.length();
+				if (strspn(oldStr.c_str(), lightVector[i].nodeName.c_str()) == oldStrLen)
+				{
+					lightVector.at(i).nodeName = light.fullPathName().asChar();
+					//MessageInfo minfo{ oldTemp, NodeType::nMesh, MessageType::msgRenamed, oldTemp };
+					RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
+					//if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
+					//{
+					mAddMessage(lightVector.at(i).nodeName, MessageType::msgRenamed, NodeType::nLight, oldTemp);
+					//}
+					for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+					{
+						if (strspn(oldStr.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+						{
+							if (msgVector[o].nodeType == NodeType::nLight)
+							{
+								msgVector[o].nodeName = newNameStr;
+							}
+						}
+					}
+					FileMapping::printInfo("Light name: " + str + " changed to: " + (MString)light.name() + " " + lightVector[i].nodeName.c_str());
+					i = camVector.size();
 					break;
 				}
 			}
@@ -1275,12 +1353,12 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 					if (strspn(oldStr.c_str(), transVector[i].nodeName.c_str()) == oldStrLen)
 					{
 						transVector.at(i).nodeName = trans.fullPathName().asChar();
-						MessageInfo minfo{ oldTemp, NodeType::nTransform, MessageType::msgRenamed };
+						//MessageInfo minfo{ oldTemp, NodeType::nTransform, MessageType::msgRenamed };
 						RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
-						if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
-						{
-							mAddMessage(meshVector.at(i).nodeName, msgRenamed, NodeType::nMesh, oldTemp);
-						}
+						//if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
+						//{
+						mAddMessage(transVector.at(i).nodeName, msgRenamed, NodeType::nMesh, oldTemp);
+						//}
 						for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
 						{
 							if (strspn(oldStr.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
@@ -1301,7 +1379,7 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 		}
 		else
 		{
-			FileMapping::printError("# IDENTIFIER FAILED ( " + MString(newNameStr.c_str())+ ")");
+			//FileMapping::printError("# IDENTIFIER FAILED ( " + MString(newNameStr.c_str())+ ")");
 		}
 	}
 }
@@ -1553,7 +1631,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		}
 		else if (msgQueue.front().msgType == MessageType::msgRenamed)
 		{
-			if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
+			if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,msgQueue.front().oldName }) == true)
 			{
 				msgQueue.pop();
 			}
@@ -1754,7 +1832,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
-	_CBidArray.append(MTimerMessage::addTimerCallback(0.2f, &cbMessageTimer));	
+	_CBidArray.append(MTimerMessage::addTimerCallback(3.0f, &cbMessageTimer));	
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
 	/*_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));	
