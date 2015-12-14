@@ -1357,7 +1357,7 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 						RenameDeleteInfo renameInfo{ newNameStr, oldTemp };
 						//if (!fileMap.tryWriteRenameDelete(minfo, renameInfo))
 						//{
-						mAddMessage(transVector.at(i).nodeName, msgRenamed, NodeType::nMesh, oldTemp);
+						mAddMessage(transVector.at(i).nodeName, msgRenamed, NodeType::nTransform, oldTemp);
 						//}
 						for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
 						{
