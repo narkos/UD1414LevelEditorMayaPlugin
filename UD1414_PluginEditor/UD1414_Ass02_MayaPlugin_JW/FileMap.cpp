@@ -960,8 +960,10 @@ MessageHeader FileMapping::createHeaderRenameDelete(MessageInfo& msginfo)
 {
 	size_t totalSize;
 	size_t msgSize;
+	size_t padding;
 	msgSize = sizeof(MessageHeader) + sizeof(RenameDeleteMessage);
 	totalSize=makeMultiple( msgSize, 256);
+	padding = totalSize - msgSize;
 	msgSize = msgSize - sizeof(MessageHeader);
 
 	MessageHeader hdr;
@@ -969,7 +971,7 @@ MessageHeader FileMapping::createHeaderRenameDelete(MessageInfo& msginfo)
 	hdr.messageType = msginfo.msgType;
 	hdr.byteTotal = totalSize;
 	hdr.byteSize = msgSize;
-	hdr.bytePadding = totalSize - msgSize;
+	hdr.bytePadding = padding;
 	FileMapping::printWarning(MString() + msginfo.nodeType);
 	return hdr;
 }
