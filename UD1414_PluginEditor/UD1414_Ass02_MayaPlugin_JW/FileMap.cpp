@@ -967,10 +967,9 @@ MessageHeader FileMapping::createHeaderRenameDelete(MessageInfo& msginfo)
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
 	hdr.messageType = msginfo.msgType;
-	hdr.bytePadding = totalSize;
+	hdr.byteTotal = totalSize;
 	hdr.byteSize = msgSize;
 	hdr.bytePadding = totalSize - msgSize;
-
 	return hdr;
 }
 //MessageHeader FileMapping::createHeaderDelete(std::string name1, MessageInfo& msginfo)
