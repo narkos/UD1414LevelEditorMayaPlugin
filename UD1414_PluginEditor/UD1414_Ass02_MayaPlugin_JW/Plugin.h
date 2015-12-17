@@ -40,7 +40,8 @@
 #include <maya/MFnSpotLight.h>
 #include <maya/MFnPointLight.h>
 #include <maya/M3dView.h>
-
+#include <maya/MTransformationMatrix.h>
+#include <maya/MMatrix.h>
 // Wrappers
 #include <maya/MGlobal.h>
 #include <maya/MCallbackIdArray.h>
@@ -57,6 +58,7 @@
 #include <maya/MUiMessage.h>
 #include <maya/MModelMessage.h>
 #include <maya/MCameraSetMessage.h>
+#include <maya/MLockMessage.h>
 
 #include "FileMap.h"
 
@@ -90,6 +92,7 @@ std::vector<std::string> msgTypeVector;
 	std::vector<MaterialInfo> materialVector;
 	std::vector<MessageInfo> msgVector;
 	std::queue<MessageInfo> msgQueue;
+	void cbReparent(MDagPath &child, MDagPath &parent, void *clientData);
 	void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
 	void cbMessageTimer(float elapsedTime, float lastTime, void *clientData);
 	void cbNewNode(MObject& node, void* clientData);

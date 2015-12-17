@@ -153,20 +153,23 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 
 		}
 		FileMapping::printInfo("outMesh Tris per Polygon: " + triFaceStr + " )");
-		for (int i = 0; i + 3 < outMesh.meshData.indCount; i += 3)
-		{
-			triIndStr += "(";
-			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i+2] + "," + MString() + outMesh.meshData.norIndices[i+2] + "," + MString() + outMesh.meshData.UVIndices[i+2] + ")");
-			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 1] + "," + MString() + outMesh.meshData.norIndices[i + 1] + "," + MString() + outMesh.meshData.UVIndices[i + 1] + ")");
-			triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
-			triIndStr += ")\n";
-		}
+	
 		bool dbug2 = false;
 
 		MString iDataStr = "";
 		if (dbug2)
 		{
 			
+			for (int i = 0; i + 3 < outMesh.meshData.indCount; i += 3)
+			{
+				triIndStr += "(";
+				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 2] + "," + MString() + outMesh.meshData.norIndices[i + 2] + "," + MString() + outMesh.meshData.UVIndices[i + 2] + ")");
+				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 1] + "," + MString() + outMesh.meshData.norIndices[i + 1] + "," + MString() + outMesh.meshData.UVIndices[i + 1] + ")");
+				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
+				triIndStr += ")\n";
+			}
+
+
 			for (int i = 0; i < outMesh.meshData.normalCount*3; i+=3)
 			{
 				iDataStr += "Pos ";
@@ -230,71 +233,96 @@ TransformInfo outTransformData(std::string name)
 	MString _name(name.c_str());
 	MSelectionList sList;
 	MDagPath dagPath;
+	TransformInfo outTrans;
 	if (MGlobal::getSelectionListByName(_name, sList))
 	{
 		sList.getDagPath(0, dagPath);
 		if (dagPath.hasFn(MFn::kTransform))
 		{
+			MTransformationMatrix trMtx = dagPath.inclusiveMatrix(&result);
+			MVector transM = trMtx.getTranslation(MSpace::kTransform, &result);
+			double rotsM[4];
+			trMtx.getRotationQuaternion(rotsM[0], rotsM[1], rotsM[2], rotsM[3]);
+			double scaleM[3];
+			trMtx.getScale(scaleM, MSpace::kTransform);
+
+			FileMapping::printInfo("Translation(ACC): " + MString() + transM.x + " " + MString() + transM.y + " " + MString() + transM.z);
+			FileMapping::printInfo("Rotation(ACC): " + MString() + rotsM[0] + " " + MString() + rotsM[1] + " " + MString() + rotsM[2] + " " + MString() + rotsM[3]);
+			FileMapping::printInfo("Scale(ACC): " + MString() + scaleM[0] + " " + MString() + scaleM[1] + " " + MString() + scaleM[2]);
 			//FileMapping::printInfo("Transform found: " + dagPath.fullPathName());
+		
+			MFnTransform mNode(dagPath.node(), &result);
+			TransformInfo outTrans;
+
+			if (result)
+			{
+				if (mNode.parent(0).hasFn(MFn::kTransform))
+				{
+					MFnTransform parent(mNode.parent(0), &result);
+					if (!result)
+					{
+						FileMapping::printWarning(MString(name.c_str()) + " parent not found!");
+					}
+					else
+					{
+						outTrans.parentName = parent.fullPathName().asChar();
+					}
+				}
+				else
+				{
+					outTrans.parentName[0] = 0;
+				}
+
+
+				std::string attName(mNode.fullPathName().asChar());
+				if (strcmp(attName.c_str(), name.c_str()) != 0)
+				{
+					FileMapping::printError("NAME CHANGED ON TRANSFORM");
+					cbNameChange(dagPath.node(), MString(name.c_str()), nullptr);
+				}
+
+
+				MVector trans = mNode.getTranslation(MSpace::kTransform, &result);
+				outTrans.transformData.translation[0] = transM.x;
+				outTrans.transformData.translation[1] = transM.y;
+				outTrans.transformData.translation[2] = transM.z;
+		/*		outTrans.transformData.translation[0] = trans.x;
+				outTrans.transformData.translation[1] = trans.y;
+				outTrans.transformData.translation[2] = trans.z;*/
+
+				double rots[4];
+				mNode.getRotationQuaternion(rots[0], rots[1], rots[2], rots[3], MSpace::kTransform);
+				outTrans.transformData.rotation[0] = rotsM[0] * -1.0f;
+				outTrans.transformData.rotation[1] = rotsM[1] * -1.0f;
+				outTrans.transformData.rotation[2] = rotsM[2] * -1.0f;
+				outTrans.transformData.rotation[3] = rotsM[3] * -1.0f;
+				/*outTrans.transformData.rotation[0] = rots[0];
+				outTrans.transformData.rotation[1] = rots[1];
+				outTrans.transformData.rotation[2] = rots[2];
+				outTrans.transformData.rotation[3] = rots[3];*/
+
+				double scale[3];
+				mNode.getScale(scale);
+				outTrans.transformData.scale[0] = scaleM[0];
+				outTrans.transformData.scale[1] = scaleM[1];
+				outTrans.transformData.scale[2] = scaleM[2];
+				/*outTrans.transformData.scale[0] = scale[0];
+				outTrans.transformData.scale[1] = scale[1];
+				outTrans.transformData.scale[2] = scale[2];*/
+
+				outTrans.nodeName = attName;
+				//outTrans.parentName = getParentName()
+
+				FileMapping::printInfo("TRANSFORM INNER DATA: " + MString(outTrans.nodeName.c_str()) + " par" +MString(outTrans.parentName.c_str()));
+				FileMapping::printInfo("Pos: " + MString() + trans.x + " " + MString() + trans.y + " " + MString() + trans.z);
+				FileMapping::printInfo("Rot: " + MString() + rots[0] + " " + MString() + rots[1] + " " + MString() + rots[2] + " " + MString() + rots[3]);
+				FileMapping::printInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);
+				return outTrans;
 		}
 
 	}
 
-	MFnTransform mNode(dagPath.node(), &result);
-	TransformInfo outTrans;
-	if (result)
-	{
-		if (mNode.parent(0).hasFn(MFn::kTransform))
-		{
-			MFnTransform parent(mNode.parent(0), &result);
-			 if(!result)
-			 {
-				 FileMapping::printWarning(MString(name.c_str()) + " parent not found!");
-			 }
-			 else
-			 {
-				 outTrans.parentName = parent.fullPathName().asChar();
-			 }
-		}
-		else
-		{
-			outTrans.parentName[0] = 0;
-		}
-		
-
-		std::string attName(mNode.fullPathName().asChar());
-		MVector trans = mNode.getTranslation(MSpace::kTransform, &result);
-		outTrans.transformData.translation[0] = trans.x;
-		outTrans.transformData.translation[1] = trans.y;
-		outTrans.transformData.translation[2] = trans.z;
-
-		//MEulerRotation rotation;
-		//MQuaternion rotation();
-		//mNode.getRotation(&rotation, MSpace::kWorld);
-		double rots[4];
-		mNode.getRotationQuaternion(rots[0], rots[1], rots[2], rots[3], MSpace::kTransform);
-		outTrans.transformData.rotation[0] = rots[0];
-		outTrans.transformData.rotation[1] = rots[1];
-		outTrans.transformData.rotation[2] = rots[2];
-		outTrans.transformData.rotation[3] = rots[3];
-		//FileMapping::printInfo(MString() + rots[0] + " " + MString() + rots[1] + MString() + rots[2] + " " + MString() + rots[3] + " ");
-		//outTrans.transformData.rotation[0] = rotation.x;
-		/*outTrans.transformData.rotation[1] = rotation.y;
-		outTrans.transformData.rotation[2] = rotation.z;
-*/
-		double scale[3];
-		mNode.getScale(scale);
-		outTrans.transformData.scale[0] = scale[0];
-		outTrans.transformData.scale[1] = scale[1];
-		outTrans.transformData.scale[2] = scale[2];
-
-		outTrans.nodeName = attName;
-		//outTrans.parentName = getParentName()
-
-		FileMapping::printInfo("TRANSFORM INNER DATA: " + MString(outTrans.nodeName.c_str()));
-		FileMapping::printInfo("Pos: " + MString() + trans.x + " " + MString() + trans.y + " " + MString() + trans.z);
-		FileMapping::printInfo("Rot: " + MString() + rots[0]+ " " + MString() + rots[1] + " " + MString() + rots[2] + " " + MString() + rots[3]);
-		FileMapping::printInfo("Sca: " + MString() + scale[0] + " " + MString() + scale[1] + " " + MString() + scale[2]);
+	
 		}
 	return outTrans;
 }
@@ -346,7 +374,16 @@ CameraInfo outCameraData(std::string name)
 			}
 	
 			outCam.camData.isOrtho = isOrtho;
-			outCam.camData.hAngle = fov;
+			if (isOrtho)
+			{
+				outCam.camData.hAngle = mNode.orthoWidth();
+				FileMapping::printInfo("ORTHO WIDTH: " + MString() + outCam.camData.hAngle);
+			}
+			else
+			{
+				outCam.camData.hAngle = fov;
+			}
+			
 			for (int i = 0; i < 3; i++)
 			{
 				outCam.camData.rightVector[i] = right[i];
@@ -538,8 +575,8 @@ MaterialInfo outMaterialData(std::string name)
 		plg = mat.findPlug("cosinePower", &status);
 		if (status)
 		{
-FileMapping::printInfo("Material has cosine power");
-plg.getValue(outMat.matData.specCosine);
+			FileMapping::printInfo("Material has cosine power");
+			plg.getValue(outMat.matData.specCosine);
 		}
 		plg = mat.findPlug("eccentricity", &status);
 		if (status)
@@ -555,14 +592,14 @@ plg.getValue(outMat.matData.specCosine);
 		}
 
 
-		if (debug)
-		{
-			FileMapping::printInfo("Color: ");
+		/*if (true)
+		{*/
+			FileMapping::printInfo("Color: " + MString()+outMat.matData.color[0]);
 			FileMapping::printInfo("Specular color: ");
 			FileMapping::printInfo("Cosine Power: " + MString() + outMat.matData.specCosine);
 			FileMapping::printInfo("Eccentricity: " + MString() + outMat.matData.specEccentricity);
 			FileMapping::printInfo("Specular Roll Off: " + MString() + outMat.matData.specRollOff);
-		}
+		//}
 
 
 
@@ -1053,6 +1090,246 @@ void cbMeshAttributeChange(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MP
 	}
 }
 
+void cbAddParent(MDagPath &child, MDagPath &parent, void *clientData)
+{
+	/*if (eventType & MLockMessage::LockDAGEvent::kReparent)
+	{*/
+	MString childPathName(child.fullPathName());
+	MString parentPathName(parent.fullPathName());
+	if(childPathName.length() > 0 && parentPathName.length() > 0)
+	{
+		if (child.hasFn(MFn::kTransform))
+		{
+			bool hasShapes = false;
+			int numChild = child.childCount();
+			if (numChild > 0)
+			{
+				for (int i = 0; i < numChild; i++)
+				{
+					if (child.child(i).hasFn(MFn::kMesh))
+					{
+						MFnMesh mesh(child.child(i));
+
+						std::string t = "|";
+						std::string nodeName = t + mesh.name().asChar();
+						//FileMapping::printInfo("THIS NODE NAME: " + MString(nodeName.c_str()));
+						int oldStrLen = mesh.name().length();
+						for (int i = 0; i < meshVector.size(); i++)
+						{
+							std::string oldTemp = meshVector.at(i).nodeName;
+							std::string oldTemp2 = oldTemp;
+							size_t strsize = oldTemp.find_last_of("|");
+							std::string thisStr = oldTemp.erase(0, strsize);
+							//FileMapping::printInfo("VECTOR NAME SPLIT: " + MString(thisStr.c_str()));
+
+							if (strcmp(nodeName.c_str(), thisStr.c_str()) == 0)
+							{
+								//FileMapping::printInfo("FOUND NODE IN VECTOR : " + MString(nodeName.c_str()) + " " + MString(thisStr.c_str()) + " " + MString(oldTemp.c_str()));
+								meshVector[i].nodeName = mesh.fullPathName().asChar();
+								//transVector[i].parentName
+								mAddMessage(meshVector[i].nodeName, msgRenamed, NodeType::nMesh, oldTemp2);
+								for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+								{
+									if (strspn(oldTemp2.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+									{
+										if (msgVector[o].nodeType == NodeType::nMesh)
+										{
+											msgVector[o].nodeName = meshVector[i].nodeName;
+										}
+									}
+								}
+								i = meshVector.size();
+							}
+						}
+					hasShapes = true;
+					}
+					else if (child.child(i).hasFn(MFn::kLight))
+					{
+						MFnLight light(child.child(i));
+						hasShapes = true;
+					}
+					else if (child.child(i).hasFn(MFn::kCamera))
+					{
+						MFnCamera camera(child.child(i));
+						hasShapes = true;
+					}
+
+				}
+			}
+
+			MFnTransform trans(child.node());	
+			
+				if (hasShapes)
+				{
+					//std::string oldStr = str.asChar();
+					std::string t = "|";
+					std::string nodeName = t+trans.name().asChar();
+					//FileMapping::printInfo("THIS NODE NAME: " + MString(nodeName.c_str()));
+					int oldStrLen = trans.name().length();
+					for (int i = 0; i < transVector.size(); i++)
+					{
+						std::string oldTemp = transVector.at(i).nodeName;
+						std::string oldTemp2 = oldTemp;
+						size_t strsize = oldTemp.find_last_of("|");
+						std::string thisStr = oldTemp.erase(0, strsize);
+						//FileMapping::printInfo("VECTOR NAME SPLIT: " + MString(thisStr.c_str()));
+
+						if (strcmp(nodeName.c_str(), thisStr.c_str()) == 0)
+						{
+							//FileMapping::printInfo("FOUND NODE IN VECTOR : " + MString(nodeName.c_str()) + " " + MString(thisStr.c_str()) + " " + MString(oldTemp.c_str()));
+							transVector[i].nodeName = childPathName.asChar();
+							transVector[i].parentName = parent.fullPathName().asChar();
+							//transVector[i].parentName
+							mAddMessage(transVector[i].nodeName, msgRenamed, NodeType::nTransform, oldTemp2);
+							for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+							{
+								if (strspn(oldTemp2.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+								{
+									if (msgVector[o].nodeType == NodeType::nTransform)
+									{
+										msgVector[o].nodeName = transVector[i].nodeName;
+									}
+								}  
+							}
+							i = transVector.size();
+						}
+					}
+				}
+			}
+		
+		FileMapping::printInfo("REPARENT " + MString() + child.length() + " " + MString() + parent.length());
+		FileMapping::printInfo("REPARENT" + child.fullPathName() + "   " + parent.fullPathName() + " ");
+	}
+
+
+
+	//}
+}
+void cbRemoveParent(MDagPath &child, MDagPath &parent, void *clientData)
+{
+	MString childPathName(child.fullPathName());
+	MString parentPathName(parent.fullPathName());
+	if (childPathName.length() > 0)
+	{
+		FileMapping::printInfo("WOWAH "+childPathName + " . . . " +parentPathName);
+
+		if (child.hasFn(MFn::kTransform))
+		{
+			bool hasShapes = false;
+			int numChild = child.childCount();
+			if (numChild > 0)
+			{
+				for (int i = 0; i < numChild; i++)
+				{
+					if (child.child(i).hasFn(MFn::kMesh))
+					{
+						MFnMesh mesh(child.child(i));
+
+						std::string t = "|";
+						std::string nodeName = t + mesh.name().asChar();
+						FileMapping::printInfo("THIS NODE NAME: " + MString(nodeName.c_str()));
+						int oldStrLen = mesh.name().length();
+						for (int i = 0; i < meshVector.size(); i++)
+						{
+							std::string oldTemp = meshVector.at(i).nodeName;
+							std::string oldTemp2 = oldTemp;
+							size_t strsize = oldTemp.find_last_of("|");
+							std::string thisStr = oldTemp.erase(0, strsize);
+							//FileMapping::printInfo("VECTOR NAME SPLIT: " + MString(thisStr.c_str()));
+							
+							if (strcmp(nodeName.c_str(), thisStr.c_str()) == 0)
+							{
+								//FileMapping::printInfo("FOUND NODE IN VECTOR : " + MString(nodeName.c_str()) + " " + MString(thisStr.c_str()) + " " + MString(oldTemp.c_str()));
+								
+								meshVector[i].nodeName = mesh.fullPathName().asChar();
+								FileMapping::printInfo("^_^_^_^_^: " + MString(meshVector[i].nodeName.c_str()) + "  " + MString(oldTemp2.c_str()));
+								
+								//transVector[i].parentName
+								mAddMessage(meshVector[i].nodeName, msgRenamed, NodeType::nMesh, oldTemp2);
+								for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+								{
+									if (strspn(oldTemp.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+									{
+										if (msgVector[o].nodeType == NodeType::nMesh)
+										{
+											msgVector[o].nodeName = meshVector[i].nodeName;
+										}
+									}
+								}
+								i = meshVector.size();
+							}
+						}
+						hasShapes = true;
+					}
+					else if (child.child(i).hasFn(MFn::kLight))
+					{
+						MFnLight light(child.child(i));
+						hasShapes = true;
+					}
+					else if (child.child(i).hasFn(MFn::kCamera))
+					{
+						MFnCamera camera(child.child(i));
+						hasShapes = true;
+					}
+
+				}
+			}
+
+			MFnTransform trans(child.node());
+
+			if (hasShapes)
+			{
+				//std::string oldStr = str.asChar();
+				std::string t = "|";
+				std::string nodeName = t + trans.name().asChar();
+				//FileMapping::printInfo("THIS NODE NAME: " + MString(nodeName.c_str()));
+				int oldStrLen = trans.name().length();
+				for (int i = 0; i < transVector.size(); i++)
+				{
+					std::string oldTemp = transVector.at(i).nodeName;
+					std::string oldTemp2 = oldTemp;
+					size_t strsize = oldTemp.find_last_of("|");
+					std::string thisStr = oldTemp.erase(0, strsize);
+					//FileMapping::printInfo("VECTOR NAME SPLIT: " + MString(thisStr.c_str()));
+
+					if (strcmp(nodeName.c_str(), thisStr.c_str()) == 0)
+					{
+						//FileMapping::printInfo("FOUND NODE IN VECTOR : " + MString(nodeName.c_str()) + " " + MString(thisStr.c_str()) + " " + MString(oldTemp.c_str()));
+						transVector[i].nodeName = childPathName.asChar();
+						if (parent.fullPathName().length() > 0)
+						{
+							transVector[i].parentName = parent.fullPathName().asChar();
+						}
+						else
+						{
+							transVector[i].parentName = '0';
+						}
+						//transVector[i].parentName
+						mAddMessage(transVector[i].nodeName, msgRenamed, NodeType::nTransform, oldTemp2);
+						for (std::vector<MessageInfo>::size_type o = 0; o != msgVector.size(); o++)
+						{
+							if (strspn(oldTemp2.c_str(), msgVector[o].nodeName.c_str()) == oldStrLen)
+							{
+								if (msgVector[o].nodeType == NodeType::nTransform)
+								{
+									msgVector[o].nodeName = transVector[i].nodeName;
+								}
+							}
+						}
+						i = transVector.size();
+					}
+				}
+			}
+		}
+
+		FileMapping::printInfo("REPARENT " + MString() + child.length() + " " + MString() + parent.length());
+		FileMapping::printInfo("REPARENT" + child.fullPathName() + "   " + parent.fullPathName() + " ");
+	}
+
+
+
+}
+
 void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	MFnLight light(plug_1.node());
@@ -1183,7 +1460,14 @@ void cbPolyChanged(MObject& node, void* clientData)
 }
 void cbCamAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
-	FileMapping::printInfo("--------------- cam attribute");
+	std::string plgname = plug_1.name().asChar();
+	if (plgname.find(".orthographicWidth"))
+	{
+		MFnCamera cam(plug_1.node());
+		//FileMapping::printInfo()
+		mAddMessage(cam.fullPathName().asChar(), MessageType::msgEdited, NodeType::nCamera);
+	}
+
 }
 void cbCameraPanel(const MString &str, MObject &node, void *clientData)
 {
@@ -1484,6 +1768,7 @@ void cbPreRemoveNode(MObject& node, void* clientData)
 }
 void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
+	//FileMapping::printInfo(MString(plug_1.info().asChar()));
 	if (msg & MNodeMessage::AttributeMessage::kAttributeSet)
 		//if (plug_1.node().hasFn(MFn::kTransform))
 	{
@@ -1491,8 +1776,9 @@ void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 		MStatus result;
 		MFnTransform transform(plug_1.node());
 		//MString att(plug_1.node());
-		//FileMapping::printInfo(MString(plug_1.info().asChar()));
+		FileMapping::printInfo(MString(plug_1.info().asChar()));
 		std::string attName(plug_1.info().asChar());
+		//FileMapping("PLG NAME")
 		if (d)
 		{
 			if (attName.find("translate") != std::string::npos)
@@ -1514,8 +1800,20 @@ void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 				FileMapping::printInfo("NODE: " + transform.fullPathName() + "Scale changed: (" + MString() + scale[0] + " , " + MString() + scale[1] + " , " + MString() + scale[2] + ")");
 			}
 		}
-	
 		mAddMessage(transform.fullPathName().asChar(), msgEdited, nTransform);
+
+		if (transform.childCount() > 0)
+		{
+			int numChild = transform.childCount();
+			for (int i = 0; i < numChild; i++)
+			{
+				if (transform.child(i).hasFn(MFn::kTransform))
+				{
+					MFnTransform childTrans(transform.child(i));
+					mAddMessage(childTrans.fullPathName().asChar(), msgEdited, nTransform);
+				}
+			}
+		}
 	}
 }
 void cbNewNode(MObject& node, void* clientData)
@@ -1534,13 +1832,20 @@ void cbNewNode(MObject& node, void* clientData)
 		{
 
 			mAddNode(trans.fullPathName().asChar(), "", nTransform);
+			MDagPath dPath = trans.dagPath();
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbTransformModified));
 			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			//_CBidArray.append(MDagMessage::addParentAddedDagPathCallback(trans.dagPath(), cbReparent));
+			//_CBidArray.append(MDagMessage::addParentAddedDagPathCallback(*dPath, cbReparent));
 
-			MFnTransform trans(node);
+
 			int pcount = trans.parentCount();
 			MFnTransform parent(trans.parent(0));
-			FileMapping::printInfo("Transform parent: " + parent.fullPathName() + MString()+ pcount);
+			if (pcount > 0)
+			{
+				FileMapping::printInfo("Transform parent: " + parent.fullPathName() + MString() + pcount);
+			}
+			
 		}
 	}
 	if (node.hasFn(MFn::kLight))
@@ -1760,6 +2065,7 @@ void loadScene()
 				transname = trans.fullPathName().asChar();
 				mAddNode(trans.fullPathName().asChar(),"", nTransform);
 				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(parent, cbTransformModified));
+				//_CBidArray.append(MDagMessage::addParentAddedDagPathCallback(trans.dagPath(), cbReparent));
 			}
 			mAddNode(dagPath.fullPathName().asChar(), transname.c_str(), nCamera);
 		}
@@ -1834,6 +2140,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
 	_CBidArray.append(MTimerMessage::addTimerCallback(3.0f, &cbMessageTimer));	
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
+	_CBidArray.append(MDagMessage::addParentAddedCallback(cbAddParent));
+	_CBidArray.append(MDagMessage::addChildReorderedCallback(cbRemoveParent));
+	
 	/*_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));	
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel3", cbCameraPanel));*/
