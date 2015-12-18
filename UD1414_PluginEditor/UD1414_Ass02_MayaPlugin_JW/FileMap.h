@@ -243,7 +243,7 @@ class FileMapping
 public:
 	FileMapping();
 	~FileMapping();
-	void CreateFileMaps();
+	void CreateFileMaps(bool debug = false);
 	void SetFilemapInfoValues(size_t headPlacement, size_t tailPlacement, size_t nonAccessMemoryPlacement, size_t messageFileMapTotalSize);
 	void GetFilemapInfoValues();
 	void PrintFileMapInfo(bool isPost);
@@ -285,7 +285,7 @@ public:
 
 	std::string GetLastErrorAsString();
 
-	float* test;
+	bool debug;
 
 
 

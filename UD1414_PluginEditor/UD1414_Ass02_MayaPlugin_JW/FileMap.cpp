@@ -55,8 +55,10 @@ FileMapping::~FileMapping()
 	
 }
 
-void FileMapping::CreateFileMaps()
+void FileMapping::CreateFileMaps(bool debug) 
 {
+	this->debug = debug;
+	FileMapping::printInfo("\n***** LOADING FFILEMAPS *****");
 	mutexInfo.Create("__info_Mutex__");
 	mInfoSize = 256;
 	//info filemapen
@@ -116,6 +118,7 @@ void FileMapping::CreateFileMaps()
 
 
 	FileMapping::printInfo("FileMapSize: " + MString() + mSize +" "+ MString()+fileMapInfo.non_accessmemoryOffset);
+	FileMapping::printInfo("***** FILEMAP LOADED *****");
 }
 
 void FileMapping::GetFilemapInfoValues()
@@ -300,12 +303,12 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 		if (hdr.byteSize + hdr.bytePadding + localHead + memoryPadding <= mSize)
 		{
 			hdr.msgConfig = 0;
-			FileMapping::printInfo("*   MSG Config (CAN WRITE NORMALLY)");
+			FileMapping::printInfo("***   MSG Config (CAN WRITE NORMALLY)");
 			return 1;
 		}
 		else if (localHead + sizeof(MessageHeader) <= mSize && makeMultiple(hdr.byteSize, 256)+ memoryPadding <=localTail)
 		{
-			FileMapping::printInfo("*   MSG Config (CAN WRITE WITH SPLIT)");
+			FileMapping::printInfo("***   MSG Config (CAN WRITE WITH SPLIT)");
 			size_t tempTotal;
 			hdr.msgConfig = 1;
 			tempTotal = makeMultiple(hdr.byteSize, 256);
@@ -323,12 +326,12 @@ int FileMapping::findWriteConfig(MessageHeader& hdr)
 		if (hdr.byteTotal + localHead + memoryPadding <= localTail)
 		{
 			hdr.msgConfig = 0;
-			FileMapping::printInfo("*   MSG Config (CAN WRITE NORMALLY)");
+			FileMapping::printInfo("***   MSG Config (CAN WRITE NORMALLY)");
 			return 1;
 		}
 	}
-	FileMapping::printInfo("*   MSG Config (CANNOT WRITE)");
-	FileMapping::printInfo("*   HEAD POSITION: " + MString() + localHead + " TAIL POSISH: " +MString() + localTail);
+	FileMapping::printInfo("***   MSG Config (CANNOT WRITE)");
+	//FileMapping::printInfo("***   HEAD POSITION: " + MString() + localHead + " TAIL POSISH: " +MString() + localTail);
 	
 	return 0;
 
@@ -838,17 +841,21 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	msgSize +=		3 * (mInfo.meshData.indCount * sizeof(int));
 	msgSize +=		mInfo.meshData.triCount * sizeof(int);
 
-	FileMapping::printInfo(":: Info byte size: " + MString()+infoSize);
-	FileMapping::printInfo(":: Mesh data byte size: " + MString() + msgSize);
-	FileMapping::printInfo(":: Header byte size: " + MString() + sizeof(MessageHeader));
-	msgSize += infoSize;
-	//msgSize += _headerSize;
-	FileMapping::printInfo(":: MESSAGE BYTE SIZE: " + MString() + msgSize);
-	totalSize = makeMultiple(msgSize+sizeof(MessageHeader), 256);
-	padding = totalSize - msgSize;
-	FileMapping::printInfo(":: Padding byte size: " + MString() + padding);
-	FileMapping::printInfo(":: TOTAL BYTE SIZE: " + MString() + totalSize);
-	FileMapping::printInfo(":: Node Name Length: " + MString(msginfo.nodeName.c_str()) + MString() + mInfo.nodeName.length());
+	if (debug)
+	{
+		FileMapping::printInfo(":: Info byte size: " + MString() + infoSize);
+		FileMapping::printInfo(":: Mesh data byte size: " + MString() + msgSize);
+		FileMapping::printInfo(":: Header byte size: " + MString() + sizeof(MessageHeader));
+		msgSize += infoSize;
+		//msgSize += _headerSize;
+		FileMapping::printInfo(":: MESSAGE BYTE SIZE: " + MString() + msgSize);
+		totalSize = makeMultiple(msgSize + sizeof(MessageHeader), 256);
+		padding = totalSize - msgSize;
+		FileMapping::printInfo(":: Padding byte size: " + MString() + padding);
+		FileMapping::printInfo(":: TOTAL BYTE SIZE: " + MString() + totalSize);
+		FileMapping::printInfo(":: Node Name Length: " + MString(msginfo.nodeName.c_str()) + MString() + mInfo.nodeName.length());
+	}
+
 
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
@@ -871,7 +878,7 @@ MessageHeader FileMapping::createHeaderTransform(MessageInfo& msginfo, Transform
 	
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
-	 FileMapping::printInfo("*   Transform Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString()+(msgSize-sizeof(MessageHeader))
+	FileMapping::printInfo("*   Transform Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString()+(msgSize-sizeof(MessageHeader))
 		+ " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
@@ -972,7 +979,7 @@ MessageHeader FileMapping::createHeaderRenameDelete(MessageInfo& msginfo)
 	hdr.byteTotal = totalSize;
 	hdr.byteSize = msgSize;
 	hdr.bytePadding = padding;
-	FileMapping::printWarning(MString() + msginfo.nodeType);
+	//FileMapping::printWarning(MString() + msginfo.nodeType);
 	return hdr;
 }
 //MessageHeader FileMapping::createHeaderDelete(std::string name1, MessageInfo& msginfo)
@@ -1213,7 +1220,7 @@ void FileMapping::PrintFileMapInfo(bool isPost)
 	{
 		str = "PRE";
 	}
-	FileMapping::printInfo("* ! Infovalues " + MString(str.c_str()) + " message(HEAD, TAIL, NAM, SIZE): " +
+	FileMapping::printInfo("*** ! Infovalues " + MString(str.c_str()) + " message(HEAD, TAIL, NAM, SIZE): " +
 		MString() + fileMapInfo.head_ByteOffset + " " + MString() + fileMapInfo.tail_ByteOffset + " " +
 		MString() + fileMapInfo.non_accessmemoryOffset + " " + MString() + fileMapInfo.messageFilemap_Size);
 
