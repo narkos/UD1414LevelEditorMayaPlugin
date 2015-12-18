@@ -846,16 +846,17 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 		FileMapping::printInfo(":: Info byte size: " + MString() + infoSize);
 		FileMapping::printInfo(":: Mesh data byte size: " + MString() + msgSize);
 		FileMapping::printInfo(":: Header byte size: " + MString() + sizeof(MessageHeader));
-		msgSize += infoSize;
+		
 		//msgSize += _headerSize;
 		FileMapping::printInfo(":: MESSAGE BYTE SIZE: " + MString() + msgSize);
-		totalSize = makeMultiple(msgSize + sizeof(MessageHeader), 256);
-		padding = totalSize - msgSize;
+
 		FileMapping::printInfo(":: Padding byte size: " + MString() + padding);
 		FileMapping::printInfo(":: TOTAL BYTE SIZE: " + MString() + totalSize);
 		FileMapping::printInfo(":: Node Name Length: " + MString(msginfo.nodeName.c_str()) + MString() + mInfo.nodeName.length());
 	}
-
+	msgSize += infoSize;
+	totalSize = makeMultiple(msgSize + sizeof(MessageHeader), 256);
+	padding = totalSize - msgSize;
 
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
