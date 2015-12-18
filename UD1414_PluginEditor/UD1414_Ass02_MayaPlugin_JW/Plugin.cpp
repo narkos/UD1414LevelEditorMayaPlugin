@@ -2094,7 +2094,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
-	_CBidArray.append(MTimerMessage::addTimerCallback(3.0f, &cbMessageTimer));	
+	_CBidArray.append(MTimerMessage::addTimerCallback(0.2f, &cbMessageTimer));	
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
 	_CBidArray.append(MDagMessage::addParentAddedCallback(cbAddParent));
 	_CBidArray.append(MDagMessage::addChildReorderedCallback(cbRemoveParent));
