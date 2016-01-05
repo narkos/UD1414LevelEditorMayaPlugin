@@ -840,8 +840,8 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	msgSize +=		2 * (mInfo.meshData.UVCount *sizeof(float));
 	msgSize +=		3 * (mInfo.meshData.indCount * sizeof(int));
 	msgSize +=		mInfo.meshData.triCount * sizeof(int);
-
-	if (debug)
+	bool fat = false;
+	if (fat)
 	{
 		FileMapping::printInfo(":: Info byte size: " + MString() + infoSize);
 		FileMapping::printInfo(":: Mesh data byte size: " + MString() + msgSize);

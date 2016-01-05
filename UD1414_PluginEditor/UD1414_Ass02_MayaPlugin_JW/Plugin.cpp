@@ -61,6 +61,17 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 			}
 			else
 			{
+				
+				MIntArray indList;
+				MPointArray vList;
+				polyIterator.getTriangles(vList, indList, MSpace::kWorld);
+				MGlobal::displayInfo("FACE");
+				MIntArray vIndList;
+				polyIterator.getVertices(vIndList);
+				for (int i = 0; i < vIndList.length(); i++)
+				{
+					MGlobal::displayInfo("VERT ID: " + MString() + vIndList[i] +" "+ MString()+polyIterator.index());
+				}
 				triNorIndices.append(polyIterator.normalIndex(0, &result));
 				triNorIndices.append(polyIterator.normalIndex(1, &result));
 				triNorIndices.append(polyIterator.normalIndex(3, &result));
@@ -129,7 +140,7 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 	triUVIndices.get(outMesh.meshData.UVIndices);
 
 	// Prints general mesh data
-	if (debug)
+	if (true)
 	{
 		FileMapping::printInfo("outMesh Name: " + MString(name.c_str()));
 		FileMapping::printInfo("outMesh Transform Name: " + MString(outMesh.transformName.c_str()));
@@ -2000,45 +2011,8 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 void loadScene()
 {
 	MStatus stat;
-	MFn::Type filter = MFn::kCamera;
-	
-	MItDag dagIt(MItDag::kDepthFirst, filter, &stat);
-	
-	for (; !dagIt.isDone(); dagIt.next())
-	{
-		MDagPath dagPath;
-		stat = dagIt.getPath(dagPath);
-		MFnDagNode dagNode(dagPath, &stat);
-		std::string transname;
-		if (dagPath.hasFn(MFn::kCamera))
-		{
-			
-			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(dagPath.node(), cbCamAttribute));
-			outCameraData(dagPath.fullPathName().asChar());
-			MObject parent = dagNode.parent(0);
-			if (parent.hasFn(MFn::kTransform))
-			{
-				MFnTransform trans(parent);
-				transname = trans.fullPathName().asChar();
-				mAddNode(trans.fullPathName().asChar(),"", nTransform);
-				_CBidArray.append(MNodeMessage::addAttributeChangedCallback(parent, cbTransformModified));
-			}
-			mAddNode(dagPath.fullPathName().asChar(), transname.c_str(), nCamera);
-		}
-		
-	}
-	stat = modelPanel.getCamera(activeCamera);
-
-	FileMapping::printInfo("CURRENT CAMERA " + activeCamera.fullPathName());
-
-	if (stat)
-	{
-		mAddMessage(activeCamera.fullPathName().asChar(), msgSwitched, nCamera);
-	}
-	
-	filter = MFn::kLambert;
 	MItDependencyNodes itDep(MFn::kLambert);
-	while(!itDep.isDone())
+	while (!itDep.isDone())
 	{
 		if (itDep.thisNode().apiType() == MFn::kLambert)
 		{
@@ -2047,7 +2021,7 @@ void loadScene()
 			mAddNode(mat.name().asChar(), "", nMaterial, 1);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(itDep.thisNode(), cbMaterialAttribute));
 		}
-		else if (itDep.thisNode().apiType() == MFn::kPhong )
+		else if (itDep.thisNode().apiType() == MFn::kPhong)
 		{
 			MFnDependencyNode mat(itDep.thisNode());
 			//FileMapping::printInfo("Found Material " + MString() + mat.name().asChar());
@@ -2063,6 +2037,113 @@ void loadScene()
 		}
 		itDep.next();
 	}
+	
+
+	MFn::Type filter = MFn::kTransform;
+	MItDag itTrans(MItDag::kDepthFirst, filter, &stat);
+	for (; !itTrans.isDone(); itTrans.next())
+	{
+		MDagPath transDagPath;
+		stat = itTrans.getPath(transDagPath);
+		MFnDagNode transDagNode(transDagPath, &stat);
+		int childCount = transDagNode.childCount();
+		if (childCount > 0)
+		{
+			MFnTransform trans(transDagPath.node());
+			MObject obj(transDagPath.node());
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(obj, cbTransformModified));
+			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(obj, cbPreRemoveNode));
+			int pcount = trans.parentCount();
+			MFnTransform transParent(trans.parent(0));
+			mAddNode(trans.fullPathName().asChar(), transParent.fullPathName().asChar(), NodeType::nTransform);
+			for (int i = 0; i < childCount; i++)
+			{
+				MObject child(trans.child(i));
+				if (child.hasFn(MFn::kMesh))
+				{
+					MFnMesh mesh(trans.child(i), &stat);
+					FileMapping::printInfo("MESH VERTS " + MString() + mesh.numVertices());
+					if (mesh.numVertices() > 0)
+					{
+						if (stat)
+						{
+							std::string name = mesh.fullPathName().asChar();
+							if (name.find("SurfaceShape") == std::string::npos)
+							{
+								_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttribute));
+								_CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(child, cbPolyChanged));
+								_CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
+								_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
+								mAddNode(mesh.fullPathName().asChar(), trans.fullPathName().asChar(), NodeType::nMesh);
+							}
+					
+						}
+					}
+					
+
+				}
+				else if (child.hasFn(MFn::kCamera))
+				{
+					MFnCamera cam(child);
+					_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbCamAttribute));
+					mAddNode(cam.fullPathName().asChar(), trans.fullPathName().asChar(), NodeType::nCamera);
+				}
+				else if (child.hasFn(MFn::kLight))
+				{
+					if (child.hasFn(MFn::kDirectionalLight) || child.hasFn(MFn::kSpotLight) || child.hasFn(MFn::kPointLight))
+					{
+						MFnLight light(child);
+						mAddNode(light.fullPathName().asChar(), trans.fullPathName().asChar(), nLight);
+						_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbLightAttribute));
+						_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
+						_CBidArray.append(MNodeMessage::addNameChangedCallback(child, &cbNameChange));
+					}
+				}
+			}
+			
+		}
+	}
+
+	filter = MFn::kCamera;
+	MItDag dagIt(MItDag::kDepthFirst, filter, &stat);
+	
+	//for (; !dagIt.isDone(); dagIt.next())
+	//{
+	//	MDagPath dagPath;
+	//	stat = dagIt.getPath(dagPath);
+	//	MFnDagNode dagNode(dagPath, &stat);
+	//	std::string transname;
+	//	if (dagPath.hasFn(MFn::kCamera))
+	//	{
+	//		
+	//		_CBidArray.append(MNodeMessage::addAttributeChangedCallback(dagPath.node(), cbCamAttribute));
+	//		outCameraData(dagPath.fullPathName().asChar());
+	//		MObject parent = dagNode.parent(0);
+	//		if (parent.hasFn(MFn::kTransform))
+	//		{
+	//			MFnTransform trans(parent);
+	//			transname = trans.fullPathName().asChar();
+	//			//mAddNode(trans.fullPathName().asChar(),"", nTransform);
+	//			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(parent, cbTransformModified));
+	//		}
+	//		mAddNode(dagPath.fullPathName().asChar(), transname.c_str(), nCamera);
+	//	}
+	//	
+	//}
+	stat = modelPanel.getCamera(activeCamera);
+
+	FileMapping::printInfo("CURRENT CAMERA " + activeCamera.fullPathName());
+
+	if (stat)
+	{
+		mAddMessage(activeCamera.fullPathName().asChar(), msgSwitched, nCamera);
+	}
+
+
+
+	
+	
+	
 }
 
 EXPORT MStatus initializePlugin(MObject obj)
@@ -2077,7 +2158,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 
 
-	fileMap.CreateFileMaps(false);
+	fileMap.CreateFileMaps(true);
 
 	FileMapping::printInfo("Level Editor plugin loaded.\n");
 	result = M3dView::getM3dViewFromModelPanel("modelPanel4", modelPanel);
