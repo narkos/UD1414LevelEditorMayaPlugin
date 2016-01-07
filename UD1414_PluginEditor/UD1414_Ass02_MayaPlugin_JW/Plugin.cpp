@@ -276,26 +276,26 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 				}
 
 				MObject face(polyIterator.currentItem());
-				MItMeshFaceVertex faceIterator(dagPath, face, &result);
-				int o = 0;
-				while (!faceIterator.isDone())
-				{
-					//FileMapping::printInfo("WOW " + MString() + o + " UH " + MString() + faceIterator.faceId());
-					o++;
-					faceIterator.next();
+				//MItMeshFaceVertex faceIterator(dagPath, face, &result);
+				//int o = 0;
+				//while (!faceIterator.isDone())
+				//{
+				//	//FileMapping::printInfo("WOW " + MString() + o + " UH " + MString() + faceIterator.faceId());
+				//	o++;
+				//	faceIterator.next();
 
-				}
+				//}
 				MIntArray indList;
 				MIntArray locInd;
 				polyIterator.getVertices(locInd);
-				for (int i = 0; i < locInd.length(); i++)
+				/*for (int i = 0; i < locInd.length(); i++)
 				{
-					//FileMapping::printInfo("VertIndex: " + MString() + locInd[i]);
-				}
+
+				}*/
 				MPointArray vList;
 
 				int numTriangles;
-				//MGlobal::displayInfo("FACE");
+
 				MIntArray vIndList;
 
 				polyIterator.getTriangles(vList, indList, MSpace::kWorld);
@@ -305,7 +305,7 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 				int lastValue;
 				int vertsThisFace = locInd.length();
 				int midValue = vertsThisFace - 1;
-				FileMapping::printInfo("LENGTH " + MString() + vertsThisFace);
+				//FileMapping::printInfo("LENGTH " + MString() + vertsThisFace);
 				for (int i = 0; i < triCountThisPoly; i++)
 				{
 
