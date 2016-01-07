@@ -1,211 +1,6 @@
 #include "Plugin.h"
 
 // OUT DATA FUNCTIONS
-//MeshInfo outMeshData(std::string name, bool getDynamicData)
-//{
-//	// Find mesh node in Dag
-//	MStatus			result;
-//	MString			_name(name.c_str());
-//	MSelectionList	sList;
-//	MDagPath		dagPath;
-//
-//	if (MGlobal::getSelectionListByName(_name, sList))
-//	{
-//		sList.getDagPath(0, dagPath);
-//		if (dagPath.hasFn(MFn::kMesh))
-//		{
-//			FileMapping::printInfo("Mesh found: " + dagPath.fullPathName());
-//		}
-//	}
-//
-//	MFnMesh			mNode(dagPath.node(), &result);
-//	MItMeshPolygon	polyIterator(dagPath.node(), &result);
-//	MeshInfo		outMesh;
-//	
-//	// Variable declaration for mesh analysis
-//	const float*	vertices = mNode.getRawPoints(&result);
-//	const float*	normals = mNode.getRawNormals(&result);
-//	MFloatArray		uArray;
-//	MFloatArray		vArray;
-//	mNode.getUVs(uArray, vArray);
-//
-//	MIntArray		triCount;
-//	MIntArray		triVerts;
-//	mNode.getTriangles(triCount, triVerts);
-//	MIntArray		triNorIndices;
-//	MIntArray		triUVIndices;
-//	
-//	MIntArray vCount, posIndices;
-//	mNode.getVertices(vCount, posIndices);
-//
-//	MIntArray uvPerPoly, uvIndices;
-//	mNode.getAssignedUVs(uvPerPoly, uvIndices);
-//
-//	MIntArray norPerPoly, norIndices;
-//	mNode.getNormalIds(norPerPoly, norIndices);
-//
-//	MIntArray trisPerFaceOff, offsetIndices;
-//	mNode.getTriangleOffsets(trisPerFaceOff, offsetIndices);
-//
-//	for (int i = 0; i < posIndices.length(); i++)
-//	{
-//
-//	}
-//
-//	int				totTris = 0;
-//	int				triCountThisPoly = 0;
-//	
-//
-//	if (mNode.parent(0).hasFn(MFn::kTransform))
-//	{
-//		MFnTransform mTrans(mNode.parent(0), &result);
-//		if (!result)
-//		{
-//			FileMapping::printError(MString(name.c_str()) + " parent not found!");
-//		}
-//		else
-//		{
-//			outMesh.transformName = mTrans.fullPathName().asChar();
-//			FileMapping::printInfo(outMesh.transformName.c_str());
-//		}
-//	}
-//
-//	outMesh.meshData.vertCount = mNode.numVertices();
-//	outMesh.meshData.normalCount = mNode.numNormals();
-//	outMesh.meshData.UVCount = mNode.numUVs();
-//
-//	outMesh.meshData.vertices = vertices;
-//	outMesh.meshData.normals = normals;
-//
-//	outMesh.meshData.triPerFace = new int[triCount.length()];
-//	triCount.get(outMesh.meshData.triPerFace);
-//
-//	outMesh.meshData.uv = new float2[mNode.numUVs()];
-//	for (int i = 0; i < outMesh.meshData.UVCount; i++)
-//	{
-//		outMesh.meshData.uv[i][0] = uArray[i];
-//		outMesh.meshData.uv[i][1] = vArray[i];
-//	}
-//
-//	outMesh.meshData.indCount = offsetIndices.length();
-//	outMesh.meshData.triCount = triCount.length();
-//
-//	outMesh.meshData.triIndices = new int[outMesh.meshData.indCount];
-//	 triVerts.get(outMesh.meshData.triIndices);
-//
-//	outMesh.meshData.norIndices = new int[norIndices.length()];
-//	norIndices.get(outMesh.meshData.norIndices);
-//	//triNorIndices.get(outMesh.meshData.norIndices);
-//
-//	outMesh.meshData.UVIndices = new int[uvIndices.length()];
-//	uvIndices.get(outMesh.meshData.UVIndices);
-//
-//	// Prints general mesh data
-//	if (true)
-//	{
-//		FileMapping::printInfo("outMesh Name: " + MString(name.c_str()));
-//		FileMapping::printInfo("outMesh Transform Name: " + MString(outMesh.transformName.c_str()));
-//		FileMapping::printInfo("outMesh Vert/Nor/UV Count: " + MString() + outMesh.meshData.vertCount + " / " + MString() + outMesh.meshData.normalCount + " / " + MString() + outMesh.meshData.UVCount);
-//		FileMapping::printInfo("outMesh Indices / Triangle Count: " + MString() + outMesh.meshData.indCount + " / "+ MString() + triUVIndices.length() + " / " + MString() + totTris);
-//		MString triFaceStr = " ( ";
-//		MString triIndStr = "";
-//		for (int i = 0; i < triCount.length(); i++)
-//		{
-//
-//			if (i != triCount.length() - 1)
-//			{
-//				triFaceStr += MString() + outMesh.meshData.triPerFace[i] + " , ";
-//				//triIndStr += MString() + outMesh.triIndices[i] + "," + MString() + outMesh.norIndices[i] + "," + MString() + outMesh.UVIndices[i] + ")";
-//			}
-//
-//			else
-//			{
-//				triFaceStr += MString() + outMesh.meshData.triPerFace[i];
-//				//triIndStr += MString() + outMesh.triIndices[i] + "," + MString() + outMesh.norIndices[i] + "," + MString() + outMesh.UVIndices[i] + ")";
-//			}
-//
-//		}
-//		FileMapping::printInfo("outMesh Tris per Polygon: " + triFaceStr + " )");
-//		
-//		// Prints vertex data
-//		bool dbug2 = true;
-//		MString iDataStr = "";
-//		if (dbug2)
-//		{
-//			
-//			for (int i = 0; i + 3 < outMesh.meshData.indCount; i += 3)
-//			{
-//				triIndStr += "(";
-//				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
-//				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 1] + "," + MString() + outMesh.meshData.norIndices[i + 1] + "," + MString() + outMesh.meshData.UVIndices[i + 1] + ")");
-//				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 2] + "," + MString() + outMesh.meshData.norIndices[i + 2] + "," + MString() + outMesh.meshData.UVIndices[i + 2] + ")");
-//				
-//				triIndStr += ")\n";
-//			}
-//
-//
-//			/*for (int i = 0; i < outMesh.meshData.normalCount*3; i+=3)
-//			{
-//				iDataStr += "Pos ";
-//				iDataStr += "(" + MString() + outMesh.meshData.vertices[i] + " , ";
-//				iDataStr += MString() + outMesh.meshData.vertices[i+1] + " , ";
-//				iDataStr += MString() + outMesh.meshData.vertices[i+2] + ")";
-//
-//				iDataStr += "Nor ";
-//				iDataStr += "(" + MString() + outMesh.meshData.normals[i] + " , ";
-//				iDataStr += MString() + outMesh.meshData.normals[i + 1] + " , ";
-//				iDataStr += MString() + outMesh.meshData.normals[i + 2] +")";
-//
-//				iDataStr += "UV ";
-//				iDataStr += "(" + MString() + outMesh.meshData.uv[i][0] + " , ";
-//				iDataStr += MString() + outMesh.meshData.uv[i][1] + ")\n";
-//			}*/
-//
-//		}
-//		FileMapping::printInfo("outMesh Indices per triangle: " + triIndStr);
-//		if(dbug2)FileMapping::printInfo(iDataStr);
-//		
-//	}
-//
-//
-//
-//
-//	MObjectArray connectedShaders;
-//	MIntArray shaderIndices;
-//	mNode.getConnectedShaders(0, connectedShaders, shaderIndices);
-//	MFnDependencyNode shaderGroup(connectedShaders[0]);
-//	MPlug plug = shaderGroup.findPlug("surfaceShader");
-//	MPlugArray connections;
-//	plug.connectedTo(connections, true, false);
-//	int matindex = -1;
-//	for (uint i = 0; i < connections.length(); i++)
-//	{
-//		if (connections[i].node().hasFn(MFn::kLambert))
-//		{
-//			matindex = i;
-//			if(debug) FileMapping::printInfo("Num of connections "+MString()+connections.length() + MString()+connections[i].name().asChar()+ MString()+shaderGroup.name().asChar());
-//		}
-//	}
-//	if (matindex >= 0)
-//	{
-//		MFnDependencyNode mat(connections[matindex].node());
-//		FileMapping::printInfo(mat.name().asChar());
-//		outMesh.materialName = mat.name().asChar();
-//	}
-//	else
-//	{
-//		outMesh.materialName = "ERROR NONE";
-//	}
-//	
-//	outMesh.meshID = 5;
-//	outMesh.materialID = 8;
-//	if(debug) FileMapping::printInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID + outMesh.materialName.c_str());
-//	FileMapping::printInfo("MESH INDEX COUNTS(V,N,UV): " + MString() + offsetIndices.length() + " " + MString() + norIndices.length() + " " + MString() + uvIndices.length());
-// 	
-//	
-//	return outMesh;
-//}
-
 
 MeshInfo outMeshData(std::string name, bool getDynamicData)
 {
@@ -2532,3 +2327,208 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 
 	return MS::kSuccess;
 }
+
+//MeshInfo outMeshData(std::string name, bool getDynamicData)
+//{
+//	// Find mesh node in Dag
+//	MStatus			result;
+//	MString			_name(name.c_str());
+//	MSelectionList	sList;
+//	MDagPath		dagPath;
+//
+//	if (MGlobal::getSelectionListByName(_name, sList))
+//	{
+//		sList.getDagPath(0, dagPath);
+//		if (dagPath.hasFn(MFn::kMesh))
+//		{
+//			FileMapping::printInfo("Mesh found: " + dagPath.fullPathName());
+//		}
+//	}
+//
+//	MFnMesh			mNode(dagPath.node(), &result);
+//	MItMeshPolygon	polyIterator(dagPath.node(), &result);
+//	MeshInfo		outMesh;
+//	
+//	// Variable declaration for mesh analysis
+//	const float*	vertices = mNode.getRawPoints(&result);
+//	const float*	normals = mNode.getRawNormals(&result);
+//	MFloatArray		uArray;
+//	MFloatArray		vArray;
+//	mNode.getUVs(uArray, vArray);
+//
+//	MIntArray		triCount;
+//	MIntArray		triVerts;
+//	mNode.getTriangles(triCount, triVerts);
+//	MIntArray		triNorIndices;
+//	MIntArray		triUVIndices;
+//	
+//	MIntArray vCount, posIndices;
+//	mNode.getVertices(vCount, posIndices);
+//
+//	MIntArray uvPerPoly, uvIndices;
+//	mNode.getAssignedUVs(uvPerPoly, uvIndices);
+//
+//	MIntArray norPerPoly, norIndices;
+//	mNode.getNormalIds(norPerPoly, norIndices);
+//
+//	MIntArray trisPerFaceOff, offsetIndices;
+//	mNode.getTriangleOffsets(trisPerFaceOff, offsetIndices);
+//
+//	for (int i = 0; i < posIndices.length(); i++)
+//	{
+//
+//	}
+//
+//	int				totTris = 0;
+//	int				triCountThisPoly = 0;
+//	
+//
+//	if (mNode.parent(0).hasFn(MFn::kTransform))
+//	{
+//		MFnTransform mTrans(mNode.parent(0), &result);
+//		if (!result)
+//		{
+//			FileMapping::printError(MString(name.c_str()) + " parent not found!");
+//		}
+//		else
+//		{
+//			outMesh.transformName = mTrans.fullPathName().asChar();
+//			FileMapping::printInfo(outMesh.transformName.c_str());
+//		}
+//	}
+//
+//	outMesh.meshData.vertCount = mNode.numVertices();
+//	outMesh.meshData.normalCount = mNode.numNormals();
+//	outMesh.meshData.UVCount = mNode.numUVs();
+//
+//	outMesh.meshData.vertices = vertices;
+//	outMesh.meshData.normals = normals;
+//
+//	outMesh.meshData.triPerFace = new int[triCount.length()];
+//	triCount.get(outMesh.meshData.triPerFace);
+//
+//	outMesh.meshData.uv = new float2[mNode.numUVs()];
+//	for (int i = 0; i < outMesh.meshData.UVCount; i++)
+//	{
+//		outMesh.meshData.uv[i][0] = uArray[i];
+//		outMesh.meshData.uv[i][1] = vArray[i];
+//	}
+//
+//	outMesh.meshData.indCount = offsetIndices.length();
+//	outMesh.meshData.triCount = triCount.length();
+//
+//	outMesh.meshData.triIndices = new int[outMesh.meshData.indCount];
+//	 triVerts.get(outMesh.meshData.triIndices);
+//
+//	outMesh.meshData.norIndices = new int[norIndices.length()];
+//	norIndices.get(outMesh.meshData.norIndices);
+//	//triNorIndices.get(outMesh.meshData.norIndices);
+//
+//	outMesh.meshData.UVIndices = new int[uvIndices.length()];
+//	uvIndices.get(outMesh.meshData.UVIndices);
+//
+//	// Prints general mesh data
+//	if (true)
+//	{
+//		FileMapping::printInfo("outMesh Name: " + MString(name.c_str()));
+//		FileMapping::printInfo("outMesh Transform Name: " + MString(outMesh.transformName.c_str()));
+//		FileMapping::printInfo("outMesh Vert/Nor/UV Count: " + MString() + outMesh.meshData.vertCount + " / " + MString() + outMesh.meshData.normalCount + " / " + MString() + outMesh.meshData.UVCount);
+//		FileMapping::printInfo("outMesh Indices / Triangle Count: " + MString() + outMesh.meshData.indCount + " / "+ MString() + triUVIndices.length() + " / " + MString() + totTris);
+//		MString triFaceStr = " ( ";
+//		MString triIndStr = "";
+//		for (int i = 0; i < triCount.length(); i++)
+//		{
+//
+//			if (i != triCount.length() - 1)
+//			{
+//				triFaceStr += MString() + outMesh.meshData.triPerFace[i] + " , ";
+//				//triIndStr += MString() + outMesh.triIndices[i] + "," + MString() + outMesh.norIndices[i] + "," + MString() + outMesh.UVIndices[i] + ")";
+//			}
+//
+//			else
+//			{
+//				triFaceStr += MString() + outMesh.meshData.triPerFace[i];
+//				//triIndStr += MString() + outMesh.triIndices[i] + "," + MString() + outMesh.norIndices[i] + "," + MString() + outMesh.UVIndices[i] + ")";
+//			}
+//
+//		}
+//		FileMapping::printInfo("outMesh Tris per Polygon: " + triFaceStr + " )");
+//		
+//		// Prints vertex data
+//		bool dbug2 = true;
+//		MString iDataStr = "";
+//		if (dbug2)
+//		{
+//			
+//			for (int i = 0; i + 3 < outMesh.meshData.indCount; i += 3)
+//			{
+//				triIndStr += "(";
+//				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i] + "," + MString() + outMesh.meshData.norIndices[i] + "," + MString() + outMesh.meshData.UVIndices[i] + ")");
+//				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 1] + "," + MString() + outMesh.meshData.norIndices[i + 1] + "," + MString() + outMesh.meshData.UVIndices[i + 1] + ")");
+//				triIndStr += ("(" + MString() + outMesh.meshData.triIndices[i + 2] + "," + MString() + outMesh.meshData.norIndices[i + 2] + "," + MString() + outMesh.meshData.UVIndices[i + 2] + ")");
+//				
+//				triIndStr += ")\n";
+//			}
+//
+//
+//			/*for (int i = 0; i < outMesh.meshData.normalCount*3; i+=3)
+//			{
+//				iDataStr += "Pos ";
+//				iDataStr += "(" + MString() + outMesh.meshData.vertices[i] + " , ";
+//				iDataStr += MString() + outMesh.meshData.vertices[i+1] + " , ";
+//				iDataStr += MString() + outMesh.meshData.vertices[i+2] + ")";
+//
+//				iDataStr += "Nor ";
+//				iDataStr += "(" + MString() + outMesh.meshData.normals[i] + " , ";
+//				iDataStr += MString() + outMesh.meshData.normals[i + 1] + " , ";
+//				iDataStr += MString() + outMesh.meshData.normals[i + 2] +")";
+//
+//				iDataStr += "UV ";
+//				iDataStr += "(" + MString() + outMesh.meshData.uv[i][0] + " , ";
+//				iDataStr += MString() + outMesh.meshData.uv[i][1] + ")\n";
+//			}*/
+//
+//		}
+//		FileMapping::printInfo("outMesh Indices per triangle: " + triIndStr);
+//		if(dbug2)FileMapping::printInfo(iDataStr);
+//		
+//	}
+//
+//
+//
+//
+//	MObjectArray connectedShaders;
+//	MIntArray shaderIndices;
+//	mNode.getConnectedShaders(0, connectedShaders, shaderIndices);
+//	MFnDependencyNode shaderGroup(connectedShaders[0]);
+//	MPlug plug = shaderGroup.findPlug("surfaceShader");
+//	MPlugArray connections;
+//	plug.connectedTo(connections, true, false);
+//	int matindex = -1;
+//	for (uint i = 0; i < connections.length(); i++)
+//	{
+//		if (connections[i].node().hasFn(MFn::kLambert))
+//		{
+//			matindex = i;
+//			if(debug) FileMapping::printInfo("Num of connections "+MString()+connections.length() + MString()+connections[i].name().asChar()+ MString()+shaderGroup.name().asChar());
+//		}
+//	}
+//	if (matindex >= 0)
+//	{
+//		MFnDependencyNode mat(connections[matindex].node());
+//		FileMapping::printInfo(mat.name().asChar());
+//		outMesh.materialName = mat.name().asChar();
+//	}
+//	else
+//	{
+//		outMesh.materialName = "ERROR NONE";
+//	}
+//	
+//	outMesh.meshID = 5;
+//	outMesh.materialID = 8;
+//	if(debug) FileMapping::printInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID + outMesh.materialName.c_str());
+//	FileMapping::printInfo("MESH INDEX COUNTS(V,N,UV): " + MString() + offsetIndices.length() + " " + MString() + norIndices.length() + " " + MString() + uvIndices.length());
+// 	
+//	
+//	return outMesh;
+//}
