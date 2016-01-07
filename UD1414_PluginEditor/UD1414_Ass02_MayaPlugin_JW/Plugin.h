@@ -42,6 +42,7 @@
 #include <maya/M3dView.h>
 #include <maya/MTransformationMatrix.h>
 #include <maya/MMatrix.h>
+#include <maya/MItMeshFaceVertex.h>
 // Wrappers
 #include <maya/MGlobal.h>
 #include <maya/MCallbackIdArray.h>
