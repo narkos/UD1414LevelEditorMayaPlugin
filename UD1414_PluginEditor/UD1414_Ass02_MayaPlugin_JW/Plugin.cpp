@@ -36,17 +36,17 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 	MIntArray		triUVIndices;
 	
 	int				totTris = 0;
-	int				trisPerFace = 0;
+	int				triCountThisPoly = 0;
 	if (polyIterator.hasValidTriangulation())
 	{
 		//DO STUFF
 		for (polyIterator.reset(); !polyIterator.isDone(); polyIterator.next())
 		{
 
-			polyIterator.numTriangles(trisPerFace);
+			polyIterator.numTriangles(triCountThisPoly);
 			int uId0, uId1, uId2;
-			cout << trisPerFace;
-			if (trisPerFace == 1)
+			cout << triCountThisPoly;
+			if (triCountThisPoly == 1)
 			{	
 				triNorIndices.append(polyIterator.normalIndex(0, &result));
 				triNorIndices.append(polyIterator.normalIndex(1, &result));
@@ -64,15 +64,55 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 				
 				MIntArray indList;
 				MPointArray vList;
-				polyIterator.getTriangles(vList, indList, MSpace::kWorld);
-				MGlobal::displayInfo("FACE");
+				
+				int numTriangles;
+				//MGlobal::displayInfo("FACE");
 				MIntArray vIndList;
+
+				polyIterator.getTriangles(vList, indList, MSpace::kWorld);
 				polyIterator.getVertices(vIndList);
-				for (int i = 0; i < vIndList.length(); i++)
+				bool firstIteration = true;
+				int firstValue;
+				int lastValue;
+				for (int i = 0; i < triCountThisPoly; i++)
 				{
-					MGlobal::displayInfo("VERT ID: " + MString() + vIndList[i] +" "+ MString()+polyIterator.index());
+					if (firstIteration)
+					{
+						triNorIndices.append(polyIterator.normalIndex(0, &result));
+						triNorIndices.append(polyIterator.normalIndex(1, &result));
+						triNorIndices.append(polyIterator.normalIndex(3, &result));
+
+						polyIterator.getUVIndex(0, uId0);
+						polyIterator.getUVIndex(1, uId1);
+						polyIterator.getUVIndex(3, uId2);
+						triUVIndices.append(uId0);
+						triUVIndices.append(uId1);
+						triUVIndices.append(uId2);
+
+						firstValue = 1;
+						lastValue = 3;
+						firstIteration = false;
+					}
+					else
+					{
+						triNorIndices.append(polyIterator.normalIndex(lastValue, &result));
+						triNorIndices.append(polyIterator.normalIndex(firstValue, &result));
+						triNorIndices.append(polyIterator.normalIndex(i+1, &result));
+
+						polyIterator.getUVIndex(lastValue, uId0);
+						polyIterator.getUVIndex(firstValue, uId1);
+						polyIterator.getUVIndex(i + 1, uId2);
+						triUVIndices.append(uId0);
+						triUVIndices.append(uId1);
+						triUVIndices.append(uId2);
+
+						firstValue = lastValue;
+						lastValue = i+1;
+
+					}
+					//MGlobal::displayInfo("VERT ID: " + MString() + vIndList[i] +" "+ MString()+polyIterator.index());
 				}
-				triNorIndices.append(polyIterator.normalIndex(0, &result));
+				/*triNorIndices.append(polyIterator.normalIndex(0, &result));
 				triNorIndices.append(polyIterator.normalIndex(1, &result));
 				triNorIndices.append(polyIterator.normalIndex(3, &result));
 				triNorIndices.append(polyIterator.normalIndex(3, &result));
@@ -91,7 +131,7 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 				polyIterator.getUVIndex(2, uId2);
 				triUVIndices.append(uId0);
 				triUVIndices.append(uId1);
-				triUVIndices.append(uId2);
+				triUVIndices.append(uId2);*/
 				}
 		}
 	}
@@ -230,10 +270,13 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 	{
 		outMesh.materialName = "ERROR NONE";
 	}
-
+	
 	outMesh.meshID = 5;
 	outMesh.materialID = 8;
 	if(debug) FileMapping::printInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID + outMesh.materialName.c_str());
+	FileMapping::printInfo("MESH INDEX COUNTS(V,N,UV): " + MString() + outMesh.meshData.indCount + " " + MString() + triNorIndices.length() + " " + MString() + triUVIndices.length());
+ 	
+	
 	return outMesh;
 }
 TransformInfo outTransformData(std::string name)
@@ -2070,7 +2113,8 @@ void loadScene()
 							std::string name = mesh.fullPathName().asChar();
 							if (name.find("SurfaceShape") == std::string::npos)
 							{
-								_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttribute));
+								//_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttribute));
+								_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttributeChange));
 								_CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(child, cbPolyChanged));
 								_CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
 								_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
