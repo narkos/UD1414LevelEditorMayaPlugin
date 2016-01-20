@@ -19,14 +19,13 @@ void fFillAttributesList()
 
 bool fAddAttributes(MFnTransform& inTrans)
 {
-
 	for (std::vector<Attribute>::size_type i = 0; i != m_attributeVector.size(); i++)
 	{
 		MStatus res;
 		MPlug testPlug = inTrans.findPlug(MString(m_attributeVector[i].name.c_str()), &res);
 		if (res)
 		{
-			FileMapping::printInfo("BBox exists!");
+			//FileMapping::printInfo("BBox exists!");
 			if (!testPlug.isKeyable())
 			{
 				MString myCommand2 = "setAttr -e -keyable true |" + inTrans.name() + "."+MString(m_attributeVector[i].name.c_str());
@@ -46,15 +45,12 @@ bool fAddAttributes(MFnTransform& inTrans)
 				MGlobal::executeCommandOnIdle(myCommand);
 			}
 			//FileMapping::printInfo("BBox does NOT exist!");
-		
 			MString myCommand2 = "setAttr -e -keyable true |" + inTrans.name() + "."+ MString(m_attributeVector[i].name.c_str());
 			MGlobal::executeCommandOnIdle(myCommand2);
 		}
 	}
 	return true;
 }
-
-
 
 MeshInfo outMeshData(std::string name, bool getDynamicData)
 {
@@ -411,6 +407,7 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 	if (debug) FileMapping::printInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID + outMesh.materialName.c_str());
 	FileMapping::printInfo("MESH INDEX COUNTS(V,N,UV): " + MString() + outMesh.meshData.indCount + " " + MString() + triNorIndices.length() + " " + MString() + triUVIndices.length());
 
+	FileMapping::printError("\n\nPARENT COUNT: " + MString() + mNode.parentCount());
 
 	return outMesh;
 }
@@ -679,7 +676,6 @@ LightInfo outLightData(std::string name)
 }
 MaterialInfo outMaterialData(std::string name)
 {
-
 	MString mName(name.c_str());
 	MDagPath dagPath;
 	MSelectionList sList;
@@ -839,7 +835,6 @@ std::string getParentName(MPlug& plug)
 	else
 		return "";
 }
-
 
 // MESSAGE AND NODE HANDLERS
 void mAddMessage(std::string name, int msgType, int nodeType, std::string oldName)
@@ -1282,6 +1277,14 @@ void cbMeshAttributeChange(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MP
 	}
 }
 
+void cbDuplication(void* clientData)
+{
+	FileMapping::printInfo("\n\n\n\n\n\n\n\n\nDUPLICADO POR FAVOR");
+}
+void cbInstancing(MObject &node, void *clientData)
+{
+	FileMapping::printInfo("\n\n\n\n\n\n\n\n\INSTANCIADO POR FAVOR\n");
+}
 void cbAddParent(MDagPath &child, MDagPath &parent, void *clientData)
 {
 	MString childPathName(child.fullPathName());
@@ -1998,6 +2001,7 @@ void cbNewNode(MObject& node, void* clientData)
 		_CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(node, cbPolyChanged));
 		_CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
 		_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+		_CBidArray.append(MModelMessage::addNodeAddedToModelCallback(node, cbInstancing));
 	}
 	if (node.hasFn(MFn::kTransform))
 	{
@@ -2411,13 +2415,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
 	_CBidArray.append(MDagMessage::addParentAddedCallback(cbAddParent));
 	_CBidArray.append(MDagMessage::addChildReorderedCallback(cbRemoveParent));
-
-	/*_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel1", cbCameraPanel));
-	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel2", cbCameraPanel));
-	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel3", cbCameraPanel));*/
-
-
-
+	_CBidArray.append(MModelMessage::addAfterDuplicateCallback(cbDuplication));
 
 	return result;
 
