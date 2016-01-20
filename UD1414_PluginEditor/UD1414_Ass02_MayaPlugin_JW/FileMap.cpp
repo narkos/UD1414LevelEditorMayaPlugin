@@ -885,7 +885,9 @@ MessageHeader FileMapping::createHeaderMesh(MessageInfo& msginfo, MeshInfo& minf
 	size_t padding;
 	size_t infoSize;
 
-	infoSize = 300 * sizeof(char);
+	infoSize = sizeof(char)*100;
+	infoSize += sizeof(int);
+	infoSize += sizeof(char) * 100 * minfo.transformCount;
 	infoSize += sizeof(int)*2;
 
 	MeshInfo mInfo = minfo;
@@ -1045,7 +1047,7 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 	MeshMessage msg;
 
 	int nodeNameLength = msginfo.nodeName.length();
-	int transformNameLength = mInfo.transformName.length();
+	
 	int materialNameLength = mInfo.materialName.length();
 	if (nodeNameLength <= 100)
 	{
@@ -1060,19 +1062,27 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 	{
 		MGlobal::displayError("Node name too long!");
 	}
-	if (transformNameLength <= 100)
+	msg.transformCount = mInfo.transformCount;
+	for (int o = 0; o < mInfo.transformCount; o++)
 	{
-		for (int i = 0; i < transformNameLength; i++)
+		int transformNameLength = mInfo.transformName[o].length();
+		if (transformNameLength <= 100)
 		{
-			msg.transformName[i] = mInfo.transformName[i];
+			NameStruct tempName;
+			for (int i = 0; i < transformNameLength; i++)
+			{
+				tempName.transformNames[i] = mInfo.transformName.at(o)[i];
+			}
+			//msg.nodeName[nodeNameLength] = (char)"\0";
+			tempName.transformNames[transformNameLength] = '\0';
+			msg.transformName.push_back(tempName);
 		}
-		//msg.nodeName[nodeNameLength] = (char)"\0";
-		msg.transformName[transformNameLength] = '\0';
+		else
+		{
+			MGlobal::displayError("Transform name too long!");
+		}
 	}
-	else
-	{
-		MGlobal::displayError("Transform name too long!");
-	}
+	
 	if (materialNameLength <= 100)
 	{
 		for (int i = 0; i < materialNameLength; i++)

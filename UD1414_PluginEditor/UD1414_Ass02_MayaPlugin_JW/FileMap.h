@@ -7,7 +7,7 @@
 #include <Windows.h>
 #include <ostream>
 #include <iostream>
-
+#include <vector>
 #include <maya/MGlobal.h>
 
 
@@ -18,6 +18,11 @@ enum class bitmask : int
 	COLORMAP = 0x01, 
 	SPECULARMAP = 0x02, 
 	BUMPMAP = 0x04
+};
+
+struct NameStruct
+{
+	char transformNames[100];
 };
 
 struct MessageHeader
@@ -112,8 +117,10 @@ struct MeshData
 struct MeshInfo
 {
 	std::string nodeName;
-	std::string transformName;
+	int transformCount;
+	std::vector<std::string> transformName;
 	std::string materialName;
+	
 	int meshID;
 	int materialID;
 	MeshData meshData;
@@ -121,7 +128,8 @@ struct MeshInfo
 struct MeshMessage
 {
 	char nodeName[100];
-	char transformName[100];
+	int transformCount;
+	std::vector<NameStruct> transformName;
 	char materialName[100];
 	int meshID;
 	int materialID;

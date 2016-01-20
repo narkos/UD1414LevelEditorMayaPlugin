@@ -268,16 +268,21 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 
 	if (mNode.parent(0).hasFn(MFn::kTransform))
 	{
-		MFnTransform mTrans(mNode.parent(0), &result);
-		if (!result)
+		outMesh.transformCount = mNode.parentCount();
+		for (int i = 0; i < outMesh.transformCount; i++)
 		{
-			FileMapping::printError(MString(name.c_str()) + " parent not found!");
+			MFnTransform mTrans(mNode.parent(i), &result);
+			if (!result)
+			{
+				FileMapping::printError(MString(name.c_str()) + " parent not found!");
+			}
+			else
+			{
+				outMesh.transformName.push_back(mTrans.fullPathName().asChar()) ;
+				FileMapping::printInfo("Parent " +MString()+i+": " + outMesh.transformName[i].c_str());
+			}
 		}
-		else
-		{
-			outMesh.transformName = mTrans.fullPathName().asChar();
-			FileMapping::printInfo(outMesh.transformName.c_str());
-		}
+	
 	}
 
 	outMesh.meshData.vertCount = mNode.numVertices();
@@ -313,7 +318,7 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 	if (true)
 	{
 		FileMapping::printInfo("outMesh Name: " + MString(name.c_str()));
-		FileMapping::printInfo("outMesh Transform Name: " + MString(outMesh.transformName.c_str()));
+		//FileMapping::printInfo("outMesh Transform Name: " + MString(outMesh.transformName.c_str()));
 		FileMapping::printInfo("outMesh Vert/Nor/UV Count: " + MString() + outMesh.meshData.vertCount + " / " + MString() + outMesh.meshData.normalCount + " / " + MString() + outMesh.meshData.UVCount);
 		FileMapping::printInfo("outMesh Indices / Triangle Count: " + MString() + outMesh.meshData.indCount + " / " + MString() + triUVIndices.length() + " / " + MString() + totTris);
 		MString triFaceStr = " ( ";
@@ -1079,7 +1084,9 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 			}
 			if (!exists)
 			{
-				MeshInfo mesh{ name, parentName, "" ,0,0 };
+				std::vector<std::string>transName;
+				transName.push_back(parentName);
+				MeshInfo mesh{ name,1 ,transName, "" ,0,0 };
 				meshVector.push_back(mesh);
 				MessageInfo msginfo{ name, NodeType::nMesh, MessageType::msgAdded };
 				mAddMessage(name, msgAdded, nMesh);
