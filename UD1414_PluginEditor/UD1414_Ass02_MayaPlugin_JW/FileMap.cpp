@@ -473,7 +473,8 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 			memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformName[i], sizeof(char) * 100);
 			tempHead += sizeof(char) * 100;
 		}
-		
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialName, sizeof(char) * 100);
+		tempHead += sizeof(char) * 100;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.meshID, sizeof(int));
 		tempHead += sizeof(int);
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialID, sizeof(int));
@@ -545,6 +546,8 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 			memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformName[i], sizeof(char) * 100);
 			tempHead += sizeof(char) * 100;
 		}
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialName, sizeof(char) * 100);
+		tempHead += sizeof(char) * 100;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.meshID, sizeof(int));
 		tempHead += sizeof(int);
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialID, sizeof(int));
@@ -601,6 +604,8 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 			memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformName[i], sizeof(char) * 100);
 			tempHead += sizeof(char) * 100;
 		}
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialName, sizeof(char) * 100);
+		tempHead += sizeof(char) * 100;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.meshID, sizeof(int));
 		tempHead += sizeof(int);
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialID, sizeof(int));
