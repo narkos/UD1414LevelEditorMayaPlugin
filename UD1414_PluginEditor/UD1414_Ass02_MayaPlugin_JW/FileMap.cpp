@@ -464,9 +464,16 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		size_t tempHead;
 		//tempHead = 0;
 		tempHead = sizeof(MessageHeader);
-		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 300);
-		tempHead += sizeof(char) * 300;
-	
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 100);
+		tempHead += sizeof(char) * 100;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformCount, sizeof(int));
+		tempHead += sizeof(int);
+		for (int i = 0; i < mdata.transformCount; i++)
+		{
+			memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformName[i], sizeof(char) * 100);
+			tempHead += sizeof(char) * 100;
+		}
+		
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.meshID, sizeof(int));
 		tempHead += sizeof(int);
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialID, sizeof(int));
@@ -529,8 +536,15 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		tempHead = sizeof(MessageHeader);
 
 
-		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 300);
-		tempHead += sizeof(char) * 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 100);
+		tempHead += sizeof(char) * 100;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformCount, sizeof(int));
+		tempHead += sizeof(int);
+		for (int i = 0; i < mdata.transformCount; i++)
+		{
+			memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformName[i], sizeof(char) * 100);
+			tempHead += sizeof(char) * 100;
+		}
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.meshID, sizeof(int));
 		tempHead += sizeof(int);
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialID, sizeof(int));
@@ -578,8 +592,15 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
 		tempHead = sizeof(MessageHeader);
 
-		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 300);
-		tempHead += sizeof(char) * 300;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 100);
+		tempHead += sizeof(char) * 100;
+		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformCount, sizeof(int));
+		tempHead += sizeof(int);
+		for (int i = 0; i < mdata.transformCount; i++)
+		{
+			memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformName[i], sizeof(char) * 100);
+			tempHead += sizeof(char) * 100;
+		}
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.meshID, sizeof(int));
 		tempHead += sizeof(int);
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.materialID, sizeof(int));
@@ -1076,6 +1097,7 @@ MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo
 			//msg.nodeName[nodeNameLength] = (char)"\0";
 			tempName.transformNames[transformNameLength] = '\0';
 			msg.transformName.push_back(tempName);
+			FileMapping::printError("Parent name " + MString() + o + " :" + msg.transformName[o].transformNames);
 		}
 		else
 		{
