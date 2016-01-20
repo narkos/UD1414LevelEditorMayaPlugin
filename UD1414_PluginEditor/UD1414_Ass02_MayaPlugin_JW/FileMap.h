@@ -55,7 +55,20 @@ struct RenameDeleteMessage
 	char nodeName2[100];
 };
 
-
+struct CustomAttributes
+{
+	bool isRendered;
+	bool isBBox;
+	bool isCollider;
+	bool isInteractable;
+	float interactIntervalX;
+	float interactIntervalY;
+	float interactIntervalZ;
+	int typeSpawner;
+	int typeCheckPoint;
+	int typeStartEnd;
+	bool isAIground;
+};
 
 struct TransformData
 {
@@ -281,12 +294,12 @@ public:
 	RenameDeleteMessage createMessageRenameDelete(MessageInfo& msgInfo, RenameDeleteInfo& info);
 	bool writeNodeRenamedDelete(MessageHeader& hdr, RenameDeleteMessage& msg, int config);
 
-
+	bool getStatus();
 
 	std::string GetLastErrorAsString();
 
 	bool debug;
-
+	
 
 
 private:
@@ -306,7 +319,7 @@ private:
 			messageFilemap_Size = 0; //storleken på filemapen med meddelanden
 		}
 	};
-
+	bool isRunning = false;
 	FilemapInfo fileMapInfo;
 	HANDLE hMessageFileMap = nullptr;;
 	LPVOID mMessageData = nullptr;;

@@ -5,6 +5,7 @@ FileMapping::FileMapping()
 {
 	//mutexInfo.Unlock();
 	//_headerSize = sizeof(MessageHeader);
+	isRunning = false;
 	headerFit;
 }
 
@@ -83,11 +84,13 @@ void FileMapping::CreateFileMaps(bool debug)
 	if (GetLastError() == ERROR_ALREADY_EXISTS ) {
 		FileMapping::printInfo("Infofilemap exists, you get a handle to it!");
 		GetFilemapInfoValues();
+		this->isRunning = true;
 	}
 	else { //first, sätter de första värdena på filemapinfon
 		FileMapping::printInfo("Creating new infofilemap, JAG SKA INTE VARA FÖRST :'(");
 		MGlobal::displayError(GetLastErrorAsString().c_str());
 		SetFilemapInfoValues(0, 0, 256, 1024*1024);
+		this->isRunning = true;
 	}
 
 	
@@ -107,18 +110,25 @@ void FileMapping::CreateFileMaps(bool debug)
 	if (hMessageFileMap == NULL) {
 		FileMapping::printInfo("Couldn't create filemap");
 	}
-	else if (GetLastError() == ERROR_ALREADY_EXISTS) {
+	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		FileMapping::printInfo("Filemap exists, you get a handle to it!");
+		this->isRunning = true;
 
 	}
 	else {
 	
 		FileMapping::printInfo("Creating new filemap");
+		this->isRunning = true;
 	}
 
-
+	
 	FileMapping::printInfo("FileMapSize: " + MString() + mSize +" "+ MString()+fileMapInfo.non_accessmemoryOffset);
 	FileMapping::printInfo("***** FILEMAP LOADED *****");
+}
+
+bool FileMapping::getStatus()
+{
+	return this->isRunning;
 }
 
 void FileMapping::GetFilemapInfoValues()
@@ -149,128 +159,173 @@ void FileMapping::SetFilemapInfoValues(size_t headPlacement, size_t tailPlacemen
 bool FileMapping::tryWriteTransform(MessageInfo& msg, TransformInfo& tinfo)
 {
 	bool returnBool = false;
-	if (msg.msgType == MessageType::msgDeleted)
+	if (isRunning == true)
 	{
+		if (msg.msgType == MessageType::msgDeleted)
+		{
 
-	}
-	else if (msg.msgType == MessageType::msgRenamed)
-	{
+		}
+		else if (msg.msgType == MessageType::msgRenamed)
+		{
 
+		}
+		else
+		{
+			MessageHeader mHeader = createHeaderTransform(msg, tinfo);
+			int cfg = findWriteConfig(mHeader);
+			if (cfg != 0)
+			{
+				if (writeTransform(mHeader, createMessageTransform(msg, tinfo), cfg) == true)
+				{
+					returnBool = true;
+				}
+			}
+			else
+			{
+				returnBool = false;
+			}
+		}
+
+		return returnBool;
 	}
 	else
 	{
-		MessageHeader mHeader = createHeaderTransform(msg, tinfo);
+		return returnBool;
+	}
+
+}
+bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
+{
+	if (isRunning)
+	{
+		MessageHeader mHeader = createHeaderMesh(msg, minfo);
 		int cfg = findWriteConfig(mHeader);
 		if (cfg != 0)
 		{
-			if (writeTransform(mHeader, createMessageTransform(msg, tinfo), cfg) == true)
+			if (writeMesh(mHeader, createMessageMesh(msg, minfo), cfg) == true)
 			{
-				returnBool = true;
+				return true;
 			}
 		}
 		else
 		{
-			returnBool = false;
+			return false;
 		}
-	}
-			
-	return returnBool;
-}
-bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
-{
-	MessageHeader mHeader = createHeaderMesh(msg, minfo);
-	int cfg = findWriteConfig(mHeader);
-	if (cfg != 0)
-	{
-		if (writeMesh(mHeader, createMessageMesh(msg, minfo), cfg) == true)
-		{
-			return true;
-		}
-	}
-	else
-	{
 		return false;
-	}
-	return false;
 
 		/*FileMapping::printInfo("FileMap Msg: Mesh Message found");
 		MessageHeader mHeader = createHeaderMesh(msg, minfo);
 		int cfg = findWriteConfig(mHeader);
 		createMessageMesh(msg, minfo);*/
 
-	return false;
+		return false;
+	}
+	else
+	{
+		return false;
+	}
+	
 }
 bool FileMapping::tryWriteCamera(MessageInfo& msg, CameraInfo& cinfo)
 {
-	MessageHeader mHeader = createHeaderCamera(msg, cinfo);
-	int cfg = findWriteConfig(mHeader);
-	if (cfg != 0)
+	if (isRunning)
 	{
-		if (writeCamera(mHeader, createMessageCamera(msg, cinfo), cfg) == true)
+		MessageHeader mHeader = createHeaderCamera(msg, cinfo);
+		int cfg = findWriteConfig(mHeader);
+		if (cfg != 0)
 		{
-			return true;
+			if (writeCamera(mHeader, createMessageCamera(msg, cinfo), cfg) == true)
+			{
+				return true;
+			}
 		}
+		else
+		{
+			return false;
+		}
+		return false;
 	}
 	else
 	{
 		return false;
 	}
-	return false;
+
 }
 bool FileMapping::tryWriteMaterial(MessageInfo& msg, MaterialInfo& minfo)
 {
-
-	MessageHeader mHeader = createHeaderMaterial(msg, minfo);
-	int cfg = findWriteConfig(mHeader);
-	if (cfg != 0)
+	if (isRunning)
 	{
-		if (writeMaterial(mHeader, createMessageMaterial(msg, minfo), cfg) == true)
+		MessageHeader mHeader = createHeaderMaterial(msg, minfo);
+		int cfg = findWriteConfig(mHeader);
+		if (cfg != 0)
 		{
-			return true;
+			if (writeMaterial(mHeader, createMessageMaterial(msg, minfo), cfg) == true)
+			{
+				return true;
+			}
 		}
+		else
+		{
+			return false;
+		}
+	
+	
+		return false;
 	}
 	else
 	{
 		return false;
 	}
-	
-	
-	return false;
+
 }
 bool FileMapping::tryWriteLight(MessageInfo& msg, LightInfo& linfo)
 {
-	MessageHeader mHeader = createHeaderLight(msg, linfo);
-	int cfg = findWriteConfig(mHeader);
-	if (cfg != 0)
+	if (isRunning)
 	{
-		if (writeLight(mHeader, createMessageLight(msg, linfo), cfg) == true)
+		MessageHeader mHeader = createHeaderLight(msg, linfo);
+		int cfg = findWriteConfig(mHeader);
+		if (cfg != 0)
 		{
-			return true;
+			if (writeLight(mHeader, createMessageLight(msg, linfo), cfg) == true)
+			{
+				return true;
+			}
 		}
+		else
+		{
+			return false;
+		}
+		return false;
 	}
 	else
 	{
 		return false;
 	}
-	return false;
 }
 bool FileMapping::tryWriteRenameDelete(MessageInfo& info, RenameDeleteInfo& msg)
 {
-	
-	MessageHeader mHeader = createHeaderRenameDelete(info);
-	int cfg = findWriteConfig(mHeader);
-	if (cfg != 0)
+	if (isRunning)
 	{
-		if (writeNodeRenamedDelete(mHeader, createMessageRenameDelete(info, msg), cfg) == true)
+		MessageHeader mHeader = createHeaderRenameDelete(info);
+		int cfg = findWriteConfig(mHeader);
+		if (cfg != 0)
 		{
-			return true;
+			if (writeNodeRenamedDelete(mHeader, createMessageRenameDelete(info, msg), cfg) == true)
+			{
+				return true;
+			}
 		}
+		else
+		{
+			return false;
+		}
+		return false;
 	}
 	else
 	{
 		return false;
 	}
-	return false;
+
 }
 
 void FileMapping::printInfo(MString instr)

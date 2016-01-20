@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <queue>
+//#include <map>
 
 #include <maya/MEvent.h>
 #include <maya/MFnPlugin.h>
@@ -61,6 +62,7 @@
 #include <maya/MCameraSetMessage.h>
 #include <maya/MLockMessage.h>
 
+//#include "Commands.h"
 #include "FileMap.h"
 
 // Commands
@@ -73,7 +75,9 @@
 #pragma comment(lib,"OpenMayaUI.lib")
 
 
-
+class OpenFileMaps;
+class CloseFileMaps;
+class AddAttribute;
 
 
 std::vector<std::string> msgTypeVector;
@@ -82,6 +86,9 @@ std::vector<std::string> msgTypeVector;
 
 	M3dView modelPanel;
 	MDagPath activeCamera;
+
+	OpenFileMaps someFunction();
+
 
 	bool debug;
 	MCallbackId _CBid;
@@ -93,6 +100,25 @@ std::vector<std::string> msgTypeVector;
 	std::vector<MaterialInfo> materialVector;
 	std::vector<MessageInfo> msgVector;
 	std::queue<MessageInfo> msgQueue;
+	//std::map<std::string, std::pair<std::string, std::string>> attributesList;
+	
+	struct Attribute
+	{
+		Attribute(std::string p_name, std::string p_type, std::string p_value): name(p_name) , type(p_type) , value(p_value)
+		{
+
+		}
+		std::string GetFullString()
+		{
+
+		}
+		std::string name;
+		std::string type;
+		std::string value;
+	};
+
+	std::vector<Attribute> m_attributeVector;
+
 	void cbReparent(MDagPath &child, MDagPath &parent, void *clientData);
 	void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
 	void cbMessageTimer(float elapsedTime, float lastTime, void *clientData);
@@ -109,6 +135,10 @@ std::vector<std::string> msgTypeVector;
 	bool renameNode(MString newName, MString oldName, int type);
 
 	MeshInfo outMeshData(std::string name, bool getDynamicData = true);
+
+
+	void fFillAttributesList();
+	bool fAddAttributes(MFnTransform& inTrans);
 
 	void outTransFormData(MObject& obj);
 	void outMeshData(MObject& obj);

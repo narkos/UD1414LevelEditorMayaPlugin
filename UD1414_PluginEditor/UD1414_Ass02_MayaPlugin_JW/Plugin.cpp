@@ -1,6 +1,67 @@
 #include "Plugin.h"
+#include "Commands.h"
 
 // OUT DATA FUNCTIONS
+
+//OpenFileMaps someFunction()
+//{
+//	OpenFileMaps maps;
+//	return maps;
+//}
+//
+void fFillAttributesList()
+{
+	m_attributeVector.push_back(Attribute("drmRender", "bool", "1"));
+	m_attributeVector.push_back(Attribute("drmBBox", "bool", "0"));
+	m_attributeVector.push_back(Attribute("drmCollidable", "bool", "0"));
+	m_attributeVector.push_back(Attribute("drmAIground", "bool", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractable", "bool", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractIntervalX", "\"float\"", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractIntervalY", "\"float\"", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractIntevalZ", "\"float\"", "0"));
+	m_attributeVector.push_back(Attribute("drmSpawner", "long", "0"));
+	m_attributeVector.push_back(Attribute("drmCheckPoint", "long", "0"));
+	m_attributeVector.push_back(Attribute("drmLevelStart", "long", "0"));
+}
+
+bool fAddAttributes(MFnTransform& inTrans)
+{
+
+	for (std::vector<Attribute>::size_type i = 0; i != m_attributeVector.size(); i++)
+	{
+		MStatus res;
+		MPlug testPlug = inTrans.findPlug(MString(m_attributeVector[i].name.c_str()), &res);
+		if (res)
+		{
+			FileMapping::printInfo("BBox exists!");
+			if (!testPlug.isKeyable())
+			{
+				MString myCommand2 = "setAttr -e -keyable true |" + inTrans.name() + "."+MString(m_attributeVector[i].name.c_str());
+				MGlobal::executeCommandOnIdle(myCommand2);
+			}
+		}
+		else
+		{
+			if (m_attributeVector[i].type.find("2") != std::string::npos)
+			{
+				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -dt " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " |" + inTrans.name();
+				MGlobal::executeCommandOnIdle(myCommand);
+			}
+			else
+			{
+				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -at " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " |" + inTrans.name();
+				MGlobal::executeCommandOnIdle(myCommand);
+			}
+			//FileMapping::printInfo("BBox does NOT exist!");
+		
+			MString myCommand2 = "setAttr -e -keyable true |" + inTrans.name() + "."+ MString(m_attributeVector[i].name.c_str());
+			MGlobal::executeCommandOnIdle(myCommand2);
+		}
+	}
+	return true;
+}
+
+
 
 MeshInfo outMeshData(std::string name, bool getDynamicData)
 {
@@ -450,6 +511,8 @@ TransformInfo outTransformData(std::string name)
 					FileMapping::printInfo("Rotation(ACC): " + MString() + rotsM[0] + " " + MString() + rotsM[1] + " " + MString() + rotsM[2] + " " + MString() + rotsM[3]);
 					FileMapping::printInfo("Scale(ACC): " + MString() + scaleM[0] + " " + MString() + scaleM[1] + " " + MString() + scaleM[2]);
 				}
+
+				//m_attributeVector[0].nam
 				return outTrans;
 			}
 
@@ -1927,11 +1990,12 @@ void cbNewNode(MObject& node, void* clientData)
 
 			mAddNode(trans.fullPathName().asChar(), "", nTransform);
 			MDagPath dPath = trans.dagPath();
+			fAddAttributes(trans);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbTransformModified));
 			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
 			//_CBidArray.append(MDagMessage::addParentAddedDagPathCallback(trans.dagPath(), cbReparent));
 			//_CBidArray.append(MDagMessage::addParentAddedDagPathCallback(*dPath, cbReparent));
-
+			
 
 			int pcount = trans.parentCount();
 			MFnTransform parent(trans.parent(0));
@@ -2003,8 +2067,13 @@ void cbNewNode(MObject& node, void* clientData)
 
 	}
 }
+
+
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 {
+	//MGlobal::displayInfo("BOOOOOOOOOOOOOOB");
+	bool asdf = false;
+	//MGlobal::displayInfo("WOWOWOWOWO");
 	if (msgVector.size() > 0)
 	{
 		for (std::vector<MessageInfo>::size_type i = 0; i != msgVector.size(); i++)
@@ -2013,124 +2082,128 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		}
 	}
 	msgVector.clear();
-	int msgCount = msgQueue.size();
-	FileMapping::printInfo("\n--- TIMED MESSAGE UPDATE (" + MString() + msgCount + " Messages) ------------------------");
-	bool run = true;
-	int msgID = 0;
-	while (!msgQueue.empty() && run == true)
+	if (fileMap.getStatus() == true)
 	{
+		int msgCount = msgQueue.size();
+		FileMapping::printInfo("\n--- TIMED MESSAGE UPDATE (" + MString() + msgCount + " Messages) ------------------------");
+		bool run = true;
+		int msgID = 0;
+		while (!msgQueue.empty() && run == true)
+		{
 
-		FileMapping::printInfo("\n****** MESSAGE START (ID: " + MString() + msgID + ") **********************");
-		if (msgQueue.front().msgType == MessageType::msgDeleted)
-		{
-			if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
+			FileMapping::printInfo("\n****** MESSAGE START (ID: " + MString() + msgID + ") **********************");
+			if (msgQueue.front().msgType == MessageType::msgDeleted)
 			{
-				msgQueue.pop();
+				if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
+				{
+					msgQueue.pop();
+				}
 			}
+			else if (msgQueue.front().msgType == MessageType::msgRenamed)
+			{
+				if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,msgQueue.front().oldName }) == true)
+				{
+					msgQueue.pop();
+				}
+			}
+			else
+			{
+				switch (msgQueue.front().nodeType)
+				{
+				case(NodeType::nMesh) :
+				{
+					MeshInfo outMesh = outMeshData(msgQueue.front().nodeName);
+					FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Mesh)");
+					if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
+					{
+						delete[] outMesh.meshData.uv;
+						delete[] outMesh.meshData.triIndices;
+						delete[] outMesh.meshData.norIndices;
+						delete[] outMesh.meshData.UVIndices;
+						delete[] outMesh.meshData.triPerFace;
+						FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+						msgQueue.pop();
+					}
+					else
+					{
+						FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+						run = false;
+					}
+					break;
+				}
+				case(NodeType::nTransform) :
+				{
+					TransformInfo outTrans = outTransformData(msgQueue.front().nodeName);
+					FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Transform)");
+					if (fileMap.tryWriteTransform(msgQueue.front(), outTrans) == true)
+					{
+						FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+						msgQueue.pop();
+					}
+					else
+					{
+						FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+						run = false;
+					}
+					break;
+					break;
+				}
+				case(NodeType::nCamera) :
+				{
+					CameraInfo outCam = outCameraData(msgQueue.front().nodeName);
+					FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Camera)");
+					if (fileMap.tryWriteCamera(msgQueue.front(), outCam) == true)
+					{
+						FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+						msgQueue.pop();
+					}
+					else
+					{
+						FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+						run = false;
+					}
+					break;
+				}
+				case(NodeType::nLight) :
+				{
+					LightInfo outLight = outLightData(msgQueue.front().nodeName);
+					FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Light)");
+					if (fileMap.tryWriteLight(msgQueue.front(), outLight) == true)
+					{
+						FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+						msgQueue.pop();
+					}
+					else
+					{
+						FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+						run = false;
+					}
+					break;
+				}
+				case(NodeType::nMaterial) :
+				{
+					MaterialInfo outMat = outMaterialData(msgQueue.front().nodeName);
+					FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Material)");
+					if (fileMap.tryWriteMaterial(msgQueue.front(), outMat) == true)
+					{
+						FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
+						msgQueue.pop();
+					}
+					else
+					{
+						FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
+						run = false;
+					}
+					break;
+				}
+				}
+			}
+			msgID++;
+			FileMapping::printInfo("*** MESSAGE STOP *************************");
 		}
-		else if (msgQueue.front().msgType == MessageType::msgRenamed)
-		{
-			if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,msgQueue.front().oldName }) == true)
-			{
-				msgQueue.pop();
-			}
-		}
-		else
-		{
-			switch (msgQueue.front().nodeType)
-			{
-			case(NodeType::nMesh) :
-			{
-				MeshInfo outMesh = outMeshData(msgQueue.front().nodeName);
-				FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Mesh)");
-				if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
-				{
-					delete[] outMesh.meshData.uv;
-					delete[] outMesh.meshData.triIndices;
-					delete[] outMesh.meshData.norIndices;
-					delete[] outMesh.meshData.UVIndices;
-					delete[] outMesh.meshData.triPerFace;
-					FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-					msgQueue.pop();
-				}
-				else
-				{
-					FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-					run = false;
-				}
-				break;
-			}
-			case(NodeType::nTransform) :
-			{
-				TransformInfo outTrans = outTransformData(msgQueue.front().nodeName);
-				FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Transform)");
-				if (fileMap.tryWriteTransform(msgQueue.front(), outTrans) == true)
-				{
-					FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-					msgQueue.pop();
-				}
-				else
-				{
-					FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-					run = false;
-				}
-				break;
-				break;
-			}
-			case(NodeType::nCamera) :
-			{
-				CameraInfo outCam = outCameraData(msgQueue.front().nodeName);
-				FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Camera)");
-				if (fileMap.tryWriteCamera(msgQueue.front(), outCam) == true)
-				{
-					FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-					msgQueue.pop();
-				}
-				else
-				{
-					FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-					run = false;
-				}
-				break;
-			}
-			case(NodeType::nLight) :
-			{
-				LightInfo outLight = outLightData(msgQueue.front().nodeName);
-				FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Light)");
-				if (fileMap.tryWriteLight(msgQueue.front(), outLight) == true)
-				{
-					FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-					msgQueue.pop();
-				}
-				else
-				{
-					FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-					run = false;
-				}
-				break;
-			}
-			case(NodeType::nMaterial) :
-			{
-				MaterialInfo outMat = outMaterialData(msgQueue.front().nodeName);
-				FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Material)");
-				if (fileMap.tryWriteMaterial(msgQueue.front(), outMat) == true)
-				{
-					FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
-					msgQueue.pop();
-				}
-				else
-				{
-					FileMapping::printInfo("*** MESSAGE result(" + MString(msgQueue.front().nodeName.c_str()) + "): Failed (Leaving in queue)");
-					run = false;
-				}
-				break;
-			}
-			}
-		}
-		msgID++;
-		FileMapping::printInfo("*** MESSAGE STOP *************************");
+
 	}
-
+	
 }
 
 void loadScene()
@@ -2176,6 +2249,7 @@ void loadScene()
 		{
 			MFnTransform trans(transDagPath.node());
 			MObject obj(transDagPath.node());
+			fAddAttributes(trans);
 			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(obj, cbTransformModified));
 			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(obj, cbPreRemoveNode));
 			int pcount = trans.parentCount();
@@ -2187,6 +2261,10 @@ void loadScene()
 				if (child.hasFn(MFn::kMesh))
 				{
 					MFnMesh mesh(trans.child(i), &stat);
+					if (mesh.isInstanced())
+					{
+						//FileMapping::printInfo("\n\n\n\n\n\n\nFOUND INSTANCE LOL");
+					}
 					FileMapping::printInfo("MESH VERTS " + MString() + mesh.numVertices());
 					if (mesh.numVertices() > 0)
 					{
@@ -2195,6 +2273,8 @@ void loadScene()
 							std::string name = mesh.fullPathName().asChar();
 							if (name.find("SurfaceShape") == std::string::npos)
 							{
+								MString myCommand = "setAttr -e " + mesh.name() + ".quadSplit 0";
+								MGlobal::executeCommandOnIdle(myCommand);
 								//_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttribute));
 								_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttributeChange));
 								_CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(child, cbPolyChanged));
@@ -2223,6 +2303,14 @@ void loadScene()
 						_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbLightAttribute));
 						_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
 						_CBidArray.append(MNodeMessage::addNameChangedCallback(child, &cbNameChange));
+					}
+				}
+				else
+				{
+					MFnDagNode dNode(trans.child(i));
+					if (dNode.isInstanced())
+					{
+						FileMapping::printInfo("\n\n\n\n\n\n\nFOUND INSTANCE LOL");
 					}
 				}
 			}
@@ -2282,8 +2370,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 	{
 		CHECK_MSTATUS(result);
 	}
-
-
+	fFillAttributesList();
+	//OpenFileMaps::fMap = &fileMap;
+	//result = editorPlugin.registerCommand("execFileMaps", OpenFileMaps::creator);
 	fileMap.CreateFileMaps(true);
 
 	FileMapping::printInfo("Level Editor plugin loaded.\n");
