@@ -2,13 +2,6 @@
 #include "Commands.h"
 
 // OUT DATA FUNCTIONS
-
-//OpenFileMaps someFunction()
-//{
-//	OpenFileMaps maps;
-//	return maps;
-//}
-//
 void fFillAttributesList()
 {
 	m_attributeVector.push_back(Attribute("drmRender", "bool", "1"));
@@ -21,7 +14,7 @@ void fFillAttributesList()
 	m_attributeVector.push_back(Attribute("drmInteractIntevalZ", "\"float\"", "0"));
 	m_attributeVector.push_back(Attribute("drmSpawner", "long", "0"));
 	m_attributeVector.push_back(Attribute("drmCheckPoint", "long", "0"));
-	m_attributeVector.push_back(Attribute("drmLevelStart", "long", "0"));
+	m_attributeVector.push_back(Attribute("drmLevelStartEnd", "long", "0"));
 }
 
 bool fAddAttributes(MFnTransform& inTrans)
@@ -511,6 +504,30 @@ TransformInfo outTransformData(std::string name)
 					FileMapping::printInfo("Rotation(ACC): " + MString() + rotsM[0] + " " + MString() + rotsM[1] + " " + MString() + rotsM[2] + " " + MString() + rotsM[3]);
 					FileMapping::printInfo("Scale(ACC): " + MString() + scaleM[0] + " " + MString() + scaleM[1] + " " + MString() + scaleM[2]);
 				}
+				
+				MPlug tempPlug = mNode.findPlug("drmRender");
+				tempPlug.getValue(outTrans.transformData.attributes.isRendered);
+				tempPlug = mNode.findPlug("drmBBox");
+				tempPlug.getValue(outTrans.transformData.attributes.isBBox);
+				tempPlug = mNode.findPlug("drmCollidable");
+				tempPlug.getValue(outTrans.transformData.attributes.isCollider);
+				tempPlug = mNode.findPlug("drmAIground");
+				tempPlug.getValue(outTrans.transformData.attributes.isAIground);
+				tempPlug = mNode.findPlug("drmInteractable");
+				tempPlug.getValue(outTrans.transformData.attributes.isInteractable);
+				tempPlug = mNode.findPlug("drmInteractIntevalX");
+				tempPlug.getValue(outTrans.transformData.attributes.interactIntervalX);
+				tempPlug = mNode.findPlug("drmInteractIntevalY");
+				tempPlug.getValue(outTrans.transformData.attributes.interactIntervalY);
+				tempPlug = mNode.findPlug("drmInteractIntevalZ");
+				tempPlug.getValue(outTrans.transformData.attributes.interactIntervalZ);
+				tempPlug = mNode.findPlug("drmSpawner");
+				tempPlug.getValue(outTrans.transformData.attributes.typeSpawner);
+				tempPlug = mNode.findPlug("drmCheckPoint");
+				tempPlug.getValue(outTrans.transformData.attributes.typeCheckPoint);
+				tempPlug = mNode.findPlug("drmLevelStartEnd");
+				tempPlug.getValue(outTrans.transformData.attributes.typeStartEnd);
+
 
 				//m_attributeVector[0].nam
 				return outTrans;

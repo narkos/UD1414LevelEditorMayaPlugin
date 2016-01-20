@@ -1038,10 +1038,7 @@ MessageHeader FileMapping::createHeaderRenameDelete(MessageInfo& msginfo)
 	//FileMapping::printWarning(MString() + msginfo.nodeType);
 	return hdr;
 }
-//MessageHeader FileMapping::createHeaderDelete(std::string name1, MessageInfo& msginfo)
-//{
-//	return MessageHeader();
-//}
+
 
 MeshMessage FileMapping::createMessageMesh(MessageInfo& msginfo, MeshInfo &mInfo)
 {
@@ -1247,10 +1244,7 @@ RenameDeleteMessage FileMapping::createMessageRenameDelete(MessageInfo& msgInfo,
 	FileMapping::printInfo(MString(outMsg.nodeName2) + " " + MString(outMsg.nodeName1));
 	return outMsg;
 }
-//RenameDeleteMessage FileMapping::createMessageDelete(std::string name1)
-//{
-//	return RenameDeleteMessage();
-//}
+
 
 size_t FileMapping::makeMultiple(size_t size, size_t multiple)
 {
