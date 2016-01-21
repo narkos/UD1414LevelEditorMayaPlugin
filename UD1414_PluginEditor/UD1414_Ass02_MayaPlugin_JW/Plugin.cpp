@@ -995,7 +995,7 @@ void mAddMessage(std::string name, int msgType, int nodeType, std::string oldNam
 			if (msgType == MessageType::msgAdded)
 			{
 				FileMapping::printInfo("\n****** MESSAGE Start (Light Added: " + MString(name.c_str()) + ")");
-				if (!fileMap.tryWriteLight(msgInfo, outLightData(name)))
+				if (fileMap.tryWriteLight(msgInfo, outLightData(name)))
 				{
 					FileMapping::printInfo("****** MESSAGE Result (Light Added: " + MString(name.c_str()) + ")) Success!");
 				}
@@ -1064,6 +1064,7 @@ void mAddMessage(std::string name, int msgType, int nodeType, std::string oldNam
 }
 void mAddNode(std::string name, std::string parentName, int type, int extra = 0, char* childname = nullptr)
 {
+	
 	if (!name.empty())
 	{
 		bool exists = false;
@@ -1154,20 +1155,25 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 		}
 		else if (type == nLight)
 		{
+			
 			if (lightVector.size() > 0)
 			{
 				for (std::vector<LightInfo>::size_type i = 0; i != lightVector.size(); i++)
 				{
-					std::string tmp = camVector.at(i).nodeName;
+					FileMapping::printInfo("VECTOR SIZE: " + MString() + lightVector.size() + " " + MString(name.c_str()));
+
+					std::string tmp = lightVector.at(i).nodeName;
 					if (strcmp(name.c_str(), tmp.c_str()) == 0)
 					{
 						exists = true;
 						FileMapping::printWarning("Light " + MString(name.c_str()) + " already exists!");
 					}
+					//FileMapping::printInfo("VECTOR SIZE: " + MString() + lightVector.size());
 				}
 			}
 			if (!exists)
 			{
+				
 				MString mName(name.c_str());
 				MDagPath dagPath;
 				MSelectionList sList;
@@ -1180,7 +1186,7 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 						MFnTransform trans(dagNode.parent(0));
 						LightInfo light{ name, trans.fullPathName().asChar() };
 						lightVector.push_back(light);
-						if (debug) FileMapping::printInfo("Added light: " + MString(name.c_str()));
+						if (true) FileMapping::printInfo("Added light: " + MString(name.c_str()) + "  " + MString()+lightVector.size());
 						mAddMessage(name, msgAdded, nLight);
 					}
 				}
@@ -1518,12 +1524,15 @@ void cbRemoveParent(MDagPath &child, MDagPath &parent, void *clientData)
 void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	MFnLight light(plug_1.node());
-
+	bool sendMsg = false;
 	std::string lightName(light.fullPathName().asChar());
 	std::string plugName(plug_1.name().asChar());
+	
+	FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
+
 	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
 	{
-		bool sendMsg = false;
+		
 		//outLightData(lightName.asChar());
 		MStatus result;
 		if (plugName.find(".intensity") != std::string::npos)
@@ -1558,6 +1567,66 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 			mAddMessage(lightName, msgEdited, nLight);
 		}
 	}
+}
+void cbLightAdd(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+{
+	MFnLight light(plug_1.node());
+	bool sendMsg = false;
+	std::string lightName(light.fullPathName().asChar());
+	std::string plugName(plug_1.name().asChar());
+
+	FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
+
+	if (lightName.find("#") == std::string::npos && MNodeMessage::AttributeMessage::kAttributeSet)
+	{
+		FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
+		FileMapping::printInfo(light.fullPathName());
+		mAddNode(light.fullPathName().asChar(), "", nLight);
+
+		_CBidArray.append(MNodeMessage::addAttributeChangedCallback(plug_1.node(), cbLightAttribute));
+		_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(plug_1.node(), cbPreRemoveNode));
+		_CBidArray.append(MNodeMessage::addNameChangedCallback(plug_1.node(), &cbNameChange));
+		MMessage::removeCallback(MMessage::currentCallbackId());
+		sendMsg = true;
+	}
+
+	//if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
+	//{
+	//	
+	//	//outLightData(lightName.asChar());
+	//	MStatus result;
+	//	if (plugName.find(".intensity") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".color") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".decayRate") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".coneAngle") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".dropOff") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+	//	}
+	//	else if (plugName.find(".penumbraAngle") != std::string::npos)
+	//	{
+	//		sendMsg = true;
+
+	//	}
+
+	//	if (sendMsg)
+	//	{
+	//		//FileMapping::printInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr() + "  " + msg);
+	//		mAddMessage(lightName, msgEdited, nLight);
+	//	}
+	//}
 }
 void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
@@ -1777,7 +1846,7 @@ void cbNameChange(MObject& node, const MString& str, void* clientData)
 							}
 						}
 					}
-					FileMapping::printInfo("Light name: " + str + " changed to: " + (MString)light.name() + " " + lightVector[i].nodeName.c_str());
+					FileMapping::printInfo("Light name: " + MString(oldStr.c_str()) + " changed to: " + (MString)light.name() + " " + lightVector[i].nodeName.c_str());
 					i = camVector.size();
 					break;
 				}
@@ -2043,26 +2112,26 @@ void cbNewNode(MObject& node, void* clientData)
 		if (node.hasFn(MFn::kDirectionalLight))
 		{
 			if (debug) FileMapping::printInfo("Directional");
-			mAddNode(light.fullPathName().asChar(), "", nLight);
-			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
-			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
-			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
+			//mAddNode(light.fullPathName().asChar(), "", nLight);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAdd));
+			//_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			//_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 		}
 		else if (node.hasFn(MFn::kSpotLight))
 		{
 			if (debug) FileMapping::printInfo("Spot");
-			mAddNode(light.fullPathName().asChar(), "", nLight);
-			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
-			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
-			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
+			//mAddNode(light.fullPathName().asChar(), "", nLight);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAdd));
+			//_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			//_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 		}
 		else if (node.hasFn(MFn::kPointLight))
 		{
 			if (debug) FileMapping::printInfo("Point");
-			mAddNode(light.fullPathName().asChar(), "", nLight);
-			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAttribute));
-			_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
-			_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
+			//mAddNode(light.fullPathName().asChar(), "", nLight);
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbLightAdd));
+			//_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+			//_CBidArray.append(MNodeMessage::addNameChangedCallback(node, &cbNameChange));
 		}
 	}
 	if (node.hasFn(MFn::kLambert))
@@ -2327,7 +2396,9 @@ void loadScene()
 					if (child.hasFn(MFn::kDirectionalLight) || child.hasFn(MFn::kSpotLight) || child.hasFn(MFn::kPointLight))
 					{
 						MFnLight light(child);
+						FileMapping::printInfo("WOAOAOAWOAWDKOASKDOAS "+trans.fullPathName()+"  KDOASKDKOASKDASOKDOSAKDOSA\n\n"+light.fullPathName()+"\n");
 						mAddNode(light.fullPathName().asChar(), trans.fullPathName().asChar(), nLight);
+						
 						_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbLightAttribute));
 						_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
 						_CBidArray.append(MNodeMessage::addNameChangedCallback(child, &cbNameChange));
@@ -2416,7 +2487,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	msgTypeVector.push_back("Switched");
 
 
-	_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
+	//_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
 	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
 	_CBidArray.append(MTimerMessage::addTimerCallback(0.2f, &cbMessageTimer));
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));

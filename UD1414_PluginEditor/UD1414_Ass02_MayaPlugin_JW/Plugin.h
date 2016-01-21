@@ -127,7 +127,7 @@ std::vector<std::string> msgTypeVector;
 	void cbNameChange(MObject& node, const MString& str, void* clientData);
 	void cbMeshAttributeChange(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
 	void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData);
-
+	void cbPreRemoveNode(MObject& node, void* clientData);
 	void mAddNode(char* name, int type, int vertCount = 0, char* childname = nullptr);
 	void mAddMessage(std::string name, int msgType, int nodeType, std::string oldName = "");
 	void loadScene();
