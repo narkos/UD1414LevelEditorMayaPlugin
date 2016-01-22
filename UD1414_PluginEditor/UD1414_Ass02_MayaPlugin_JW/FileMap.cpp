@@ -779,6 +779,7 @@ bool FileMapping::writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int 
 bool FileMapping::writeLight(MessageHeader& hdr, LightMessage& ldata, int config)
 {
 	int cfg = config;
+	FileMapping::printInfo("\n\nWRITE LIGHT " + MString(ldata.nodeName) + " \n\n");
 	switch (cfg)
 	{
 	case 1:

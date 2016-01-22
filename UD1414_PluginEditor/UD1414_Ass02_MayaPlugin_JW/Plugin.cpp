@@ -1160,7 +1160,7 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 			{
 				for (std::vector<LightInfo>::size_type i = 0; i != lightVector.size(); i++)
 				{
-					FileMapping::printInfo("VECTOR SIZE: " + MString() + lightVector.size() + " " + MString(name.c_str()));
+					//FileMapping::printInfo("VECTOR SIZE: " + MString() + lightVector.size() + " " + MString(name.c_str()));
 
 					std::string tmp = lightVector.at(i).nodeName;
 					if (strcmp(name.c_str(), tmp.c_str()) == 0)
@@ -1575,12 +1575,12 @@ void cbLightAdd(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2
 	std::string lightName(light.fullPathName().asChar());
 	std::string plugName(plug_1.name().asChar());
 
-	FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
+	//FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
 
 	if (lightName.find("#") == std::string::npos && MNodeMessage::AttributeMessage::kAttributeSet)
 	{
-		FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
-		FileMapping::printInfo(light.fullPathName());
+		//FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
+		//FileMapping::printInfo(light.fullPathName());
 		mAddNode(light.fullPathName().asChar(), "", nLight);
 
 		_CBidArray.append(MNodeMessage::addAttributeChangedCallback(plug_1.node(), cbLightAttribute));
@@ -1589,44 +1589,6 @@ void cbLightAdd(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2
 		MMessage::removeCallback(MMessage::currentCallbackId());
 		sendMsg = true;
 	}
-
-	//if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
-	//{
-	//	
-	//	//outLightData(lightName.asChar());
-	//	MStatus result;
-	//	if (plugName.find(".intensity") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".color") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".decayRate") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".coneAngle") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".dropOff") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-	//	}
-	//	else if (plugName.find(".penumbraAngle") != std::string::npos)
-	//	{
-	//		sendMsg = true;
-
-	//	}
-
-	//	if (sendMsg)
-	//	{
-	//		//FileMapping::printInfo(MString(plugName.c_str()) + "    " + plug_1.node().apiTypeStr() + "  " + msg);
-	//		mAddMessage(lightName, msgEdited, nLight);
-	//	}
-	//}
 }
 void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
@@ -2396,7 +2358,7 @@ void loadScene()
 					if (child.hasFn(MFn::kDirectionalLight) || child.hasFn(MFn::kSpotLight) || child.hasFn(MFn::kPointLight))
 					{
 						MFnLight light(child);
-						FileMapping::printInfo("WOAOAOAWOAWDKOASKDOAS "+trans.fullPathName()+"  KDOASKDKOASKDASOKDOSAKDOSA\n\n"+light.fullPathName()+"\n");
+						//FileMapping::printInfo("WOAOAOAWOAWDKOASKDOAS "+trans.fullPathName()+"  KDOASKDKOASKDASOKDOSAKDOSA\n\n"+light.fullPathName()+"\n");
 						mAddNode(light.fullPathName().asChar(), trans.fullPathName().asChar(), nLight);
 						
 						_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbLightAttribute));
@@ -2409,7 +2371,7 @@ void loadScene()
 					MFnDagNode dNode(trans.child(i));
 					if (dNode.isInstanced())
 					{
-						FileMapping::printInfo("\n\n\n\n\n\n\nFOUND INSTANCE LOL");
+						//FileMapping::printInfo("\n\n\n\n\n\n\nFOUND INSTANCE LOL");
 					}
 				}
 			}
