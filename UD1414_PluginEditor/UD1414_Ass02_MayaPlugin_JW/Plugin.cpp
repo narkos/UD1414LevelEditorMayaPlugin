@@ -151,117 +151,125 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 				int vertsThisFace = locInd.length();
 				int midValue = vertsThisFace - 1;
 				//FileMapping::printInfo("LENGTH " + MString() + vertsThisFace);
-				for (int i = 0; i < triCountThisPoly; i++)
+				if (triCountThisPoly > 2)
 				{
-
-					if (firstIteration)
+					for (int i = 0; i < triCountThisPoly; i++)
 					{
-						triNorIndices.append(polyIterator.normalIndex(0, &result));
-						triNorIndices.append(polyIterator.normalIndex(1, &result));
-						triNorIndices.append(polyIterator.normalIndex(midValue-2, &result));
 
-						polyIterator.getUVIndex(0, uId0);
-						polyIterator.getUVIndex(1, uId1);
-						polyIterator.getUVIndex(midValue, uId2);
-						triUVIndices.append(uId0);
-						triUVIndices.append(uId1);
-						triUVIndices.append(uId2);
-
-						firstValue = 1;
-						lastValue = midValue;
-						firstIteration = false;
-					}
-					else if (triCountThisPoly == 2)
-					{
-						triNorIndices.append(polyIterator.normalIndex(lastValue, &result));
-						triNorIndices.append(polyIterator.normalIndex(firstValue, &result));
-						triNorIndices.append(polyIterator.normalIndex(3, &result));
-
-						polyIterator.getUVIndex(lastValue, uId0);
-						polyIterator.getUVIndex(firstValue, uId1);
-						polyIterator.getUVIndex(2, uId2);
-						triUVIndices.append(uId0);
-						triUVIndices.append(uId1);
-						triUVIndices.append(uId2);
-
-					}
-					else
-					{
-						if (lastValue - 1 >= 0)
+						if (firstIteration)
 						{
-							if (lastValue - 1 != midValue)
+							triNorIndices.append(polyIterator.normalIndex(0, &result));
+							triNorIndices.append(polyIterator.normalIndex(1, &result));
+							triNorIndices.append(polyIterator.normalIndex(midValue - 2, &result));
+
+							polyIterator.getUVIndex(0, uId0);
+							polyIterator.getUVIndex(1, uId1);
+							polyIterator.getUVIndex(midValue, uId2);
+							triUVIndices.append(uId0);
+							triUVIndices.append(uId1);
+							triUVIndices.append(uId2);
+
+							firstValue = 1;
+							lastValue = midValue;
+							firstIteration = false;
+						}
+						else if (triCountThisPoly == 2)
+						{
+							triNorIndices.append(polyIterator.normalIndex(lastValue, &result));
+							triNorIndices.append(polyIterator.normalIndex(firstValue, &result));
+							triNorIndices.append(polyIterator.normalIndex(3, &result));
+
+							polyIterator.getUVIndex(lastValue, uId0);
+							polyIterator.getUVIndex(firstValue, uId1);
+							polyIterator.getUVIndex(2, uId2);
+							triUVIndices.append(uId0);
+							triUVIndices.append(uId1);
+							triUVIndices.append(uId2);
+
+						}
+						else
+						{
+							if (lastValue - 1 >= 0)
 							{
-								lastValue--;
-							}
-							else if (lastValue - 2 >= 0)
-							{
-								lastValue -= 2;
+								if (lastValue - 1 != midValue)
+								{
+									lastValue--;
+								}
+								else if (lastValue - 2 >= 0)
+								{
+									lastValue -= 2;
+								}
+								else
+								{
+									lastValue = midValue + 1;
+								}
 							}
 							else
 							{
 								lastValue = midValue + 1;
 							}
-						}
-						else
-						{
-							lastValue = midValue + 1;
-						}
-						triNorIndices.append(polyIterator.normalIndex(firstValue, &result));
-						triNorIndices.append(polyIterator.normalIndex(lastValue, &result));
-						triNorIndices.append(polyIterator.normalIndex(midValue-2, &result));
-						if (lastValue - 1 >= 0)
-						{
-							if (lastValue - 1 != midValue)
+							triNorIndices.append(polyIterator.normalIndex(firstValue, &result));
+							triNorIndices.append(polyIterator.normalIndex(lastValue, &result));
+							triNorIndices.append(polyIterator.normalIndex(midValue - 2, &result));
+							if (lastValue - 1 >= 0)
 							{
-								lastValue--;
-							}
-							else if (lastValue - 2 >= 0)
-							{
-								lastValue -= 2;
+								if (lastValue - 1 != midValue)
+								{
+									lastValue--;
+								}
+								else if (lastValue - 2 >= 0)
+								{
+									lastValue -= 2;
+								}
+								else
+								{
+									lastValue = midValue + 1;
+								}
 							}
 							else
 							{
-								lastValue = midValue +1;
+								lastValue = midValue + 1;
 							}
-						}
-						else
-						{
-							lastValue = midValue +1;
-						}
-						polyIterator.getUVIndex(firstValue, uId0);
-						polyIterator.getUVIndex(lastValue, uId1);
-						polyIterator.getUVIndex(midValue, uId2);
-						triUVIndices.append(uId0);
-						triUVIndices.append(uId1);
-						triUVIndices.append(uId2);
+							polyIterator.getUVIndex(firstValue, uId0);
+							polyIterator.getUVIndex(lastValue, uId1);
+							polyIterator.getUVIndex(midValue, uId2);
+							triUVIndices.append(uId0);
+							triUVIndices.append(uId1);
+							triUVIndices.append(uId2);
 
-						firstValue = lastValue;
-						lastValue-=2;
-						//lastValue = i + 1;
+							firstValue = lastValue;
+							lastValue -= 2;
+							//lastValue = i + 1;
+						}
+						//midValue += 2;
+						//MGlobal::displayInfo("VERT ID: " + MString() + vIndList[i] +" "+ MString()+polyIterator.index());
 					}
-					//midValue += 2;
-					//MGlobal::displayInfo("VERT ID: " + MString() + vIndList[i] +" "+ MString()+polyIterator.index());
 				}
-				/*triNorIndices.append(polyIterator.normalIndex(0, &result));
-				triNorIndices.append(polyIterator.normalIndex(1, &result));
-				triNorIndices.append(polyIterator.normalIndex(3, &result));
-				triNorIndices.append(polyIterator.normalIndex(3, &result));
-				triNorIndices.append(polyIterator.normalIndex(1, &result));
-				triNorIndices.append(polyIterator.normalIndex(2, &result));
+				else
+				{
+					triNorIndices.append(polyIterator.normalIndex(0, &result));
+					triNorIndices.append(polyIterator.normalIndex(1, &result));
+					triNorIndices.append(polyIterator.normalIndex(3, &result));
+					triNorIndices.append(polyIterator.normalIndex(3, &result));
+					triNorIndices.append(polyIterator.normalIndex(1, &result));
+					triNorIndices.append(polyIterator.normalIndex(2, &result));
 
-				polyIterator.getUVIndex(0, uId0);
-				polyIterator.getUVIndex(1, uId1);
-				polyIterator.getUVIndex(3, uId2);
-				triUVIndices.append(uId0);
-				triUVIndices.append(uId1);
-				triUVIndices.append(uId2);
+					polyIterator.getUVIndex(0, uId0);
+					polyIterator.getUVIndex(1, uId1);
+					polyIterator.getUVIndex(3, uId2);
+					triUVIndices.append(uId0);
+					triUVIndices.append(uId1);
+					triUVIndices.append(uId2);
 
-				polyIterator.getUVIndex(3, uId0);
-				polyIterator.getUVIndex(1, uId1);
-				polyIterator.getUVIndex(2, uId2);
-				triUVIndices.append(uId0);
-				triUVIndices.append(uId1);
-				triUVIndices.append(uId2);*/
+					polyIterator.getUVIndex(3, uId0);
+					polyIterator.getUVIndex(1, uId1);
+					polyIterator.getUVIndex(2, uId2);
+					triUVIndices.append(uId0);
+					triUVIndices.append(uId1);
+					triUVIndices.append(uId2);
+				}
+				
+				
 			}
 		}
 	}
@@ -2365,6 +2373,14 @@ void loadScene()
 						_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
 						_CBidArray.append(MNodeMessage::addNameChangedCallback(child, &cbNameChange));
 					}
+				}
+				else if (child.hasFn(MFn::kTransform))
+				{
+					MFnTransform childTransform(child);
+					_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbTransformModified));
+					_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
+
+					mAddNode(childTransform.fullPathName().asChar(), trans.fullPathName().asChar(), NodeType::nTransform);
 				}
 				else
 				{
