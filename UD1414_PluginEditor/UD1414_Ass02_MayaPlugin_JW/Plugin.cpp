@@ -28,7 +28,7 @@ bool fAddAttributes(MFnTransform& inTrans)
 			//FileMapping::printInfo("BBox exists!");
 			if (!testPlug.isKeyable())
 			{
-				MString myCommand2 = "setAttr -e -keyable true |" + inTrans.name() + "."+MString(m_attributeVector[i].name.c_str());
+				MString myCommand2 = "setAttr -e -keyable true " + inTrans.fullPathName() + "."+MString(m_attributeVector[i].name.c_str());
 				MGlobal::executeCommandOnIdle(myCommand2);
 			}
 		}
@@ -36,16 +36,16 @@ bool fAddAttributes(MFnTransform& inTrans)
 		{
 			if (m_attributeVector[i].type.find("2") != std::string::npos)
 			{
-				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -dt " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " |" + inTrans.name();
+				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -dt " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " " + inTrans.fullPathName();
 				MGlobal::executeCommandOnIdle(myCommand);
 			}
 			else
 			{
-				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -at " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " |" + inTrans.name();
+				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -at " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " " + inTrans.fullPathName();
 				MGlobal::executeCommandOnIdle(myCommand);
 			}
 			//FileMapping::printInfo("BBox does NOT exist!");
-			MString myCommand2 = "setAttr -e -keyable true |" + inTrans.name() + "."+ MString(m_attributeVector[i].name.c_str());
+			MString myCommand2 = "setAttr -e -keyable true " + inTrans.fullPathName() + "."+ MString(m_attributeVector[i].name.c_str());
 			MGlobal::executeCommandOnIdle(myCommand2);
 		}
 	}
