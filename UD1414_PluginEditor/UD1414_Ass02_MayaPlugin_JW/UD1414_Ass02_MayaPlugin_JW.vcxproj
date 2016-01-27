@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FileMap.cpp" />
+    <ClCompile Include="LoaderPlugin.cpp" />
     <ClCompile Include="OLD.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -158,6 +159,8 @@
   <ItemGroup>
     <ClInclude Include="Commands.h" />
     <ClInclude Include="FileMap.h" />
+    <ClInclude Include="Includes.hpp" />
+    <ClInclude Include="LoaderPlugin.hpp" />
     <ClInclude Include="Plugin.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
