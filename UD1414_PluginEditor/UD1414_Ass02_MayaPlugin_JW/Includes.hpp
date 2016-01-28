@@ -85,11 +85,11 @@
 #include <iostream>
 #include <vector>
 #include <maya/MGlobal.h>
+#include <vector>
 
 
 
-
-
+#include "PluginStructs.hpp"
 
 
 #endif

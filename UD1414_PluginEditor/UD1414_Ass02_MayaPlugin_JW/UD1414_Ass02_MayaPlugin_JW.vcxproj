@@ -147,8 +147,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ApplicationContext.cpp" />
     <ClCompile Include="FileMap.cpp" />
-    <ClCompile Include="LoaderPlugin.cpp" />
+    <ClCompile Include="MayaCallbacks.cpp" />
+    <ClCompile Include="MessageHandler.cpp" />
+    <ClCompile Include="NodeHandler.cpp" />
     <ClCompile Include="OLD.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -157,11 +160,15 @@
     <ClCompile Include="Commands.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Commands.h" />
+    <ClInclude Include="ApplicationContext.hpp" />
+    <ClInclude Include="Commands.hpp" />
     <ClInclude Include="FileMap.h" />
     <ClInclude Include="Includes.hpp" />
-    <ClInclude Include="LoaderPlugin.hpp" />
+    <ClInclude Include="MayaCallbacks.hpp" />
+    <ClInclude Include="MessageHandler.hpp" />
+    <ClInclude Include="NodeHandler.hpp" />
     <ClInclude Include="Plugin.h" />
+    <ClInclude Include="PluginStructs.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,5 @@
 #include "Plugin.h"
+#include "ApplicationContext.hpp"
 //#include "Commands.h"
 
 
@@ -8,13 +9,13 @@
 
 
 
-
-LoaderPlugin mainPlugin;
+//MayaCallbacks mainPlugin;
 
 
 
 EXPORT MStatus initializePlugin(MObject obj)
 {
+	using namespace DoremiEditor::Plugin;
 	//Error Checking Variable
 	MStatus result = MS::kSuccess;
 	//LoaderPlugin mainPlugin;
@@ -28,6 +29,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 		MGlobal::displayInfo("DRM Level Editor Plugin Loaded.");
 	}
 	
+
 	//mainPlugin.m_callbackIDArray.append(MDGMessage::addNodeAddedCallback(mainPlugin.cbNewNode));
 	//fFillAttributesList();
 	//OpenFileMaps::fMap = &fileMap;

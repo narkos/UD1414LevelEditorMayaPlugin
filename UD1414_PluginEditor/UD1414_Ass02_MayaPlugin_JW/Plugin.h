@@ -1,6 +1,6 @@
 #pragma once
-#include "LoaderPlugin.hpp"
-
+#include "MayaCallbacks.hpp"
+#include "Commands.hpp"
 #define NT_PLUGIN
 #define REQUIRE_IOSTREAM
 #define EXPORT __declspec(dllexport)
