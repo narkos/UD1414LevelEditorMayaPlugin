@@ -1,17 +1,4 @@
 #include "Plugin.h"
-#include "ApplicationContext.hpp"
-//#include "Commands.h"
-
-
-
-
-
-
-
-
-//MayaCallbacks mainPlugin;
-
-
 
 EXPORT MStatus initializePlugin(MObject obj)
 {

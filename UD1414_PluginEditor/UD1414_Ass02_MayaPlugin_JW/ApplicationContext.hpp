@@ -26,14 +26,24 @@ namespace DoremiEditor
 
 			MayaCallbacks* GetMayaCallbacks() const
 			{
-				return mayaCallbacks;
+				return m_mayaCallbacks;
 			}
 
-			MayaCallbacks* mayaCallbacks;
+			MessageHandler* GetMessageHandler() const
+			{
+				return m_messageHandler;
+			}
+
 
 		private:
 			ApplicationContext();
-			~ApplicationContext();
+			~ApplicationContext();			
+			
+			MessageHandler* m_messageHandler;
+			NodeHandler* m_nodeHandler;
+			FileMaps* m_fileMaps;
+			Commands* m_commands;
+			MayaCallbacks* m_mayaCallbacks;
 		};
 
 

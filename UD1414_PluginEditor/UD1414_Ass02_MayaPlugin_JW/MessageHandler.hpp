@@ -6,6 +6,7 @@ namespace DoremiEditor
 {
 	namespace Plugin
 	{
+		class NodeHandler;
 		class MessageHandler
 		{
 		private:
