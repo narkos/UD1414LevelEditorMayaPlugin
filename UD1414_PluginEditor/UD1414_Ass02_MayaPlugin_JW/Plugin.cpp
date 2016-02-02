@@ -1,8 +1,12 @@
 #include "Plugin.h"
-
+#include "ApplicationContext.hpp"
+#include "CmdFilemapOnOff.hpp"
 EXPORT MStatus initializePlugin(MObject obj)
 {
+	MGlobal::displayInfo("Bulten1");
 	using namespace DoremiEditor::Plugin;
+	//ApplicationContext::Startup();
+	MGlobal::displayInfo("Bulten2");
 	//Error Checking Variable
 	MStatus result = MS::kSuccess;
 	//LoaderPlugin mainPlugin;
@@ -16,6 +20,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 		MGlobal::displayInfo("DRM Level Editor Plugin Loaded.");
 	}
 	
+	//editorPlugin.registerCommand("drmToggleFilemaps", CmdFilemapOnOff::creator);
 
 	//mainPlugin.m_callbackIDArray.append(MDGMessage::addNodeAddedCallback(mainPlugin.cbNewNode));
 	//fFillAttributesList();
@@ -28,7 +33,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	//loadScene();
 	//debug = fileMap.debug;
 	//FileMapping::printInfo("debug:  " + MString() + debug);
-	
+	//ApplicationContext::GetInstance().GetNodeHandler().DoATestOfStuff(true);
 
 
 	//_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
@@ -48,8 +53,10 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 	MFnPlugin plugin(obj);
 
 	MGlobal::displayInfo("Level Editor plugin unloaded.");
+
+	using namespace DoremiEditor::Plugin;
+	//plugin.deregisterCommand("drmToggleFilemaps");
+	//ApplicationContext::Shutdown();
 	
-
-
 	return MS::kSuccess;
 }

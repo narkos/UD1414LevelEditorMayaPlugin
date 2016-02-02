@@ -29,11 +29,17 @@ namespace DoremiEditor
 			std::queue<MessageInfo>m_msgQueue;
 			std::vector<std::string> m_msgTypeVector;
 
-			MessageHandler* m_messageHandler;
-
+		//	MessageHandler* m_messageHandler;
+			bool testBool;
 		public:
 			NodeHandler();
 			~NodeHandler();
+
+			/** 
+			Testing commands function
+			*/
+			bool DoATestOfStuff(bool p_something);
+
 
 			/**
 			Object of message handler class

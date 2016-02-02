@@ -1,7 +1,7 @@
 #pragma once
 #ifndef MESSAGEHANDLER_HPP
 #define MESSAGEHANDLER_HPP
-
+#include "Includes.hpp"
 namespace DoremiEditor
 {
 	namespace Plugin
@@ -12,6 +12,7 @@ namespace DoremiEditor
 		private:
 
 		public:
+			void printAThing();
 			MessageHandler();
 			~MessageHandler();
 		};

@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationContext.cpp" />
+    <ClCompile Include="CommandHandler.cpp" />
     <ClCompile Include="FileMap.cpp" />
     <ClCompile Include="MayaCallbacks.cpp" />
     <ClCompile Include="MessageHandler.cpp" />
@@ -157,11 +158,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Plugin.cpp" />
-    <ClCompile Include="Commands.cpp" />
+    <ClCompile Include="CmdFilemapOnOff.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplicationContext.hpp" />
-    <ClInclude Include="Commands.hpp" />
+    <ClInclude Include="CommandHandler.hpp" />
+    <ClInclude Include="CmdFilemapOnOff.hpp" />
     <ClInclude Include="FileMap.h" />
     <ClInclude Include="Includes.hpp" />
     <ClInclude Include="MayaCallbacks.hpp" />

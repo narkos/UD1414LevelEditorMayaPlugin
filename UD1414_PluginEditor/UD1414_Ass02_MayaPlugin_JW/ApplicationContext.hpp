@@ -1,5 +1,4 @@
 #pragma once
-
 namespace DoremiEditor
 {
 	namespace Plugin
@@ -15,14 +14,15 @@ namespace DoremiEditor
 		
 		class ApplicationContext
 		{
-		public:
-		
+		public:		
+
+			static void Startup();
+			static void Shutdown();
+
 			static ApplicationContext& GetInstance()
 			{
-				static ApplicationContext applicationContext = ApplicationContext();
-				return applicationContext;
+				return *applicationContext;
 			}
-
 
 			MayaCallbacks* GetMayaCallbacks() const
 			{
@@ -34,21 +34,23 @@ namespace DoremiEditor
 				return m_messageHandler;
 			}
 
+			NodeHandler* GetNodeHandler() const
+			{
+				return m_nodeHandler;
+			}
 
 		private:
 			ApplicationContext();
-			~ApplicationContext();			
-			
+			~ApplicationContext();		
+			ApplicationContext(ApplicationContext const&) = delete;
+			void operator=(ApplicationContext const&) = delete;
+			static ApplicationContext* applicationContext;
+
 			MessageHandler* m_messageHandler;
 			NodeHandler* m_nodeHandler;
 			FileMaps* m_fileMaps;
 			Commands* m_commands;
 			MayaCallbacks* m_mayaCallbacks;
 		};
-
-
-
-
-
 	}
 }
