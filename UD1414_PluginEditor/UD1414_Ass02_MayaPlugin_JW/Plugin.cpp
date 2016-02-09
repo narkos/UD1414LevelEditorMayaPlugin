@@ -6,9 +6,13 @@ void fFillAttributesList()
 {
 	m_attributeVector.push_back(Attribute("drmRender", "bool", "1"));
 	m_attributeVector.push_back(Attribute("drmBBox", "bool", "0"));
-	m_attributeVector.push_back(Attribute("drmCollidable", "bool", "0"));
-	m_attributeVector.push_back(Attribute("drmAIground", "bool", "0"));
+	m_attributeVector.push_back(Attribute("drmCollidable", "bool", "1"));	
 	m_attributeVector.push_back(Attribute("drmInteractable", "bool", "0"));
+    m_attributeVector.push_back(Attribute("drmCheckPointID", "long", "-10"));
+    m_attributeVector.push_back(Attribute("drmLevelStartEnd", "long", "0"));
+    m_attributeVector.push_back(Attribute("drmAIground", "bool", "0"));
+
+    m_attributeVector.push_back(Attribute("drmFrequencyAffected", "bool", "0"));
 	m_attributeVector.push_back(Attribute("drmInteractableStartPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableEndPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableOffset", "double2", "0 0"));
@@ -22,16 +26,18 @@ void fFillAttributesList()
 	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour3", "long", "-1"));
 	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour4", "long", "-1"));
 	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour5", "long", "-1"));
+
 	m_attributeVector.push_back(Attribute("drmIsSpawner", "bool", "0"));
 	m_attributeVector.push_back(Attribute("drmSpawnsMax", "long", "1"));
 	m_attributeVector.push_back(Attribute("drmSpawnsMaxAlive", "long", "1"));
 	m_attributeVector.push_back(Attribute("drmSpawnTypeBlueprint", "long", "-1"));
-	m_attributeVector.push_back(Attribute("drmIsStatic", "bool", "1"));
-	m_attributeVector.push_back(Attribute("drmPhysicsType", "long", "-1"));
+    m_attributeVector.push_back(Attribute("drmSpawnFrequency", "double", "0"));
+
+    m_attributeVector.push_back(Attribute("drmIsStatic", "bool", "1"));
+    m_attributeVector.push_back(Attribute("drmPhysicsType", "long", "-1"));
+	
 	m_attributeVector.push_back(Attribute("drmTypeBlueprint", "long", "0"));
-	m_attributeVector.push_back(Attribute("drmCheckPoint", "long", "0"));
-	m_attributeVector.push_back(Attribute("drmLevelStartEnd", "long", "0"));
-	m_attributeVector.push_back(Attribute("drmIsDangerous", "long", "0"));
+	m_attributeVector.push_back(Attribute("drmIsDangerous", "bool", "0"));
 }
 
 bool fAddAttributes(MFnTransform& inTrans)
@@ -560,10 +566,18 @@ TransformInfo outTransformData(std::string name)
 				tempPlug.getValue(outTrans.transformData.attributes.isBBox);
 				tempPlug = mNode.findPlug("drmCollidable");
 				tempPlug.getValue(outTrans.transformData.attributes.isCollider);
+                tempPlug = mNode.findPlug("drmInteractable");
+                tempPlug.getValue(outTrans.transformData.attributes.isInteractable);
+                tempPlug = mNode.findPlug("drmCheckPointID");
+                tempPlug.getValue(outTrans.transformData.attributes.checkPointID);
+                tempPlug = mNode.findPlug("drmLevelStartEnd");
+                tempPlug.getValue(outTrans.transformData.attributes.startOrEndPoint);
 				tempPlug = mNode.findPlug("drmAIground");
 				tempPlug.getValue(outTrans.transformData.attributes.isAIground);
-				tempPlug = mNode.findPlug("drmInteractable");
-				tempPlug.getValue(outTrans.transformData.attributes.isInteractable);
+				
+                tempPlug = mNode.findPlug("drmFrequencyAffected");
+                tempPlug.getValue(outTrans.transformData.attributes.frequencyAffected);
+
 				tempPlug = mNode.findPlug("drmInteractableStartPosX");
 				tempPlug.getValue(outTrans.transformData.attributes.interactableStartPos[0]);
 				tempPlug = mNode.findPlug("drmInteractableStartPosY");
@@ -595,7 +609,7 @@ TransformInfo outTransformData(std::string name)
 				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldNeighbour4);
 				tempPlug = mNode.findPlug("drmPotentialFieldNeighbour5");
 				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldNeighbour5);
-	
+
 				tempPlug = mNode.findPlug("drmIsSpawner");
 				tempPlug.getValue(outTrans.transformData.attributes.isSpawner);
 				tempPlug = mNode.findPlug("drmSpawnsMax");
@@ -603,17 +617,17 @@ TransformInfo outTransformData(std::string name)
 				tempPlug = mNode.findPlug("drmSpawnsMaxAlive");
 				tempPlug.getValue(outTrans.transformData.attributes.spawnMaxAlive);
 				tempPlug = mNode.findPlug("drmSpawnTypeBlueprint");
-				tempPlug.getValue(outTrans.transformData.attributes.spawnTypeBlueprint);
+				tempPlug.getValue(outTrans.transformData.attributes.spawnTypeBlueprint);                
+                tempPlug = mNode.findPlug("drmSpawnFrequency");
+                tempPlug.getValue(outTrans.transformData.attributes.spawnFrequency);
+
 				tempPlug = mNode.findPlug("drmIsStatic");
 				tempPlug.getValue(outTrans.transformData.attributes.isStatic);
 				tempPlug = mNode.findPlug("drmPhysicsType");
 				tempPlug.getValue(outTrans.transformData.attributes.physicsType);
+
 				tempPlug = mNode.findPlug("drmTypeBlueprint");
-				tempPlug.getValue(outTrans.transformData.attributes.typeBlueprint);
-				tempPlug = mNode.findPlug("drmCheckPoint");
-				tempPlug.getValue(outTrans.transformData.attributes.typeCheckPoint);
-				tempPlug = mNode.findPlug("drmLevelStartEnd");
-				tempPlug.getValue(outTrans.transformData.attributes.typeStartEnd);
+				tempPlug.getValue(outTrans.transformData.attributes.typeBlueprint);	
 				tempPlug = mNode.findPlug("drmIsDangerous");
 				tempPlug.getValue(outTrans.transformData.attributes.isDangerous);
 

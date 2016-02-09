@@ -67,6 +67,11 @@ struct CustomAttributes
 	bool isBBox;
 	bool isCollider;
 	bool isInteractable;
+    int checkPointID;
+    int startOrEndPoint;
+    bool isAIground;
+
+    bool frequencyAffected;
 	float3 interactableStartPos;
 	float3 interactableEndPos;
 	float2 interactableOffset;
@@ -77,16 +82,20 @@ struct CustomAttributes
 	int potentialFieldNeighbour3;
 	int potentialFieldNeighbour4;
 	int potentialFieldNeighbour5;
+
 	bool isSpawner;
 	int spawnMax;
 	int spawnMaxAlive;
 	int spawnTypeBlueprint;
+    float spawnFrequency;
+
+    bool isPlayerStart;
+
 	bool isStatic;
 	int physicsType; 
+
 	int typeBlueprint;
-	int typeCheckPoint;
-	int typeStartEnd;
-	bool isAIground;
+	
 	bool isDangerous;
 };
 
