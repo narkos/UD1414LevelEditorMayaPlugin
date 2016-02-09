@@ -31,6 +31,7 @@ void fFillAttributesList()
 	m_attributeVector.push_back(Attribute("drmTypeBlueprint", "long", "0"));
 	m_attributeVector.push_back(Attribute("drmCheckPoint", "long", "0"));
 	m_attributeVector.push_back(Attribute("drmLevelStartEnd", "long", "0"));
+	m_attributeVector.push_back(Attribute("drmIsDangerous", "long", "0"));
 }
 
 bool fAddAttributes(MFnTransform& inTrans)
@@ -613,7 +614,8 @@ TransformInfo outTransformData(std::string name)
 				tempPlug.getValue(outTrans.transformData.attributes.typeCheckPoint);
 				tempPlug = mNode.findPlug("drmLevelStartEnd");
 				tempPlug.getValue(outTrans.transformData.attributes.typeStartEnd);
-
+				tempPlug = mNode.findPlug("drmIsDangerous");
+				tempPlug.getValue(outTrans.transformData.attributes.isDangerous);
 
 				//m_attributeVector[0].nam
 				return outTrans;

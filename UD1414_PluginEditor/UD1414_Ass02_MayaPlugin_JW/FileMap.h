@@ -87,6 +87,7 @@ struct CustomAttributes
 	int typeCheckPoint;
 	int typeStartEnd;
 	bool isAIground;
+	bool isDangerous;
 };
 
 struct TransformData
