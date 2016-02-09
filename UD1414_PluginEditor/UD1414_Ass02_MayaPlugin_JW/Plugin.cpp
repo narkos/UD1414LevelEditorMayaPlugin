@@ -9,10 +9,26 @@ void fFillAttributesList()
 	m_attributeVector.push_back(Attribute("drmCollidable", "bool", "0"));
 	m_attributeVector.push_back(Attribute("drmAIground", "bool", "0"));
 	m_attributeVector.push_back(Attribute("drmInteractable", "bool", "0"));
-	m_attributeVector.push_back(Attribute("drmInteractIntervalX", "\"float\"", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractableStartPos", "double3", "0 0 0"));
+	m_attributeVector.push_back(Attribute("drmInteractableEndPos", "double3", "0 0 0"));
+	m_attributeVector.push_back(Attribute("drmInteractableOffset", "double2", "0 0"));
+	/*m_attributeVector.push_back(Attribute("drmInteractIntervalX", "\"float\"", "0"));
 	m_attributeVector.push_back(Attribute("drmInteractIntervalY", "\"float\"", "0"));
-	m_attributeVector.push_back(Attribute("drmInteractIntevalZ", "\"float\"", "0"));
-	m_attributeVector.push_back(Attribute("drmSpawner", "long", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractIntevalZ", "\"float\"", "0"));*/
+	m_attributeVector.push_back(Attribute("drmIsPotentialFieldCollidable", "bool", "1"));
+	m_attributeVector.push_back(Attribute("drmPotentialFieldID", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour1", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour2", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour3", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour4", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour5", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmIsSpawner", "bool", "0"));
+	m_attributeVector.push_back(Attribute("drmSpawnsMax", "long", "1"));
+	m_attributeVector.push_back(Attribute("drmSpawnsMaxAlive", "long", "1"));
+	m_attributeVector.push_back(Attribute("drmSpawnTypeBlueprint", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmIsStatic", "bool", "1"));
+	m_attributeVector.push_back(Attribute("drmPhysicsType", "long", "-1"));
+	m_attributeVector.push_back(Attribute("drmTypeBlueprint", "long", "0"));
 	m_attributeVector.push_back(Attribute("drmCheckPoint", "long", "0"));
 	m_attributeVector.push_back(Attribute("drmLevelStartEnd", "long", "0"));
 }
@@ -34,19 +50,41 @@ bool fAddAttributes(MFnTransform& inTrans)
 		}
 		else
 		{
-			if (m_attributeVector[i].type.find("2") != std::string::npos)
+			if (m_attributeVector[i].type.find("3") != std::string::npos)
 			{
-				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -dt " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " " + inTrans.fullPathName();
+				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -at " + MString(m_attributeVector[i].type.c_str()) + " " + inTrans.fullPathName();
 				MGlobal::executeCommandOnIdle(myCommand);
+				myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "X\" -at double -p " + MString(m_attributeVector[i].name.c_str()) + " " + inTrans.fullPathName();
+				MGlobal::executeCommandOnIdle(myCommand);
+				myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "Y\" -at double -p " + MString(m_attributeVector[i].name.c_str()) + " " + inTrans.fullPathName();
+				MGlobal::executeCommandOnIdle(myCommand);
+				myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "Z\" -at double -p " + MString(m_attributeVector[i].name.c_str()) + " " + inTrans.fullPathName();
+				MGlobal::executeCommandOnIdle(myCommand);
+				myCommand = "setAttr -type double3 " + inTrans.fullPathName() +"."+m_attributeVector[i].name.c_str()+ " " + m_attributeVector[i].value.c_str();
+				MGlobal::executeCommandOnIdle(myCommand);
+				
+			}
+			else if (m_attributeVector[i].type.find("2") != std::string::npos)
+			{
+				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -at " + MString(m_attributeVector[i].type.c_str()) + " " + inTrans.fullPathName();
+				MGlobal::executeCommandOnIdle(myCommand);
+				myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "X\" -at double -p " + MString(m_attributeVector[i].name.c_str()) + " " + inTrans.fullPathName();
+				MGlobal::executeCommandOnIdle(myCommand);
+				myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "Y\" -at double -p " + MString(m_attributeVector[i].name.c_str()) + " " + inTrans.fullPathName();
+				MGlobal::executeCommandOnIdle(myCommand);
+				myCommand = "setAttr -type double2 " + inTrans.fullPathName() + "." + m_attributeVector[i].name.c_str() + " " + m_attributeVector[i].value.c_str();
+				MGlobal::executeCommandOnIdle(myCommand);
+
 			}
 			else
 			{
 				MString myCommand = "addAttr -ln \"" + MString(m_attributeVector[i].name.c_str()) + "\" -at " + MString(m_attributeVector[i].type.c_str()) + " -dv " + MString(m_attributeVector[i].value.c_str()) + " " + inTrans.fullPathName();
 				MGlobal::executeCommandOnIdle(myCommand);
+				MString myCommand2 = "setAttr -e -keyable true " + inTrans.fullPathName() + "." + MString(m_attributeVector[i].name.c_str());
+				MGlobal::executeCommandOnIdle(myCommand2);
 			}
 			//FileMapping::printInfo("BBox does NOT exist!");
-			MString myCommand2 = "setAttr -e -keyable true " + inTrans.fullPathName() + "."+ MString(m_attributeVector[i].name.c_str());
-			MGlobal::executeCommandOnIdle(myCommand2);
+			
 		}
 	}
 	return true;
@@ -525,14 +563,52 @@ TransformInfo outTransformData(std::string name)
 				tempPlug.getValue(outTrans.transformData.attributes.isAIground);
 				tempPlug = mNode.findPlug("drmInteractable");
 				tempPlug.getValue(outTrans.transformData.attributes.isInteractable);
-				tempPlug = mNode.findPlug("drmInteractIntevalX");
-				tempPlug.getValue(outTrans.transformData.attributes.interactIntervalX);
-				tempPlug = mNode.findPlug("drmInteractIntevalY");
-				tempPlug.getValue(outTrans.transformData.attributes.interactIntervalY);
-				tempPlug = mNode.findPlug("drmInteractIntevalZ");
-				tempPlug.getValue(outTrans.transformData.attributes.interactIntervalZ);
-				tempPlug = mNode.findPlug("drmSpawner");
-				tempPlug.getValue(outTrans.transformData.attributes.typeSpawner);
+				tempPlug = mNode.findPlug("drmInteractableStartPosX");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableStartPos[0]);
+				tempPlug = mNode.findPlug("drmInteractableStartPosY");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableStartPos[1]);
+				tempPlug = mNode.findPlug("drmInteractableStartPosZ");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableStartPos[2]);
+				tempPlug = mNode.findPlug("drmInteractableEndtPosX");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableEndPos[0]);
+				tempPlug = mNode.findPlug("drmInteractableEndPosY");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableEndPos[1]);
+				tempPlug = mNode.findPlug("drmInteractableEndPosZ");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableEndPos[2]);
+				tempPlug = mNode.findPlug("drmInteractableOffsetX");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableOffset[0]);
+				tempPlug = mNode.findPlug("drmInteractableOffsetY");
+				tempPlug.getValue(outTrans.transformData.attributes.interactableOffset[1]);
+
+				tempPlug = mNode.findPlug("drmIsPotentialFieldCollidable");
+				tempPlug.getValue(outTrans.transformData.attributes.isPotentialFieldCollidable);
+				tempPlug = mNode.findPlug("drmPotentialFieldID");
+				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldID);
+				tempPlug = mNode.findPlug("drmPotentialFieldNeighbour1");
+				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldNeighbour1);
+				tempPlug = mNode.findPlug("drmPotentialFieldNeighbour2");
+				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldNeighbour2);
+				tempPlug = mNode.findPlug("drmPotentialFieldNeighbour3");
+				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldNeighbour3);
+				tempPlug = mNode.findPlug("drmPotentialFieldNeighbour4");
+				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldNeighbour4);
+				tempPlug = mNode.findPlug("drmPotentialFieldNeighbour5");
+				tempPlug.getValue(outTrans.transformData.attributes.potentialFieldNeighbour5);
+	
+				tempPlug = mNode.findPlug("drmIsSpawner");
+				tempPlug.getValue(outTrans.transformData.attributes.isSpawner);
+				tempPlug = mNode.findPlug("drmSpawnsMax");
+				tempPlug.getValue(outTrans.transformData.attributes.spawnMax);
+				tempPlug = mNode.findPlug("drmSpawnsMaxAlive");
+				tempPlug.getValue(outTrans.transformData.attributes.spawnMaxAlive);
+				tempPlug = mNode.findPlug("drmSpawnTypeBlueprint");
+				tempPlug.getValue(outTrans.transformData.attributes.spawnTypeBlueprint);
+				tempPlug = mNode.findPlug("drmIsStatic");
+				tempPlug.getValue(outTrans.transformData.attributes.isStatic);
+				tempPlug = mNode.findPlug("drmPhysicsType");
+				tempPlug.getValue(outTrans.transformData.attributes.physicsType);
+				tempPlug = mNode.findPlug("drmTypeBlueprint");
+				tempPlug.getValue(outTrans.transformData.attributes.typeBlueprint);
 				tempPlug = mNode.findPlug("drmCheckPoint");
 				tempPlug.getValue(outTrans.transformData.attributes.typeCheckPoint);
 				tempPlug = mNode.findPlug("drmLevelStartEnd");
