@@ -350,7 +350,7 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 		FileMapping::printInfo("outMesh Tris per Polygon: " + triFaceStr + " )");
 
 		// Prints vertex data
-		bool dbug2 = true;
+		bool dbug2 = false;
 		MString iDataStr = "";
 		if (dbug2)
 		{
@@ -699,14 +699,14 @@ MaterialInfo outMaterialData(std::string name)
 		MObject obj;
 		sList.getDependNode(0, obj);
 		MFnDependencyNode mat(obj);
-		//FileMapping::printInfo(depNode.name().asChar());
+		// FileMapping::printInfo(depNode.name().asChar());
 		MPlug plg = mat.findPlug("diffuse", &status);
 		if (status)
 		{
 			float val;
 			plg.getValue(val);
 			FileMapping::printInfo(MString() + val);
-			outMat.matData.diffuse = val;
+			outMat.data.diffuse = val;
 		}
 		plg = mat.findPlug("color", &status);
 		if (status)
@@ -732,14 +732,10 @@ MaterialInfo outMaterialData(std::string name)
 							else if (name.length() < 100)
 							{
 								FileMapping::printInfo(mat.name() + " FOUND TEXTURE MAP " + name);
-								//std::string strname = name.asChar();
-								for (int i = 0; i < name.length(); i++)
-								{
-									outMat.diffuseTexturePath[i] = name.asChar()[i];
-								}
-								outMat.diffuseTexturePath[name.length()] = 0;
-								outMat.matData.mapMasks |= (int)bitmask::COLORMAP;
-								FileMapping::printInfo(outMat.diffuseTexturePath);
+								outMat.diffuseTexturePath = name.asChar();
+								// outMat.diffuseTexturePath[name.length()] = 0;
+								outMat.data.mapMasks |= (int)bitmask::COLORMAP;
+								FileMapping::printInfo(outMat.diffuseTexturePath.c_str());
 							}
 							else
 							{
@@ -753,16 +749,49 @@ MaterialInfo outMaterialData(std::string name)
 			{
 				outMat.diffuseTexturePath[0] = 0;
 				plg = mat.findPlug("colorR", &status);
-				if (status)
-					plg.getValue(outMat.matData.color[0]);
+				if (status) plg.getValue(outMat.data.color[0]);
 				plg = mat.findPlug("colorG", &status);
-				if (status)
-					plg.getValue(outMat.matData.color[1]);
+				if (status) plg.getValue(outMat.data.color[1]);
 				plg = mat.findPlug("colorB", &status);
-				if (status)
-					plg.getValue(outMat.matData.color[2]);
+				if (status) plg.getValue(outMat.data.color[2]);
 			}
 		}
+		plg = mat.findPlug("incandescence", &status);
+		if (status)
+		{
+			if (plg.isConnected())
+			{
+				MPlugArray plgArray;
+				plg.connectedTo(plgArray, true, false);
+				for (int i = 0; i < plgArray.length(); ++i)
+				{
+					if (plgArray[i].node().apiType() == MFn::kFileTexture)
+					{
+						MFnDependencyNode glowTexture(plgArray[i].node());
+						plg = glowTexture.findPlug("fileTextureName", &status);
+						MString name = plg.asString();
+						if (name.length() < 1)
+						{
+							FileMapping::printWarning(mat.name() + "TEXTURE PATH NOT SET");
+							outMat.glowTexturePath[0] = 0;
+						}
+						else if (name.length() < 100)
+						{
+							FileMapping::printInfo(mat.name() + " FOUND GLOW MAP " + name);
+							outMat.glowTexturePath = name.asChar();
+							FileMapping::printInfo(outMat.glowTexturePath.c_str());
+							outMat.data.mapMasks |= (int)bitmask::GLOWMAP;
+						}
+						else
+						{
+							FileMapping::printError(mat.name() + "Glow texture path name too long");
+						}
+					}
+				}
+			}
+		}
+
+
 		plg = mat.findPlug("specularColor", &status);
 		if (status)
 		{
@@ -773,51 +802,48 @@ MaterialInfo outMaterialData(std::string name)
 			else
 			{
 				plg = mat.findPlug("specularColorR", &status);
-				if (status)
-					plg.getValue(outMat.matData.specColor[0]);
+				if (status) plg.getValue(outMat.data.specColor[0]);
 				plg = mat.findPlug("specularColorG", &status);
-				if (status)
-					plg.getValue(outMat.matData.specColor[1]);
+				if (status) plg.getValue(outMat.data.specColor[1]);
 				plg = mat.findPlug("specularColorB", &status);
-				if (status)
-					plg.getValue(outMat.matData.specColor[2]);
+				if (status) plg.getValue(outMat.data.specColor[2]);
 			}
 		}
 		plg = mat.findPlug("cosinePower", &status);
 		if (status)
 		{
-			plg.getValue(outMat.matData.specCosine);
+			plg.getValue(outMat.data.specCosine);
 		}
 		plg = mat.findPlug("eccentricity", &status);
 		if (status)
 		{
-			plg.getValue(outMat.matData.specEccentricity);
+			plg.getValue(outMat.data.specEccentricity);
 		}
 		plg = mat.findPlug("specularRollOff", &status);
 		if (status)
 		{
-			plg.getValue(outMat.matData.specRollOff);
+			plg.getValue(outMat.data.specRollOff);
 		}
 
 
 		if (debug)
 		{
-			FileMapping::printInfo("Color: " + MString() + outMat.matData.color[0]);
+			FileMapping::printInfo("Color: " + MString() + outMat.data.color[0]);
 			FileMapping::printInfo("Specular color: ");
-			FileMapping::printInfo("Cosine Power: " + MString() + outMat.matData.specCosine);
-			FileMapping::printInfo("Eccentricity: " + MString() + outMat.matData.specEccentricity);
-			FileMapping::printInfo("Specular Roll Off: " + MString() + outMat.matData.specRollOff);
+			FileMapping::printInfo("Cosine Power: " + MString() + outMat.data.specCosine);
+			FileMapping::printInfo("Eccentricity: " + MString() + outMat.data.specEccentricity);
+			FileMapping::printInfo("Specular Roll Off: " + MString() + outMat.data.specRollOff);
 		}
 
 		/*int mask = 0;
 		if ((mask & (int)bitmask::COLORMAP))
 		{
-			FileMapping::printInfo("BITS "+MString()+mask);
+		FileMapping::printInfo("BITS "+MString()+mask);
 		}
 		mask |= (int)bitmask::SPECULARMAP;
 		if((mask & ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP)) == ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP))
 		{
-			FileMapping::printInfo("BITS2 " + MString() + mask);
+		FileMapping::printInfo("BITS2 " + MString() + mask);
 		}
 
 		int removeMask = (int)bitmask::COLORMAP;
@@ -825,15 +851,14 @@ MaterialInfo outMaterialData(std::string name)
 		mask ^= removeMask;
 		if ((mask & ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP)) == ((int)bitmask::SPECULARMAP | (int)bitmask::COLORMAP))
 		{
-			FileMapping::printInfo("WRONG " + MString() + mask);
+		FileMapping::printInfo("WRONG " + MString() + mask);
 		}
 		if ((mask &(int)bitmask::SPECULARMAP) == (int)bitmask::SPECULARMAP)
 		{
-			FileMapping::printInfo("RIGHT " + MString() + mask);
+		FileMapping::printInfo("RIGHT " + MString() + mask);
 		}
 
 		plg = mat.findPlug("ambient");*/
-
 	}
 	return outMat;
 }
@@ -1216,7 +1241,7 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 			}
 			if (!exists)
 			{
-				MaterialInfo material{ name,"", extra };
+				MaterialInfo material{ name,"", "","","",extra };
 				materialVector.push_back(material);
 				if (debug) FileMapping::printInfo("Added material: " + MString(name.c_str()));
 				mAddMessage(name, msgAdded, nMaterial);
@@ -1998,7 +2023,7 @@ void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 		MStatus result;
 		MFnTransform transform(plug_1.node());
 		//MString att(plug_1.node());
-		FileMapping::printInfo(MString(plug_1.info().asChar()));
+		//FileMapping::printInfo(MString(plug_1.info().asChar()));
 		std::string attName(plug_1.info().asChar());
 		//FileMapping("PLG NAME")
 		if (d)
@@ -2308,6 +2333,7 @@ void loadScene()
 	MItDag itTrans(MItDag::kDepthFirst, filter, &stat);
 	for (; !itTrans.isDone(); itTrans.next())
 	{
+		
 		MDagPath transDagPath;
 		stat = itTrans.getPath(transDagPath);
 		MFnDagNode transDagNode(transDagPath, &stat);
@@ -2327,6 +2353,7 @@ void loadScene()
 				MObject child(trans.child(i));
 				if (child.hasFn(MFn::kMesh))
 				{
+					
 					MFnMesh mesh(trans.child(i), &stat);
 					if (mesh.isInstanced())
 					{

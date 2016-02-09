@@ -15,9 +15,10 @@ enum MessageType { msgAdded = 1, msgEdited = 2, msgDeleted = 3, msgRenamed = 4, 
 enum NodeType { nDefaultNode = 0, nMesh = 1, nTransform = 2, nCamera = 3, nLight = 4, nMaterial = 5 };
 enum class bitmask : int
 { 
-	COLORMAP = 0x01, 
-	SPECULARMAP = 0x02, 
-	BUMPMAP = 0x04
+	COLORMAP = 0x01,
+	GLOWMAP = 0x02,
+	SPECMAP = 0x04,
+	BUMPMAP = 0x08
 };
 
 struct NameStruct
@@ -179,16 +180,22 @@ struct MaterialData
 struct MaterialInfo
 {
 	std::string nodeName;
-	char diffuseTexturePath[100];
+	std::string diffuseTexturePath;
+	std::string glowTexturePath;
+	std::string specTexturePath;
+	std::string bumpTexturePath;
 	int type;
-	MaterialData matData;
+	MaterialData data;
 };
 struct MaterialMessage
 {
 	char nodeName[100];
 	char diffuseTexturePath[100];
+	char glowTexturePath[100];
+	char specTexturePath[100];
+	char bumpTexturePath[100];
 	int type;
-	MaterialData matData;
+	MaterialData data;
 };
 struct LightData
 {

@@ -728,7 +728,8 @@ bool FileMapping::writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int 
 
 		localHead += hdr.byteSize + hdr.bytePadding;
 
-		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		while (mutexInfo.Lock(1000) == false)
+			Sleep(10);
 		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
 		if (localHead == mSize)
 		{
@@ -748,7 +749,8 @@ bool FileMapping::writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int 
 		memcpy((unsigned char*)mMessageData, &mdata, hdr.byteSize);
 		localHead += hdr.byteSize + hdr.bytePadding;
 
-		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		while (mutexInfo.Lock(1000) == false)
+			Sleep(10);
 		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
 		fileMapInfo.head_ByteOffset = localHead;
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
@@ -764,7 +766,8 @@ bool FileMapping::writeMaterial(MessageHeader& hdr, MaterialMessage& mdata, int 
 		memcpy((unsigned char*)mMessageData + sizeof(MessageHeader), &mdata, hdr.byteSize);
 		localHead += hdr.byteSize + hdr.bytePadding;
 
-		while (mutexInfo.Lock(1000) == false) Sleep(10);
+		while (mutexInfo.Lock(1000) == false)
+			Sleep(10);
 		memcpy(&fileMapInfo, (unsigned char*)mInfoData, sizeof(FilemapInfo));
 		fileMapInfo.head_ByteOffset = localHead;
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
@@ -1006,13 +1009,13 @@ MessageHeader FileMapping::createHeaderMaterial(MessageInfo& msginfo, MaterialIn
 	size_t msgSize;
 	size_t padding;
 	size_t infoSize;
-	//infoSize = 200 * sizeof(char);
+	// infoSize = 200 * sizeof(char);
 	msgSize = sizeof(MaterialMessage) + sizeof(MessageHeader);
 
 	totalSize = makeMultiple(msgSize, 256);
 	padding = totalSize - msgSize;
-	FileMapping::printInfo("*   Material Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() + (msgSize - sizeof(MessageHeader))
-		+ " " + MString() + padding + " " + MString() + totalSize);
+	FileMapping::printInfo("*   Material Message Sizes(HDR,MSG,PDG,TOT): " + MString() + sizeof(MessageHeader) + " " + MString() +
+		(msgSize - sizeof(MessageHeader)) + " " + MString() + padding + " " + MString() + totalSize);
 
 	MessageHeader hdr;
 	hdr.nodeType = msginfo.nodeType;
@@ -1022,7 +1025,7 @@ MessageHeader FileMapping::createHeaderMaterial(MessageInfo& msginfo, MaterialIn
 	hdr.bytePadding = padding;
 
 	return hdr;
-	//return 0;
+	// return 0;
 }
 MessageHeader FileMapping::createHeaderLight(MessageInfo& msginfo, LightInfo& lInfo)
 {
@@ -1204,25 +1207,37 @@ MaterialMessage FileMapping::createMessageMaterial(MessageInfo& msginfo, Materia
 	MaterialMessage outMsg;
 
 	int nodeNameLength = msginfo.nodeName.length();
+	int diffTexLength = mInfo.diffuseTexturePath.length();
+	int glowTexLength = mInfo.glowTexturePath.length();
+	int specTexLength = mInfo.specTexturePath.length();
+
 	if (nodeNameLength <= 100)
 	{
 		for (int i = 0; i < nodeNameLength; i++)
 		{
 			outMsg.nodeName[i] = msginfo.nodeName[i];
 		}
-		//FileMapping::printInfo("Node name added!");
+		// FileMapping::printInfo("Node name added!");
 		outMsg.nodeName[nodeNameLength] = '\0';
 	}
 	else
 	{
 		FileMapping::printError("* Node name too long!");
 	}
-	memcpy(&outMsg.diffuseTexturePath, &mInfo.diffuseTexturePath, sizeof(char) * 100);
-	
+
+	// Fill Texture path names
+	strcpy(outMsg.diffuseTexturePath, mInfo.diffuseTexturePath.c_str());
+	strcpy(outMsg.glowTexturePath, mInfo.glowTexturePath.c_str());
+	strcpy(outMsg.specTexturePath, mInfo.specTexturePath.c_str());
+	strcpy(outMsg.bumpTexturePath, mInfo.bumpTexturePath.c_str());
+	FileMapping::printInfo("GLOW TEX: " + MString(outMsg.glowTexturePath));
+
+	// memcpy(&outMsg.diffuseTexturePath, &mInfo.diffuseTexturePath, sizeof(char) * 100);
+
 	FileMapping::printInfo("TEXTURE PATH: " + MString(outMsg.diffuseTexturePath));
 
-	outMsg.matData = mInfo.matData;
-	
+	outMsg.data = mInfo.data;
+
 	return outMsg;
 }
 LightMessage FileMapping::createMessageLight(MessageInfo& msgInfo, LightInfo& lInfo)
