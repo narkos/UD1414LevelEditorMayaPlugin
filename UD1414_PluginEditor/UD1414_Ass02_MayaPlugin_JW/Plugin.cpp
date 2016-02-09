@@ -8,7 +8,8 @@ void fFillAttributesList()
 	m_attributeVector.push_back(Attribute("drmBBox", "bool", "0"));
 	m_attributeVector.push_back(Attribute("drmCollidable", "bool", "1"));	
 	m_attributeVector.push_back(Attribute("drmInteractable", "bool", "0"));
-    m_attributeVector.push_back(Attribute("drmCheckPointID", "long", "-10"));
+    m_attributeVector.push_back(Attribute("drmCheckPointID", "long", "-1"));
+    m_attributeVector.push_back(Attribute("drmSpawnPointID", "long", "-1"));
     m_attributeVector.push_back(Attribute("drmLevelStartEnd", "long", "0"));
     m_attributeVector.push_back(Attribute("drmAIground", "bool", "0"));
 
@@ -570,6 +571,8 @@ TransformInfo outTransformData(std::string name)
                 tempPlug.getValue(outTrans.transformData.attributes.isInteractable);
                 tempPlug = mNode.findPlug("drmCheckPointID");
                 tempPlug.getValue(outTrans.transformData.attributes.checkPointID);
+                tempPlug = mNode.findPlug("drmSpawnPointID");
+                tempPlug.getValue(outTrans.transformData.attributes.spawnPointID);
                 tempPlug = mNode.findPlug("drmLevelStartEnd");
                 tempPlug.getValue(outTrans.transformData.attributes.startOrEndPoint);
 				tempPlug = mNode.findPlug("drmAIground");
