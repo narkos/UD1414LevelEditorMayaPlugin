@@ -73,6 +73,7 @@ struct CustomAttributes
     bool isAIground;
 
     bool frequencyAffected;
+    float interactableRange;
 	float3 interactableStartPos;
 	float3 interactableEndPos;
 	float2 interactableOffset;
@@ -91,8 +92,6 @@ struct CustomAttributes
 	int spawnMaxAlive;
 	int spawnTypeBlueprint;
     float spawnFrequency;
-
-    bool isPlayerStart;
 
 	bool isStatic;
 	int physicsType; 

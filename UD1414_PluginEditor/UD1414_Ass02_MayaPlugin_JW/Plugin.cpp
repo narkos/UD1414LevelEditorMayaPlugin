@@ -13,6 +13,7 @@ void fFillAttributesList()
     m_attributeVector.push_back(Attribute("drmLevelStartEnd", "long", "0"));
     m_attributeVector.push_back(Attribute("drmAIground", "bool", "0"));
     m_attributeVector.push_back(Attribute("drmFrequencyAffected", "bool", "0"));
+    m_attributeVector.push_back(Attribute("drmInteractableRange", "double", "40"));
 	m_attributeVector.push_back(Attribute("drmInteractableStartPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableEndPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableOffset", "double2", "0 0"));
@@ -575,6 +576,8 @@ TransformInfo outTransformData(std::string name)
 				
                 tempPlug = mNode.findPlug("drmFrequencyAffected");
                 tempPlug.getValue(outTrans.transformData.attributes.frequencyAffected);
+                tempPlug = mNode.findPlug("drmInteractableRange");
+                tempPlug.getValue(outTrans.transformData.attributes.interactableRange);
 
 				tempPlug = mNode.findPlug("drmInteractableStartPosX");
 				tempPlug.getValue(outTrans.transformData.attributes.interactableStartPos[0]);
