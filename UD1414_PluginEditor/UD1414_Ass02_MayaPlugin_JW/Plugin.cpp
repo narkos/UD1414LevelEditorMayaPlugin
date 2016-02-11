@@ -589,7 +589,7 @@ TransformInfo outTransformData(std::string name)
 				tempPlug.getValue(outTrans.transformData.attributes.interactableStartPos[1]);
 				tempPlug = mNode.findPlug("drmInteractableStartPosZ");
 				tempPlug.getValue(outTrans.transformData.attributes.interactableStartPos[2]);
-				tempPlug = mNode.findPlug("drmInteractableEndtPosX");
+				tempPlug = mNode.findPlug("drmInteractableEndPosX");
 				tempPlug.getValue(outTrans.transformData.attributes.interactableEndPos[0]);
 				tempPlug = mNode.findPlug("drmInteractableEndPosY");
 				tempPlug.getValue(outTrans.transformData.attributes.interactableEndPos[1]);
