@@ -527,6 +527,11 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
 		FileMapping::printInfo("* WOW EN VERTEX: " + MString() + mdata.meshData.vertCount +" "+ MString()+mdata.materialID+" "+mdata.materialName);
+		delete mdata.meshData.triPerFace;
+		delete mdata.meshData.uv;
+		delete mdata.meshData.triIndices;
+		delete mdata.meshData.norIndices;
+		delete mdata.meshData.UVIndices;
 		return true;
 		break;
 
@@ -587,6 +592,11 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
+		delete mdata.meshData.triPerFace;
+		delete mdata.meshData.uv;
+		delete mdata.meshData.triIndices;
+		delete mdata.meshData.norIndices;
+		delete mdata.meshData.UVIndices;
 		return true;
 		break;
 
@@ -645,6 +655,11 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		memcpy((unsigned char*)mInfoData, &fileMapInfo, sizeof(FilemapInfo));
 		mutexInfo.Unlock();
 		PrintFileMapInfo(true);
+		delete mdata.meshData.triPerFace;
+		delete mdata.meshData.uv;
+		delete mdata.meshData.triIndices;
+		delete mdata.meshData.norIndices;
+		delete mdata.meshData.UVIndices;
 		return true;
 		break;
 	}

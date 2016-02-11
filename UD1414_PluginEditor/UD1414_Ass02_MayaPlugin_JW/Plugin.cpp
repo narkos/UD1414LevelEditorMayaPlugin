@@ -17,6 +17,8 @@ void fFillAttributesList()
 	m_attributeVector.push_back(Attribute("drmInteractableStartPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableEndPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableOffset", "double2", "0 0"));
+	m_attributeVector.push_back(Attribute("drmInteractableStartSpeed", "double", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractableEndSpeed", "double", "0"));
 	/*m_attributeVector.push_back(Attribute("drmInteractIntervalX", "\"float\"", "0"));
 	m_attributeVector.push_back(Attribute("drmInteractIntervalY", "\"float\"", "0"));
 	m_attributeVector.push_back(Attribute("drmInteractIntevalZ", "\"float\"", "0"));*/
@@ -2303,11 +2305,11 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 					FileMapping::printInfo("*** MESSAGE: ( " + MString(msgQueue.front().nodeName.c_str()) + " ) (" + msgTypeVector[msgQueue.front().msgType].c_str() + " Mesh)");
 					if (fileMap.tryWriteMesh(msgQueue.front(), outMesh) == true)
 					{
-						delete[] outMesh.meshData.uv;
+						/*delete[] outMesh.meshData.uv;
 						delete[] outMesh.meshData.triIndices;
 						delete[] outMesh.meshData.norIndices;
 						delete[] outMesh.meshData.UVIndices;
-						delete[] outMesh.meshData.triPerFace;
+						delete[] outMesh.meshData.triPerFace;*/
 						FileMapping::printInfo("*** MESSAGE Result( " + MString(msgQueue.front().nodeName.c_str()) + " ): Success");
 						msgQueue.pop();
 					}
