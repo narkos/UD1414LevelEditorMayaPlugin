@@ -17,8 +17,8 @@ void fFillAttributesList()
 	m_attributeVector.push_back(Attribute("drmInteractableStartPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableEndPos", "double3", "0 0 0"));
 	m_attributeVector.push_back(Attribute("drmInteractableOffset", "double2", "0 0"));
-	m_attributeVector.push_back(Attribute("drmInteractableStartSpeed", "double", "0"));
-	m_attributeVector.push_back(Attribute("drmInteractableEndSpeed", "double", "0"));
+	m_attributeVector.push_back(Attribute("drmInteractableStartSpeed", "double", "1"));
+	m_attributeVector.push_back(Attribute("drmInteractableEndSpeed", "double", "1"));
 	m_attributeVector.push_back(Attribute("drmIsPotentialFieldCollidable", "bool", "1"));
 	m_attributeVector.push_back(Attribute("drmPotentialFieldID", "long", "-1"));
 	m_attributeVector.push_back(Attribute("drmPotentialFieldNeighbour1", "long", "-1"));

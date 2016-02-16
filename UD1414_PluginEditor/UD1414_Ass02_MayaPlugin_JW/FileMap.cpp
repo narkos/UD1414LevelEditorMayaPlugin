@@ -198,19 +198,26 @@ bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
 {
 	if (isRunning)
 	{
+        bool result = false;
 		MessageHeader mHeader = createHeaderMesh(msg, minfo);
 		int cfg = findWriteConfig(mHeader);
 		if (cfg != 0)
 		{
 			if (writeMesh(mHeader, createMessageMesh(msg, minfo), cfg) == true)
 			{
-				return true;
+
+                result = true;
 			}
 		}
 		else
 		{
-			return false;
+			result = false;
 		}
+        /*delete[] minfo.meshData.uv;
+        delete[] minfo.meshData.triIndices;
+        delete[] minfo.meshData.norIndices;
+        delete[] minfo.meshData.UVIndices;
+        delete[] minfo.meshData.triPerFace;*/
 		return false;
 
 		/*FileMapping::printInfo("FileMap Msg: Mesh Message found");
