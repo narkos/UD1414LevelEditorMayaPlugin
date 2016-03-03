@@ -430,33 +430,58 @@ MeshInfo outMeshData(std::string name, bool getDynamicData)
 		if (dbug2)FileMapping::printInfo(iDataStr);
 
 	}
-	MObjectArray connectedShaders;
-	MIntArray shaderIndices;
-	mNode.getConnectedShaders(0, connectedShaders, shaderIndices);
-	MFnDependencyNode shaderGroup(connectedShaders[0]);
-	MPlug plug = shaderGroup.findPlug("surfaceShader");
-	MPlugArray connections;
-	plug.connectedTo(connections, true, false);
-	int matindex = -1;
-	for (uint i = 0; i < connections.length(); i++)
-	{
-		if (connections[i].node().hasFn(MFn::kLambert))
-		{
-			matindex = i;
-			if (debug) FileMapping::printInfo("Num of connections " + MString() + connections.length() + MString() + connections[i].name().asChar() + MString() + shaderGroup.name().asChar());
-		}
-	}
-	if (matindex >= 0)
-	{
-		MFnDependencyNode mat(connections[matindex].node());
-		FileMapping::printInfo(mat.name().asChar());
-		outMesh.materialName = mat.name().asChar();
-	}
-	else
-	{
-		outMesh.materialName = "ERROR NONE";
-	}
+    // ---
+    std::string t_materialName = "";
+    MObjectArray t_connectedShaders;
+    MIntArray t_shaderIDArray;
+    mNode.getConnectedShaders(0, t_connectedShaders, t_shaderIDArray);
+    size_t t_connectionID;
+    if (t_connectedShaders.length() > static_cast<size_t>(0))
+    {
+        for (size_t i = 0; i < t_connectedShaders.length(); ++i)
+        {
+            MFnDependencyNode t_shaderGroupTemp(t_connectedShaders[i], &result);
+            MPlug t_plug_2 = t_shaderGroupTemp.findPlug("surfaceShader", &result);
+            if (result)
+            {
+                t_connectionID = i;
+                break;
+            }
+        }
+        MFnDependencyNode t_shaderGroup(t_connectedShaders[t_connectionID], &result);
+        MPlug t_plug = t_shaderGroup.findPlug("surfaceShader");
+        MPlugArray t_connections;
+        t_plug.connectedTo(t_connections, true, false);
+        int t_shaderID = -1;
+        for (size_t i = 0; i < t_connections.length(); ++i)
+        {
+            if (t_connections[i].node().hasFn(MFn::kLambert))
+            {
+                t_shaderID = i;
+            }
+        }
+        if (t_shaderID >= 0)
+        {
+            MFnDependencyNode t_material(t_connections[t_shaderID].node());
+            t_materialName = t_material.name().asChar();
+            outMesh.materialName = t_materialName;
+        }
+        else
+        {
+            outMesh.materialName = "";
+        }
+    }
 
+
+
+
+
+
+
+
+    // -----
+	
+    
 	outMesh.meshID = 5;
 	outMesh.materialID = 8;
 	if (debug) FileMapping::printInfo("MAT MESH ID: " + MString() + outMesh.meshID + " " + MString() + outMesh.materialID + outMesh.materialName.c_str());
@@ -1375,7 +1400,7 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 		if (result)
 		{	//DO STUFF
 			MString myCommand = "setAttr -e " + mNode.name() + ".quadSplit 0";
-			MGlobal::executeCommandOnIdle(myCommand);
+			MGlobal::executeCommand(myCommand);
 			std::string parentname = getParentName(plug_1);
 			std::string tmpName = mNode.fullPathName().asChar();
 			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh);
@@ -2162,15 +2187,20 @@ void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 		}
 	}
 }
-void cbNewNode(MObject& node, void* clientData)
+void cbNewNode(MObject& node, void* clientData) //när ett objekt skapats
 {
 	if (node.hasFn(MFn::kMesh))
 	{
-		_CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMeshAttribute));
-		_CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(node, cbPolyChanged));
-		_CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
-		_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
-		_CBidArray.append(MModelMessage::addNodeAddedToModelCallback(node, cbInstancing));
+        MFnMesh t_mesh(node);
+        if (!t_mesh.isIntermediateObject())
+        {
+            _CBidArray.append(MNodeMessage::addAttributeChangedCallback(node, cbMeshAttribute));
+            _CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(node, cbPolyChanged));
+            _CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
+            _CBidArray.append(MNodeMessage::addNodePreRemovalCallback(node, cbPreRemoveNode));
+            _CBidArray.append(MModelMessage::addNodeAddedToModelCallback(node, cbInstancing));
+        }
+		
 	}
 	if (node.hasFn(MFn::kTransform))
 	{
@@ -2264,7 +2294,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 	//MGlobal::displayInfo("BOOOOOOOOOOOOOOB");
 	bool asdf = false;
 	//MGlobal::displayInfo("WOWOWOWOWO");
-	if (msgVector.size() > 0)
+	if (msgVector.size() > 0) //om det finns meddelanden så skicka dem till att skrivas
 	{
 		for (std::vector<MessageInfo>::size_type i = 0; i != msgVector.size(); i++)
 		{
@@ -2278,13 +2308,13 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 		FileMapping::printInfo("\n--- TIMED MESSAGE UPDATE (" + MString() + msgCount + " Messages) ------------------------");
 		bool run = true;
 		int msgID = 0;
-		while (!msgQueue.empty() && run == true)
+		while (!msgQueue.empty() && run == true) //om det finns meddelanden som ska skrivas
 		{
 
 			FileMapping::printInfo("\n****** MESSAGE START (ID: " + MString() + msgID + ") **********************");
 			if (msgQueue.front().msgType == MessageType::msgDeleted)
 			{
-				if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true)
+				if (fileMap.tryWriteRenameDelete(msgQueue.front(), RenameDeleteInfo{ msgQueue.front().nodeName,"" }) == true) //lyckades skriva, ta bort det från kön
 				{
 					msgQueue.pop();
 				}
@@ -2396,7 +2426,7 @@ void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 	
 }
 
-void loadScene()
+void loadScene() //ladda in allt som redan finns i maya
 {
 	MStatus stat;
 	MItDependencyNodes itDep(MFn::kLambert);
@@ -2453,30 +2483,31 @@ void loadScene()
 				{
 					
 					MFnMesh mesh(trans.child(i), &stat);
-					if (mesh.isInstanced())
+					if (!mesh.isIntermediateObject())
 					{
-						//FileMapping::printInfo("\n\n\n\n\n\n\nFOUND INSTANCE LOL");
-					}
-					FileMapping::printInfo("MESH VERTS " + MString() + mesh.numVertices());
-					if (mesh.numVertices() > 0)
-					{
-						if (stat)
-						{
-							std::string name = mesh.fullPathName().asChar();
-							if (name.find("SurfaceShape") == std::string::npos)
-							{
-								MString myCommand = "setAttr -e " + mesh.name() + ".quadSplit 0";
-								MGlobal::executeCommandOnIdle(myCommand);
-								//_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttribute));
-								_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttributeChange));
-								_CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(child, cbPolyChanged));
-								_CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
-								_CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
-								mAddNode(mesh.fullPathName().asChar(), trans.fullPathName().asChar(), NodeType::nMesh);
-							}
+                        FileMapping::printInfo("MESH VERTS " + MString() + mesh.numVertices());
+                        if (mesh.numVertices() > 0)
+                        {
+                            if (stat)
+                            {
+                                std::string name = mesh.fullPathName().asChar();
+                                if (name.find("SurfaceShape") == std::string::npos)
+                                {
+                                    MString myCommand = "setAttr -e " + mesh.name() + ".quadSplit 0";
+                                    MGlobal::executeCommand(myCommand);
+                                    //_CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttribute));
+                                    _CBidArray.append(MNodeMessage::addAttributeChangedCallback(child, cbMeshAttributeChange));
+                                    _CBidArray.append(MPolyMessage::addPolyTopologyChangedCallback(child, cbPolyChanged));
+                                    _CBidArray.append(MDGMessage::addNodeRemovedCallback(cbRemovedNode, "dependNode"));
+                                    _CBidArray.append(MNodeMessage::addNodePreRemovalCallback(child, cbPreRemoveNode));
+                                    mAddNode(mesh.fullPathName().asChar(), trans.fullPathName().asChar(), NodeType::nMesh);
+                                }
 
-						}
+                            }
+                        }
 					}
+                  
+					
 
 
 				}
@@ -2591,7 +2622,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 
 	//_CBidArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, &cbNameChange));
-	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode));
+	_CBidArray.append(MDGMessage::addNodeAddedCallback(cbNewNode)); //när nånting skapas?
 	_CBidArray.append(MTimerMessage::addTimerCallback(0.2f, &cbMessageTimer));
 	_CBidArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cbCameraPanel));
 	_CBidArray.append(MDagMessage::addParentAddedCallback(cbAddParent));

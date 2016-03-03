@@ -198,26 +198,19 @@ bool FileMapping::tryWriteMesh(MessageInfo& msg, MeshInfo& minfo)
 {
 	if (isRunning)
 	{
-        bool result = false;
 		MessageHeader mHeader = createHeaderMesh(msg, minfo);
 		int cfg = findWriteConfig(mHeader);
 		if (cfg != 0)
 		{
 			if (writeMesh(mHeader, createMessageMesh(msg, minfo), cfg) == true)
 			{
-
-                result = true;
+				return true;
 			}
 		}
 		else
 		{
-			result = false;
+			return false;
 		}
-        /*delete[] minfo.meshData.uv;
-        delete[] minfo.meshData.triIndices;
-        delete[] minfo.meshData.norIndices;
-        delete[] minfo.meshData.UVIndices;
-        delete[] minfo.meshData.triPerFace;*/
 		return false;
 
 		/*FileMapping::printInfo("FileMap Msg: Mesh Message found");
@@ -539,7 +532,6 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		delete mdata.meshData.triIndices;
 		delete mdata.meshData.norIndices;
 		delete mdata.meshData.UVIndices;
-		return true;
 		break;
 
 	case 2:
@@ -604,14 +596,13 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		delete mdata.meshData.triIndices;
 		delete mdata.meshData.norIndices;
 		delete mdata.meshData.UVIndices;
-		return true;
 		break;
 
 	case 3:
 		PrintFileMapInfo(false);
 		memcpy((unsigned char*)mMessageData, &hdr, sizeof(MessageHeader));
 		tempHead = sizeof(MessageHeader);
-
+        localHead = 0;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata, sizeof(char) * 100);
 		tempHead += sizeof(char) * 100;
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.transformCount, sizeof(int));
@@ -637,19 +628,19 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		tempHead += sizeof(int);
 		memcpy((unsigned char*)mMessageData + localHead + tempHead, &mdata.meshData.triCount, sizeof(int));
 		tempHead += sizeof(int);
-		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
+		memcpy((unsigned char*)mMessageData + localHead +  tempHead, mdata.meshData.vertices, sizeof(float) * 3 * mdata.meshData.vertCount);
 		tempHead += sizeof(float) * 3 * mdata.meshData.vertCount;
-		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
+		memcpy((unsigned char*)mMessageData + localHead +  tempHead, mdata.meshData.normals, sizeof(float) * 3 * mdata.meshData.normalCount);
 		tempHead += sizeof(float) * 3 * mdata.meshData.normalCount;
 		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.uv, sizeof(float) * 2 * mdata.meshData.UVCount);
 		tempHead += sizeof(float) * 2 * mdata.meshData.UVCount;
-		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.triIndices, sizeof(int) * mdata.meshData.indCount);
+		memcpy((unsigned char*)mMessageData + localHead +  tempHead, mdata.meshData.triIndices, sizeof(int) * mdata.meshData.indCount);
 		tempHead += sizeof(int) * mdata.meshData.indCount;
-		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.norIndices, sizeof(int) * mdata.meshData.indCount);
+		memcpy((unsigned char*)mMessageData + localHead +  tempHead, mdata.meshData.norIndices, sizeof(int) * mdata.meshData.indCount);
 		tempHead += sizeof(int) * mdata.meshData.indCount;
-		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.UVIndices, sizeof(int) * mdata.meshData.indCount);
+		memcpy((unsigned char*)mMessageData + localHead +  tempHead, mdata.meshData.UVIndices, sizeof(int) * mdata.meshData.indCount);
 		tempHead += sizeof(int) * mdata.meshData.indCount;
-		memcpy((unsigned char*)mMessageData +  tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
+		memcpy((unsigned char*)mMessageData + localHead +  tempHead, mdata.meshData.triPerFace, sizeof(int) * mdata.meshData.triCount);
 		tempHead += sizeof(int) * mdata.meshData.triCount;
 
 		FileMapping::printInfo("***** (CFG " + MString() + cfg + ") " + MString() + (tempHead + hdr.bytePadding) + " " + MString() + hdr.byteTotal);
@@ -667,13 +658,12 @@ bool FileMapping::writeMesh(MessageHeader& hdr, MeshMessage& mdata, int config)
 		delete mdata.meshData.triIndices;
 		delete mdata.meshData.norIndices;
 		delete mdata.meshData.UVIndices;
-		return true;
 		break;
 	}
-	
+    Sleep(10);
 
 
-	return false;
+	return true;
 }
 bool FileMapping::writeCamera(MessageHeader& hdr, CameraMessage& cdata, int config)
 {
