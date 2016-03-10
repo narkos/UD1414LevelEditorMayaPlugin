@@ -624,7 +624,7 @@ TransformInfo outTransformData(std::string name)
 				tempPlug = mNode.findPlug("drmInteractableStartSpeed");
 				tempPlug.getValue(outTrans.transformData.attributes.interactableStartSpeed);
 				tempPlug = mNode.findPlug("drmInteractableEndSpeed");
-				tempPlug.getValue(outTrans.transformData.attributes.interactableStartSpeed);
+				tempPlug.getValue(outTrans.transformData.attributes.interactableEndSpeed);
 
 				tempPlug = mNode.findPlug("drmIsPotentialFieldCollidable");
 				tempPlug.getValue(outTrans.transformData.attributes.isPotentialFieldCollidable);
@@ -998,7 +998,7 @@ std::string getParentName(MPlug& plug)
 }
 
 // MESSAGE AND NODE HANDLERS
-void mAddMessage(std::string name, int msgType, int nodeType, std::string oldName)
+void mAddMessage(std::string name, int msgType, int nodeType, std::string oldName) //namn på meddelandet, vad som ska hända och vilken typ av object
 {
 	bool exists = false;
 	bool addToVector = false;
@@ -1218,7 +1218,7 @@ void mAddMessage(std::string name, int msgType, int nodeType, std::string oldNam
 	//	//msgQueue.push(tMsg);
 	//}
 }
-void mAddNode(std::string name, std::string parentName, int type, int extra = 0, char* childname = nullptr)
+void mAddNode(std::string name, std::string parentName, int type, int extra = 0, char* childname = nullptr) //håller koll på vad som hänt, om det finns en ny node så ska ett meddelande läggas till. Innehåller alla objekten så man håller koll på vad som finns
 {
 	
 	if (!name.empty())
@@ -1244,7 +1244,7 @@ void mAddNode(std::string name, std::string parentName, int type, int extra = 0,
 				std::vector<std::string>transName;
 				transName.push_back(parentName);
 				MeshInfo mesh{ name,1 ,transName, "" ,0,0 };
-				meshVector.push_back(mesh);
+				meshVector.push_back(mesh); //hade inte behövt skicka all data egentligen, namn n stuff är viktigt
 				MessageInfo msginfo{ name, NodeType::nMesh, MessageType::msgAdded };
 				mAddMessage(name, msgAdded, nMesh);
 				if (debug) FileMapping::printInfo("Added mesh: " + MString(name.c_str()));
@@ -1388,12 +1388,12 @@ bool removeFromQueue(std::string name)
 	return true;
 }
 // CALLBACKS
-void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData) //meshen håller på att skapas, denna läggs på först och ser till att inga ändringar registreras förrens meshen är "doublesided" alltså den funkar
 {
 	// Validates new mesh
 	// Standard string for use with find() function
 	std::string plugName(plug_1.name().asChar());
-	if (plugName.find("doubleSided") != std::string::npos && MNodeMessage::AttributeMessage::kAttributeSet)
+	if (plugName.find("doubleSided") != std::string::npos && MNodeMessage::AttributeMessage::kAttributeSet) 
 	{
 		MStatus result;
 		MFnMesh mNode(plug_1.node(), &result);
@@ -1403,8 +1403,8 @@ void cbMeshAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& p
 			MGlobal::executeCommand(myCommand);
 			std::string parentname = getParentName(plug_1);
 			std::string tmpName = mNode.fullPathName().asChar();
-			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh);
-			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(plug_1.node(), cbMeshAttributeChange));
+			mAddNode(tmpName.c_str(), parentname.c_str(), nMesh); //skapar objektet med datan, den moddas sen med cbMeshAttributeChange
+			_CBidArray.append(MNodeMessage::addAttributeChangedCallback(plug_1.node(), cbMeshAttributeChange)); //lägger på den RIKTIGA callbacken på meshen som faktiskt hämtar värden
 			MMessage::removeCallback(MMessage::currentCallbackId());
 		}
 	}
@@ -1454,7 +1454,7 @@ void cbInstancing(MObject &node, void *clientData)
 {
 	FileMapping::printInfo("\n\n\n\n\n\n\n\n\INSTANCIADO POR FAVOR\n");
 }
-void cbAddParent(MDagPath &child, MDagPath &parent, void *clientData)
+void cbAddParent(MDagPath &child, MDagPath &parent, void *clientData) //ändrat namnet på en transform
 {
 	MString childPathName(child.fullPathName());
 	MString parentPathName(parent.fullPathName());
@@ -1686,7 +1686,7 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 	
 	FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
 
-	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
+	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052) //edited
 	{
 		
 		//outLightData(lightName.asChar());
@@ -1724,7 +1724,7 @@ void cbLightAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& 
 		}
 	}
 }
-void cbLightAdd(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
+void cbLightAdd(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData) //innan ljuset är klart
 {
 	MFnLight light(plug_1.node());
 	bool sendMsg = false;
@@ -1733,7 +1733,7 @@ void cbLightAdd(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2
 
 	//FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
 
-	if (lightName.find("#") == std::string::npos && MNodeMessage::AttributeMessage::kAttributeSet)
+	if (lightName.find("#") == std::string::npos && MNodeMessage::AttributeMessage::kAttributeSet) //väntar på att ljuset skapats
 	{
 		//FileMapping::printInfo(MString(plugName.c_str()) + " nr " + MString() + msg);
 		//FileMapping::printInfo(light.fullPathName());
@@ -1754,7 +1754,7 @@ void cbMaterialAttribute(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlu
 	std::string plugName(plug_1.name().asChar());
 
 
-	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052)
+	if (msg & MNodeMessage::AttributeMessage::kAttributeSet && msg != 2052) //edited
 	{
 		bool sendMsg = false;
 		//outLightData(lightName.asChar());
@@ -1851,7 +1851,7 @@ void cbCameraPanel(const MString &str, MObject &node, void *clientData)
 		mAddMessage(currCam.fullPathName().asChar(), msgSwitched, nCamera);
 	}
 }
-void cbNameChange(MObject& node, const MString& str, void* clientData)
+void cbNameChange(MObject& node, const MString& str, void* clientData) //jämför den mot i nodes
 {
 	if (node.hasFn(MFn::kMesh))
 	{
@@ -2139,7 +2139,7 @@ void cbPreRemoveNode(MObject& node, void* clientData)
 void cbTransformModified(MNodeMessage::AttributeMessage msg, MPlug& plug_1, MPlug& plug_2, void* clientData)
 {
 	//FileMapping::printInfo(MString(plug_1.info().asChar()));
-	if (msg & MNodeMessage::AttributeMessage::kAttributeSet)
+	if (msg & MNodeMessage::AttributeMessage::kAttributeSet) //edited
 		//if (plug_1.node().hasFn(MFn::kTransform))
 	{
 		bool d = false;
@@ -2291,9 +2291,7 @@ void cbNewNode(MObject& node, void* clientData) //när ett objekt skapats
 
 void cbMessageTimer(float elapsedTime, float lastTime, void *clientData)
 {
-	//MGlobal::displayInfo("BOOOOOOOOOOOOOOB");
 	bool asdf = false;
-	//MGlobal::displayInfo("WOWOWOWOWO");
 	if (msgVector.size() > 0) //om det finns meddelanden så skicka dem till att skrivas
 	{
 		for (std::vector<MessageInfo>::size_type i = 0; i != msgVector.size(); i++)
@@ -2610,7 +2608,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 	FileMapping::printInfo("Level Editor plugin loaded.\n");
 	result = M3dView::getM3dViewFromModelPanel("modelPanel4", modelPanel);
-	loadScene();
+	loadScene(); // !!!!
 	debug = fileMap.debug;
 	FileMapping::printInfo("debug:  " + MString() + debug);
 	msgTypeVector.push_back("Invalid msg type");
